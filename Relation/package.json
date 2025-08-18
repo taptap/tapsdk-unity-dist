@@ -1,12 +1,12 @@
 {
-    "name": "@taptap/com.taptap.sdk.relation",
+    "name": "com.taptap.tapsdk.unity.relation",
     "displayName": "TapTapSDK Relation",
     "description": "TapTapSDK Relation",
-    "version": "4.7.2",
+    "version": "4.7.2-beta.0",
     "unity": "2019.4",
     "license": "MIT",
     "dependencies": {
-        "@taptap/com.taptap.sdk.core": "4.7.2",
-        "@taptap/com.taptap.sdk.login": "4.7.2"
+        "com.taptap.tapsdk.unity.core": "4.7.2",
+        "com.taptap.tapsdk.unity.login": "4.7.2"
     }
 }
