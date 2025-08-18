@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<dependencies>
-  <androidPackages>
-    <repositories>
-      <repository>https://repo.maven.apache.org/maven2</repository>
-    </repositories>
-    <androidPackage spec="com.taptap.sdk:tap-update:4.7.2"/>
-  </androidPackages>
-</dependencies>

@@ -1,4 +1,0 @@
-<linker>
-  <assembly fullname="TapSDK.Moment.Runtime" preserve="all" />
-  <assembly fullname="TapSDK.Moment.Mobile.Runtime" preserve="all" />
-</linker>
