@@ -1,0 +1,22 @@
+{
+    "name": "TapSDK.Moment.Standalone.Runtime",
+    "references": [
+        "GUID:5f5654759b7534ddebacbe2e8ef8a8da",
+        "GUID:7d5ef2062f3704e1ab74aac0e4d5a1a7"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "LinuxStandalone64",
+        "macOSStandalone",
+        "WindowsStandalone32",
+        "WindowsStandalone64"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

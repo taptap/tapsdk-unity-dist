@@ -1,0 +1,12 @@
+{
+    "name": "com.taptap.tapsdk.unity.leaderboard",
+    "displayName": "TapTapSDK Leaderboard",
+    "description": "TapTapSDK Leaderboard",
+    "version": "4.7.2-beta.2",
+    "unity": "2019.4",
+    "license": "MIT",
+    "dependencies": {
+        "com.taptap.tapsdk.unity.core": "4.7.2-beta.2",
+        "com.taptap.tapsdk.unity.login": "4.7.2-beta.2"
+    }
+}

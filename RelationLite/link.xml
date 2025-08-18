@@ -1,0 +1,4 @@
+<linker>
+  <assembly fullname="TapSDK.RelationLite.Runtime" preserve="all" />
+  <assembly fullname="TapSDK.RelationLite.Mobile.Runtime" preserve="all" />
+</linker>

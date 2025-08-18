@@ -1,0 +1,17 @@
+{
+    "name": "TapSDK.License.Mobile.Editor",
+    "references": [
+        "GUID:56f3da7a178484843974054bafe77e73"
+    ],
+    "includePlatforms": [
+        "Editor"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
