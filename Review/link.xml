@@ -1,0 +1,3 @@
+<linker>
+  <assembly fullname="TapSDK.Review.Mobile.Runtime" preserve="all" />
+</linker>

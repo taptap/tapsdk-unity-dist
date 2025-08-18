@@ -1,0 +1,50 @@
+[
+  {
+    "name": "Core",
+    "package": "com.taptap.sdk.core"
+  },
+  {
+    "name": "Achievement",
+    "package": "com.taptap.sdk.achievement"
+  },
+  {
+    "name": "Compliance",
+    "package": "com.taptap.sdk.compliance"
+  },
+  {
+    "name": "IAP",
+    "package": "com.taptap.sdk.iap"
+  },
+  {
+    "name": "License",
+    "package": "com.taptap.sdk.license"
+  },
+  {
+    "name": "Login",
+    "package": "com.taptap.sdk.login"
+  },
+  {
+    "name": "Moment",
+    "package": "com.taptap.sdk.moment"
+  },
+  {
+    "name": "Update",
+    "package": "com.taptap.sdk.update"
+  },
+  {
+    "name": "Review",
+    "package": "com.taptap.sdk.review"
+  },
+  {
+    "name": "Relation",
+    "package": "com.taptap.sdk.relation"
+  },
+  {
+    "name": "RelationLite",
+    "package": "com.taptap.sdk.relationlite"
+  },
+  {
+    "name": "Leaderboard",
+    "package": "com.taptap.sdk.leaderboard"
+  }
+]

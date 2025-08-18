@@ -1,0 +1,12 @@
+{
+    "name": "@taptap/com.taptap.sdk.compliance",
+    "displayName": "TapTapSDK Compliance",
+    "description": "TapTapSDK Compliance",
+    "version": "4.7.2",
+    "unity": "2019.4",
+    "license": "MIT",
+    "dependencies": {
+        "@taptap/com.taptap.sdk.core": "4.7.2",
+        "@taptap/com.taptap.sdk.login": "4.7.2"
+    }
+}

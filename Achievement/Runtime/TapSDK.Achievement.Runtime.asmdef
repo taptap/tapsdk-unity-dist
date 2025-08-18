@@ -1,0 +1,16 @@
+{
+    "name": "TapSDK.Achievement.Runtime",
+    "references": [
+        "GUID:7d5ef2062f3704e1ab74aac0e4d5a1a7",
+        "GUID:e8754b6153389406c963cd52996cc80f"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

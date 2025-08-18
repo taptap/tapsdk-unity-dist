@@ -1,0 +1,15 @@
+{
+    "name": "TapSDK.Moment.Runtime",
+    "references": [
+        "GUID:7d5ef2062f3704e1ab74aac0e4d5a1a7"
+    ],
+    "includePlatforms": [],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}
