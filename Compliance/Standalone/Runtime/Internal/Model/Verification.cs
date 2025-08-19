@@ -2,6 +2,7 @@
 using TapSDK.Compliance;
 using TapSDK.Compliance.Internal;
 using TapSDK.Core;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Compliance.Model 
 {
@@ -30,7 +31,7 @@ namespace TapSDK.Compliance.Model
 
         internal VerificationResult(VerificationResult other)
         {
-            TapLogger.Debug("current state = " + other.Status);
+            TapLog.Log("current state = " + other.Status);
             Status = other.Status;
             ComplianceToken = other.ComplianceToken;
             errorCode = other.errorCode;

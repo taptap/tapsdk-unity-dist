@@ -5,6 +5,7 @@ using UnityEngine;
 using TapSDK.Compliance.Model;
 using TapSDK.Core;
 using TapSDK.Login;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Compliance.Internal 
 {
@@ -58,7 +59,7 @@ namespace TapSDK.Compliance.Internal
             try
             {
                 LocalVerification localVerification;
-                TapLogger.Debug("start check v2 token in local");
+                TapLog.Log("start check v2 token in local");
                 //先检查本地是否有 v2 缓存
                 localVerification = await persistenceV2.Load<LocalVerification>();
                 if (localVerification != null && localVerification.ComplianceToken != null
@@ -75,7 +76,7 @@ namespace TapSDK.Compliance.Internal
                 }
                 else
                 {
-                    TapLogger.Debug("try get v2 token with userId");
+                    TapLog.Log("try get v2 token with userId");
                     result = await Network.FetchVerification(userId);
                     await Save(userId, result);
                 }
@@ -84,15 +85,15 @@ namespace TapSDK.Compliance.Internal
             catch (Exception e)
             {
                 //首次异常报错
-                TapLogger.Debug("try get v2 token failed  error: " + e.Message);
-                TapLogger.Error(e.ToString());
+                TapLog.Log("try get v2 token failed  error: " + e.Message);
+                TapLog.Error(e.ToString());
                 throw;
             }
         }
 
         internal static async Task FetchByTapToken(string userId, AccessToken accessToken = null)
         {
-            TapLogger.Debug("start check tapToken in local");
+            TapLog.Log("start check tapToken in local");
             long timestamp = 0;
             int retryTimes = 1;
             VerificationResult result;
@@ -108,7 +109,7 @@ namespace TapSDK.Compliance.Internal
                 {
                     if (HasComplianceAuthInTapToken(accessToken))
                     {
-                        TapLogger.Debug("try use tapToken to get v2 token");
+                        TapLog.Log("try use tapToken to get v2 token");
                         result = await Network.FetchVerificationByTapToken(userId, accessToken, timestamp);
                         await Save(userId, result);
                         return;
@@ -172,7 +173,7 @@ namespace TapSDK.Compliance.Internal
             catch (Exception e)
             {
                 tcs.SetException(e);
-                TapLogger.Error(e.ToString());
+                TapLog.Error(e.ToString());
                 throw;
             }
 
@@ -204,7 +205,7 @@ namespace TapSDK.Compliance.Internal
             catch (Exception e)
             {
                 tcs.SetException(e);
-                TapLogger.Error(e.ToString());
+                TapLog.Error(e.ToString());
                 throw;
             }
 
@@ -217,7 +218,7 @@ namespace TapSDK.Compliance.Internal
             {
                 UserId = userId
             };
-            TapLogger.Debug("try save  v2 token to local");
+            TapLog.Log("try save  v2 token to local");
             if (persistenceV2 == null)
             {
                 var filename = Tool.EncryptString(userId);

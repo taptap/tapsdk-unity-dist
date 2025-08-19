@@ -15,6 +15,7 @@ using System.Collections.Concurrent;
 using System.Threading;
 using TapSDK.Login.Internal;
 using TapSDK.Core.Internal.Utils;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Achievement.Standalone
 {
@@ -70,7 +71,7 @@ namespace TapSDK.Achievement.Standalone
             // check login
             if (!await TapAchievementUtil.CheckAccount())
             {
-                Debug.LogError("TapAchievement Increment achievementId: " + achievementId + " failed, not login");
+                TapLog.Error("TapAchievement Increment achievementId: " + achievementId + " failed, not login");
                 NotifyCallbackFailure(
                                      achievementId: achievementId,
                                      errorCode: TapTapAchievementConstants.NOT_LOGGED,
@@ -93,7 +94,7 @@ namespace TapSDK.Achievement.Standalone
             // check login
             if (!await TapAchievementUtil.CheckAccount())
             {
-                Debug.LogError("TapAchievement ShowAchievements failed, not login");
+                TapLog.Error("TapAchievement ShowAchievements failed, not login");
                 NotifyCallbackFailure(
                                      achievementId: "",
                                      errorCode: TapTapAchievementConstants.NOT_LOGGED,

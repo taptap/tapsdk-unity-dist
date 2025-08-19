@@ -106,7 +106,6 @@ namespace TapSDK.Achievement.Mobile
                 {
                     return;
                 }
-                Debug.Log("TapSdk4UnityDemo -->> Bridge Callback == " + JsonConvert.SerializeObject(result));
                 var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
                 var state = SafeDictionary.GetValue<string>(dic, "state");
                 switch (state)

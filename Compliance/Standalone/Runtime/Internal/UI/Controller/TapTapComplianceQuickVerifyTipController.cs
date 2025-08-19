@@ -2,6 +2,7 @@ using System;
 using UnityEngine.UI;
 using TapSDK.UI;
 using UnityEngine;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Compliance.Internal {
     public class TapTapComplianceQuickVerifyTipController : BasePanelController {
@@ -84,7 +85,7 @@ namespace TapSDK.Compliance.Internal {
             if (config != null) {
                 titleText.text = config.Title;
                 mainIntroText.text = config.Content.Replace(" ","\u00A0");//.Substring(0, index + + splitter.Length);
-                Debug.Log("set mainIntro text = " + config.Content);
+                TapLog.Log("set mainIntro text = " + config.Content);
                 int lineCount;
                 float lineHeight;
                 if (IsTextOverflowing(mainIntroText, out lineCount, out lineHeight)) {

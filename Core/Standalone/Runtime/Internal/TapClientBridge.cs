@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using System.Text;
+using TapSDK.Core.Internal.Log;
 
 
 
@@ -168,7 +169,7 @@ namespace TapSDK.Core.Standalone.Internal
             StringBuilder errMsgBuffer = new StringBuilder(1024); // 分配 1024 字节缓冲区
             int result = TapSDK_Init(errMsgBuffer, key);
             errMessage = errMsgBuffer.ToString();
-            TapLogger.Debug("CheckInitState result = " + result);
+            TapLog.Log("CheckInitState result = " + result);
             return result;
         }
 
@@ -248,15 +249,15 @@ namespace TapSDK.Core.Standalone.Internal
         {
             try
             {
-                TapLogger.Debug("login start ==== " + string.Join(",", scopeStrings));
+                TapLog.Log("login start ==== " + string.Join(",", scopeStrings));
                 int result = TapUser_AsyncAuthorize_internal(string.Join(",", scopeStrings), responseType, redirectUri,
      codeChallenge, state, codeChallengeMethod, versonCode, sdkUa, info);
-                TapLogger.Debug("login end === " + result);
+                TapLog.Log("login end === " + result);
                 return (AuthorizeResult)result;
             }
             catch (Exception ex)
             {
-                TapLogger.Debug("login crash = " + ex.StackTrace);
+                TapLog.Log("login crash = " + ex.StackTrace);
                 return AuthorizeResult.UNKNOWN;
             }
         }
@@ -270,7 +271,7 @@ namespace TapSDK.Core.Standalone.Internal
             }
             catch (Exception ex)
             {
-                TapLogger.Debug("login crash = " + ex.Message);
+                TapLog.Log("login crash = " + ex.Message);
                 return AuthorizeResult.UNKNOWN;
             }
         }

@@ -4,13 +4,13 @@
     <repositories>
       <repository>https://repo.maven.apache.org/maven2</repository>
     </repositories>
-    <androidPackage spec="com.taptap.sdk:tap-login-unity:4.7.2"/>
+    <androidPackage spec="com.taptap.sdk:tap-login-unity:4.8.1-beta.4"/>
   </androidPackages>
   <iosPods>
     <sources>
       <source>https://github.com/CocoaPods/Specs.git</source>
     </sources>
-    <iosPod addToAllTargets="false" bitcodeEnabled="false" name="TapTapLoginSDK" version="~> 4.7.2"/>
-    <iosPod addToAllTargets="false" bitcodeEnabled="false" name="TapTapGidSDK" version="~> 4.7.2"/>
+    <iosPod addToAllTargets="false" bitcodeEnabled="false" name="TapTapLoginSDK" version="~> 4.8.1-beta.4"/>
+    <iosPod addToAllTargets="false" bitcodeEnabled="false" name="TapTapGidSDK" version="~> 4.8.1-beta.4"/>
   </iosPods>
 </dependencies>

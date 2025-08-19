@@ -4,6 +4,7 @@ using UnityEngine;
 using TapSDK.Core;
 using TapSDK.Compliance.Model;
 using System.Collections.Generic;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Compliance.Internal
 {
@@ -67,7 +68,7 @@ namespace TapSDK.Compliance.Internal
                 _job = CreateJob(true);
             }
             
-            TapLogger.Debug(string.Format("Anti Addiction Job Type: {0} ! Platform: {1}", _job.GetType(),  Application.platform.ToString()));
+            TapLog.Log(string.Format("Anti Addiction Job Type: {0} ! Platform: {1}", _job.GetType(),  Application.platform.ToString()));
         }
 
         internal static void Init(string clientId, string clientToken, TapTapRegionType regionType, TapTapComplianceOption config)

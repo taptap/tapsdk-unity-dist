@@ -6,6 +6,7 @@ using TapSDK.Core;
 using Newtonsoft.Json;
 using TapSDK.Leaderboard;
 using TapSDK.Core.Internal.Utils;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Leaderboard.Mobile
 {
@@ -40,13 +41,13 @@ namespace TapSDK.Leaderboard.Mobile
         {
             if (string.IsNullOrEmpty(openId))
             {
-                Debug.LogError("OpenUserProfile failed: openId is null or empty.");
+                TapLog.Error("OpenUserProfile failed: openId is null or empty.");
                 return;
             }
             
             if (!string.IsNullOrEmpty(unionId))
             {
-                Debug.LogWarning("OpenUserProfile: unionId is not used in mobile platform, it will be ignored.");
+                TapLog.Warning("OpenUserProfile: unionId is not used in mobile platform, it will be ignored.");
             }
             var command = new Command.Builder()
                 .Service(SERVICE_NAME)
@@ -79,14 +80,14 @@ namespace TapSDK.Leaderboard.Mobile
                     return;
                 }
                 
-                Debug.Log("SubmitScores, result ==>>> " + JsonConvert.SerializeObject(result));
+                TapLog.Log("SubmitScores, result ==>>> " + JsonConvert.SerializeObject(result));
                 var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
                 var status = SafeDictionary.GetValue<string>(dic, "status");
                 switch (status)
                 {
                     case "success":
                         var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
-                        Debug.Log("submit scores success: " + jsonStr);
+                        TapLog.Log("submit scores success: " + jsonStr);
                         var data = JsonConvert.DeserializeObject<SubmitScoresResponse>(jsonStr);
                         if (callback != null)
                         {
@@ -96,7 +97,7 @@ namespace TapSDK.Leaderboard.Mobile
                     case "failure":
                         var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
                         var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
-                        Debug.Log("failed to submit scores, errorCode: " + errorCode + ", errorMsg: " + errorMsg);
+                        TapLog.Log("failed to submit scores, errorCode: " + errorCode + ", errorMsg: " + errorMsg);
                         if (callback != null)
                         {
                             callback.OnFailure(errorCode, errorMsg);
@@ -134,14 +135,14 @@ namespace TapSDK.Leaderboard.Mobile
                     return;
                 }
                 
-                Debug.Log("LoadLeaderboardScores, result ==>>> " + JsonConvert.SerializeObject(result));
+                TapLog.Log("LoadLeaderboardScores, result ==>>> " + JsonConvert.SerializeObject(result));
                 var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
                 var status = SafeDictionary.GetValue<string>(dic, "status");
                 switch (status)
                 {
                     case "success":
                         var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
-                        Debug.Log("load leaderboard scores success: " + jsonStr);
+                        TapLog.Log("load leaderboard scores success: " + jsonStr);
                         var data = JsonConvert.DeserializeObject<LeaderboardScoreResponse>(jsonStr);
                         if (callback != null)
                         {
@@ -151,7 +152,7 @@ namespace TapSDK.Leaderboard.Mobile
                     case "failure":
                         var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
                         var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
-                        Debug.Log("load leaderboard scores failed, errorCode: " + errorCode + ", errorMsg: " + errorMsg);
+                        TapLog.Log("load leaderboard scores failed, errorCode: " + errorCode + ", errorMsg: " + errorMsg);
                         if (callback != null)
                         {
                             callback.OnFailure(errorCode, errorMsg);
@@ -186,14 +187,14 @@ namespace TapSDK.Leaderboard.Mobile
                     return;
                 }
                 
-                Debug.Log("LoadCurrentPlayerLeaderboardScore, result ==>>> " + JsonConvert.SerializeObject(result));
+                TapLog.Log("LoadCurrentPlayerLeaderboardScore, result ==>>> " + JsonConvert.SerializeObject(result));
                 var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
                 var status = SafeDictionary.GetValue<string>(dic, "status");
                 switch (status)
                 {
                     case "success":
                         var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
-                        Debug.Log("Load current player leaderboard score success: " + jsonStr);
+                        TapLog.Log("Load current player leaderboard score success: " + jsonStr);
                         var data = JsonConvert.DeserializeObject<UserScoreResponse>(jsonStr);
                         if (callback != null)
                         {
@@ -203,7 +204,7 @@ namespace TapSDK.Leaderboard.Mobile
                     case "failure":
                         var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
                         var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
-                        Debug.Log("Load current player leaderboard score failed: errorCode: " + errorCode + ", errorMsg: " + errorMsg);
+                        TapLog.Log("Load current player leaderboard score failed: errorCode: " + errorCode + ", errorMsg: " + errorMsg);
                         if (callback != null)
                         {
                             callback.OnFailure(errorCode, errorMsg);
@@ -240,14 +241,14 @@ namespace TapSDK.Leaderboard.Mobile
                     return;
                 }
                 
-                Debug.Log("LoadPlayerCenteredScores, result ==>>> " + JsonConvert.SerializeObject(result));
+                TapLog.Log("LoadPlayerCenteredScores, result ==>>> " + JsonConvert.SerializeObject(result));
                 var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
                 var status = SafeDictionary.GetValue<string>(dic, "status");
                 switch (status)
                 {
                     case "success":
                         var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
-                        Debug.Log("Load player centered scores success: " + jsonStr);
+                        TapLog.Log("Load player centered scores success: " + jsonStr);
                         var data = JsonConvert.DeserializeObject<LeaderboardScoreResponse>(jsonStr);
                         if (callback != null)
                         {
@@ -257,7 +258,7 @@ namespace TapSDK.Leaderboard.Mobile
                     case "failure":
                         var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
                         var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
-                        Debug.Log("Load failed load player centered scores:: errorCode: " + errorCode + ", errorMsg: " + errorMsg);
+                        TapLog.Log("Load failed load player centered scores:: errorCode: " + errorCode + ", errorMsg: " + errorMsg);
                         if (callback != null)
                         {
                             callback.OnFailure(errorCode, errorMsg);
@@ -287,14 +288,14 @@ namespace TapSDK.Leaderboard.Mobile
                     return;
                 }
                 
-                Debug.Log("SetShareCallback, result ==>>> " + JsonConvert.SerializeObject(result));
+                TapLog.Log("SetShareCallback, result ==>>> " + JsonConvert.SerializeObject(result));
                 var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
                 var status = SafeDictionary.GetValue<string>(dic, "status");
                 switch (status)
                 {
                     case "success":
                         var localPath = SafeDictionary.GetValue<string>(dic, "data");
-                        Debug.Log("share success: " + localPath);
+                        TapLog.Log("share success: " + localPath);
                         callback.OnShareSuccess(localPath);
                         break;
                     case "failure":

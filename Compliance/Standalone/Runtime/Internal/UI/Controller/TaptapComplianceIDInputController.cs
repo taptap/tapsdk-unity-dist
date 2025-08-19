@@ -214,7 +214,7 @@ namespace TapSDK.Compliance.Internal
             //             catch
             //             {
             // #if UNITY_EDITOR
-            //                TapLogger.Error("国内-防沉迷 身份证号非法出生日期");
+            //                TapLog.Error("国内-防沉迷 身份证号非法出生日期");
             // #endif
             //                 return false;
             //             }
@@ -229,7 +229,7 @@ namespace TapSDK.Compliance.Internal
             //             if (iSum % 11 != 1)
             //             {
             // #if UNITY_EDITOR
-            //                 TapLogger.Error("国内-防沉迷 身份证号非法尾号");
+            //                 TapLog.Error("国内-防沉迷 身份证号非法尾号");
             // #endif
             //                 return false;
             //             }

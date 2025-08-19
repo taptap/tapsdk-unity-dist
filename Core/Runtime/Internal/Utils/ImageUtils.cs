@@ -6,6 +6,7 @@ using System.Text;
 using System.IO;
 using UnityEngine;
 using UnityEngine.Networking;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core.Internal.Utils {
     public class ImageUtils {
@@ -16,7 +17,7 @@ namespace TapSDK.Core.Internal.Utils {
 
         public static async Task<Texture> LoadImage(string url, int timeout = 30, bool useMemoryCache = true) {
             if (string.IsNullOrEmpty(url)) {
-                TapLogger.Warn(string.Format($"ImageUtils Fetch image is null! url is null or empty!"));
+                TapLog.Warning(string.Format($"ImageUtils Fetch image is null! url is null or empty!"));
                 return null;
             }
 
@@ -35,7 +36,7 @@ namespace TapSDK.Core.Internal.Utils {
 
                     return cachedImage;
                 } catch (Exception e) {
-                    TapLogger.Warn(e.Message);
+                    TapLog.Warning(e.Message);
                     try {
                         // 从网络加载
                         Texture2D newTex = await FetchImage(url, timeout);
@@ -49,7 +50,7 @@ namespace TapSDK.Core.Internal.Utils {
 
                         return newTex;
                     } catch (Exception ex) {
-                        TapLogger.Warn(ex.Message);
+                        TapLog.Warning(ex.Message);
                         return null;
                     }
                 }
@@ -69,7 +70,7 @@ namespace TapSDK.Core.Internal.Utils {
                 } else {
                     Texture2D texture = ((DownloadHandlerTexture)request.downloadHandler)?.texture;
                     if (texture == null) {
-                        TapLogger.Warn($"ImageUtils Fetch image is null! url: {url}");
+                        TapLog.Warning($"ImageUtils Fetch image is null! url: {url}");
                     }
                     return texture;
                 }

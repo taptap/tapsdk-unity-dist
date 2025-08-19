@@ -1,5 +1,6 @@
 ﻿using System;
 using UnityEngine;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core
 {
@@ -51,7 +52,7 @@ namespace TapSDK.Core
             }
             catch (Exception e)
             {
-                Debug.Log("register Failed:" + e);
+                TapLog.Log("register Failed:" + e);
                 //
             }
         }

@@ -13,6 +13,7 @@ using UnityEngine;
 using Network = TapSDK.Compliance.Internal.Network;
 using Random = System.Random;
 using System.Text;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Compliance
 {
@@ -120,7 +121,7 @@ namespace TapSDK.Compliance
             }
             catch (Exception e) 
             {
-                TapLogger.Error(e);
+                TapLog.Error(e);
                 // 单机判断是否可玩
                 return CheckOfflinePlayable();
             }
@@ -162,7 +163,7 @@ namespace TapSDK.Compliance
             }
             catch (Exception e) 
             {
-                TapLogger.Error(e);
+                TapLog.Error(e.Message ?? "");
                 if(result == null){
                     throw;
                 }else{
@@ -180,7 +181,7 @@ namespace TapSDK.Compliance
             }
             BaseLocalTime = DateTimeOffset.Now.ToUnixTimeSeconds();
             BaseLocalStartUpTime = (long)Time.realtimeSinceStartup;
-            TapLogger.Debug(" current local time " + DateTimeOffset.Now);
+            TapLog.Log(" current local time " + DateTimeOffset.Now);
         }
 
         /// <summary>
@@ -222,7 +223,7 @@ namespace TapSDK.Compliance
             }
             catch (Exception e) 
             {
-                TapLogger.Error(e);
+                TapLog.Error(e.Message ?? "");
                 throw;
             }
         }
@@ -233,7 +234,7 @@ namespace TapSDK.Compliance
         /// <returns></returns>
         protected virtual PlayableResult CheckOfflinePlayable()
         {
-            TapLogger.Debug("CheckOfflinePlayable");
+            TapLog.Log("CheckOfflinePlayable");
             // 成年人
             if (Verification.IsAdult) 
             {
@@ -350,7 +351,7 @@ namespace TapSDK.Compliance
             await FetchVerificationAsync(userId);
             if (Verification.Current == null ||  Verification.IsVerifyFailed)
             {
-                TapLogger.Debug("try get token internal by UI");
+                TapLog.Log("try get token internal by UI");
                 var result = await InternalStartup(userId);
                 // 目前只会返回 9002 和 0-认证成功
                 // 9002 是 StartUpResult.REAL_NAME_STOP
@@ -379,7 +380,7 @@ namespace TapSDK.Compliance
             var tip = Config.GetInputIdentifyBlockingTip();
             Action onOk = () =>
             {
-                TapLogger.Debug("[TapTap: ChinaCompliance] 认证中,实名取消!");
+                TapLog.Log("[TapTap: ChinaCompliance] 认证中,实名取消!");
                 task.TrySetResult(StartUpResult.REAL_NAME_STOP);
             };
             TapComplianceUI.OpenHealthPaymentPanel(tip.Title, tip.Content, tip.PositiveButtonText, onOk);
@@ -398,7 +399,7 @@ namespace TapSDK.Compliance
             }
             catch (Exception e)
             {
-                TapLogger.Error(e);
+                TapLog.Error(e.Message ?? "");
                 UIManager.Instance.CloseLoading();
                 //所有错误跳过，执行实名
             }
@@ -465,7 +466,7 @@ namespace TapSDK.Compliance
                     }
                 }
                 catch (Exception e){
-                    Debug.Log("ValidatePlayableAsync ERROR = " + e.Message + " stack = " + e.StackTrace);
+                    TapLog.Log("ValidatePlayableAsync ERROR = " + e.Message + " stack = " + e.StackTrace);
                     if (e is ComplianceException aae && aae.IsTokenExpired())
                     {
                         //用户登出
@@ -484,10 +485,10 @@ namespace TapSDK.Compliance
         /// </summary>
         protected void TryStartPoll()
         {
-            TapLogger.Debug("TryStartPoll ");
+            TapLog.Log("TryStartPoll ");
             if (IsNeedStartPoll())
             {
-                TapLogger.Debug("TryStartPoll interval = " + TapTapComplianceManager.CurrentUserAntiResult.policy.heartbeatInterval);
+                TapLog.Log("TryStartPoll interval = " + TapTapComplianceManager.CurrentUserAntiResult.policy.heartbeatInterval);
                 CompliancePoll.StartUp(TapTapComplianceManager.CurrentUserAntiResult.policy.heartbeatInterval);
             }
         }

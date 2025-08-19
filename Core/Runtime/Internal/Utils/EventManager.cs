@@ -10,7 +10,7 @@ namespace TapSDK.Core.Internal.Utils
         public const string OnApplicationQuit = "OnApplicationQuit";
 
         public const string OnComplianceUserChanged = "OnComplianceUserChanged";
-
+        public const string OnTapUserChanged = "OnTapUserChanged";
         public const string IsLaunchedFromTapTapPCFinished = "IsLaunchedFromTapTapPCFinished";
         private Dictionary<string, Action<object>> eventRegistries = new Dictionary<string, Action<object>>();
         

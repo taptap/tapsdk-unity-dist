@@ -4,6 +4,7 @@ using System.IO;
 using System.Net.NetworkInformation;
 using System.Security.Cryptography;
 using System.Text;
+using TapSDK.Core.Internal.Log;
 using UnityEngine;
 
 namespace TapSDK.Core
@@ -127,7 +128,7 @@ namespace TapSDK.Core
             }
             catch (Exception e)
             {
-                Debug.Log(e.Message);
+                TapLog.Log(e.Message);
                 return decryptString;
             }
         }

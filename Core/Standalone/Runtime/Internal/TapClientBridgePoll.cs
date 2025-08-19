@@ -1,4 +1,5 @@
 
+using TapSDK.Core.Internal.Log;
 using UnityEngine;
 
 namespace TapSDK.Core.Standalone.Internal
@@ -13,7 +14,7 @@ namespace TapSDK.Core.Standalone.Internal
     
         internal static void StartUp() 
         {
-            TapLogger.Debug("TapClientBridgePoll StartUp " );
+            TapLog.Log("TapClientBridgePoll StartUp " );
             if (current == null) 
             {
                 GameObject pollGo = new GameObject(TAP_CLIENT_POLL_NAME);

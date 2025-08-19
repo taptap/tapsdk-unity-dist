@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using TapSDK.Compliance.Model;
 using System.Threading.Tasks;
+using TapSDK.Core.Internal.Log;
 using TapSDK.Core;
 using UnityEngine;
 
@@ -20,7 +21,7 @@ namespace TapSDK.Compliance.Mobile.Runtime
         {
             EngineBridge.GetInstance()
                 .Register(ANTI_ADDICTION_SERVICE_CLZ, ANTI_ADDICTION_SERVICE_IMPL);
-            Debug.Log("ComplianceMobileBridge register.");
+            TapLog.Log("ComplianceMobileBridge register.");
         }
 
 
@@ -54,7 +55,7 @@ namespace TapSDK.Compliance.Mobile.Runtime
                 {
                     try
                     {
-                        TapLogger.Debug($"[Unity:Compliance] callback result: {result.ToJSON().ToString()}");
+                        TapLog.Log($"[Unity:Compliance] callback result: {result.ToJSON().ToString()}");
                         if (result.code != Result.RESULT_SUCCESS)
                         {
                             callbackList.ForEach((item) =>
@@ -92,8 +93,8 @@ namespace TapSDK.Compliance.Mobile.Runtime
                         }
                         else
                         {
-                            TapLogger.Debug("[Unity:Compliance] result.extras title:" + callbackData.extras.title);
-                            TapLogger.Debug("[Unity:Compliance] result.extras description:" + callbackData.extras.description);
+                            TapLog.Log("[Unity:Compliance] result.extras title:" + callbackData.extras.title);
+                            TapLog.Log("[Unity:Compliance] result.extras description:" + callbackData.extras.description);
                             callbackList.ForEach((item) =>
                             {
                                 item?.Invoke(-1, callbackData.extras.description);
@@ -102,7 +103,7 @@ namespace TapSDK.Compliance.Mobile.Runtime
                     }
                     catch (Exception e)
                     {
-                        TapLogger.Error("[Unity:Compliance] callback error:" + e.Message + "\n" + e.StackTrace);
+                        TapLog.Error("[Unity:Compliance] callback error:" + e.Message + "\n" + e.StackTrace);
                     }
 
                 });
@@ -241,7 +242,7 @@ namespace TapSDK.Compliance.Mobile.Runtime
 
             EngineBridge.GetInstance().CallHandler(command, result =>
             {
-                TapLogger.Debug($"[Unity:Compliance] submitPayResult result: {result.ToJSON().ToString()}");
+                TapLog.Log($"[Unity:Compliance] submitPayResult result: {result.ToJSON().ToString()}");
                 if (result.code != Result.RESULT_SUCCESS)
                 {
                     handleSubmitPayResultException?.Invoke("[Unity:Compliance] submitPayResult fail");
@@ -254,7 +255,7 @@ namespace TapSDK.Compliance.Mobile.Runtime
                     return;
                 }
 
-                TapLogger.Debug("[Unity:Compliance] submitPayResult content: " + result.content);
+                TapLog.Log("[Unity:Compliance] submitPayResult content: " + result.content);
                 var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
                 bool success = SafeDictionary.GetValue<int>(dic, "success") == 0;
                 string errorMsg = SafeDictionary.GetValue<string>(dic, "description");
@@ -283,7 +284,7 @@ namespace TapSDK.Compliance.Mobile.Runtime
 
             EngineBridge.GetInstance().CallHandler(command, result =>
             {
-                TapLogger.Debug($"[Unity:Compliance] checkPayLimit result: {result.ToJSON().ToString()}");
+                TapLog.Log($"[Unity:Compliance] checkPayLimit result: {result.ToJSON().ToString()}");
                 if (result.code != Result.RESULT_SUCCESS)
                 {
                     handleCheckPayLimitException?.Invoke("[Unity:Compliance] checkPayLimit fail");
@@ -296,7 +297,7 @@ namespace TapSDK.Compliance.Mobile.Runtime
                     return;
                 }
 
-                TapLogger.Debug("[Unity:Compliance] checkPayLimit content: " + result.content);
+                TapLog.Log("[Unity:Compliance] checkPayLimit content: " + result.content);
 
                 var checkPayResultParams = JsonConvert.DeserializeObject<CheckPayResultParams>(result.content);
                 if (checkPayResultParams.Success)

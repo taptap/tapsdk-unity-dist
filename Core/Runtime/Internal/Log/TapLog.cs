@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 
 namespace TapSDK.Core.Internal.Log
@@ -42,28 +43,63 @@ namespace TapSDK.Core.Internal.Log
             TapLog.Error(message, detail, tag, module);
         }
 
+        public static void Error(Exception e)
+        {
+            TapLog.Error(e?.Message ?? "");
+        }
+
         // 输出带有自定义颜色和标签的普通日志
         public static void Log(string message, string detail = null, string tag = TAG, string module = null)
         {
+            if (string.IsNullOrEmpty(message))
+            {
+                return;
+            }
+            string msg = GetFormattedMessage(message: message, detail: detail, colorHex: InfoColor, tag: tag, module: module);
+            if (TapLogger.LogDelegate != null)
+            {
+                TapLogger.Debug(msg);
+                return;
+            }
             if (Enabled)
             {
-                Debug.Log(GetFormattedMessage(message: message, detail: detail, colorHex: InfoColor, tag: tag, module: module));
+                Debug.Log(msg);
             }
         }
 
         // 输出带有自定义颜色和标签的警告
         public static void Warning(string message, string detail = null, string tag = TAG, string module = null)
         {
+            if (string.IsNullOrEmpty(message))
+            {
+                return;
+            }
+            string msg = GetFormattedMessage(message: message, detail: detail, colorHex: WarningColor, tag: tag, module: module);
+            if (TapLogger.LogDelegate != null)
+            {
+                TapLogger.Warn(msg);
+                return;
+            }
             if (Enabled)
             {
-                Debug.LogWarning(GetFormattedMessage(message: message, detail: detail, colorHex: WarningColor, tag: tag, module: module));
+                Debug.LogWarning(msg);
             }
         }
 
         // 输出带有自定义颜色和标签的错误
         public static void Error(string message, string detail = null, string tag = TAG, string module = null)
         {
-            Debug.LogError(GetFormattedMessage(message: message, detail: detail, colorHex: ErrorColor, tag: tag, module: module));
+            if (string.IsNullOrEmpty(message))
+            {
+                return;
+            }
+            string msg = GetFormattedMessage(message: message, detail: detail, colorHex: ErrorColor, tag: tag, module: module);
+             if (TapLogger.LogDelegate != null)
+            {
+                TapLogger.Error(msg);
+                return;
+            }
+            Debug.LogError(msg);
         }
 
         // 格式化带有颜色和标签的消息

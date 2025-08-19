@@ -8,6 +8,7 @@ using System.Linq;
 using TapSDK.Core;
 using UnityEngine;
 using Random = System.Random;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Login.Internal
 {
@@ -119,7 +120,7 @@ namespace TapSDK.Login.Internal
         public static string GetRedirectUri()
         {
             var redirectUri = $"http://{IPAddress.Loopback}:{GetRandomUnusedPort()}/";
-            TapLogger.Debug($"redirect uri:{redirectUri}");
+            TapLog.Log($"redirect uri:{redirectUri}");
             return redirectUri;
         }
 

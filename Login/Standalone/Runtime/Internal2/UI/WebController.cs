@@ -75,7 +75,7 @@ namespace TapSDK.Login.Internal {
             while (isRunning) {
                 try {
                     HttpListenerContext context = await server.GetContextAsync();
-                    Debug.Log($"{context.Request.HttpMethod} {context.Request.Url}");
+                    TapLog.Log($"{context.Request.HttpMethod} {context.Request.Url}");
                     context.Response.StatusCode = 200;
                     context.Response.Close();
 

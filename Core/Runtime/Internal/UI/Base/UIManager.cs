@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using TapSDK.Core.Internal.Log;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -615,7 +616,7 @@ namespace TapSDK.UI
         {
             if (!string.IsNullOrEmpty(text))
             {
-                Debug.LogFormat($"[UIManager] Call OpenTip text:{text} ");
+                TapLog.Log("[UIManager] Call OpenTip text: " + text);
                 var tip = OpenUI<TipPanelController>("TapCommonTip", new TipPanelOpenParam(text, textColor, textAnchor));
                 if (tip != null)
                 {

@@ -126,10 +126,6 @@ namespace TapSDK.Core.Standalone.Internal.Http
 
         public static void PrintRequest(HttpClient client, HttpRequestMessage request)
         {
-            if (TapLogger.LogDelegate == null)
-            {
-                return;
-            }
             if (client == null)
             {
                 return;
@@ -176,10 +172,6 @@ namespace TapSDK.Core.Standalone.Internal.Http
 
         public static void PrintResponse(HttpResponseMessage response)
         {
-            if (TapLogger.LogDelegate == null)
-            {
-                return;
-            }
             StringBuilder sb = new StringBuilder();
             sb.AppendLine("=== HTTP Response Start ===");
             sb.AppendLine($"URL: {response.RequestMessage.RequestUri}");

@@ -5,6 +5,7 @@ using TapSDK.Login.Mobile.Runtime;
 using TapSDK.Login.Internal;
 using UnityEngine;
 using System.Runtime.InteropServices;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Login.Mobile
 {
@@ -43,7 +44,7 @@ namespace TapSDK.Login.Mobile
                 .CommandBuilder(),
                 result =>
                 {
-                    Debug.Log("Login result: " + result.content);
+                    TapLog.Log("Login result: " + result.content);
                     var wrapper = new AccountWrapper(result.content);
                     if (wrapper.code == 1)
                     {
@@ -76,7 +77,7 @@ namespace TapSDK.Login.Mobile
                 .Callback(true)
                 .OnceTime(true)
                 .CommandBuilder());
-            Debug.Log("Current account: " + result.content);
+            TapLog.Log("Current account: " + result.content);
             return new AccountWrapper(result.content).account;
         }
     }
