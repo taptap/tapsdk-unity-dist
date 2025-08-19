@@ -2,10 +2,10 @@
     "name": "com.taptap.tapsdk.unity.license",
     "displayName": "TapTapSDK License",
     "description": "TapTapSDK License",
-    "version": "4.7.2-beta.3",
+    "version": "4.7.2",
     "unity": "2019.4",
     "license": "MIT",
     "dependencies": {
-        "com.taptap.tapsdk.unity.core": "4.7.2-beta.3"
+        "com.taptap.tapsdk.unity.core": "4.7.2"
     }
 }
