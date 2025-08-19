@@ -1,5 +1,5 @@
-# Unity generated meta files
-*.meta
+# Unity generated meta files in root directory only
+/*.meta
 
 # Unity generated temp files
 /Temp/
