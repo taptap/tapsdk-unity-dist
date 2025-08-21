@@ -56,7 +56,7 @@ namespace TapSDK.Core.Standalone
             }
             if (!IsValidUserID(userID))
             {
-                TapLog.Error("Invalid user ID, length should be 1-160 and only contains a-zA-Z0-9_+/=.,:");
+                TapLogger.Error("Invalid user ID, length should be 1-160 and only contains a-zA-Z0-9_+/=.,:");
                 return;
             }
 
@@ -103,7 +103,7 @@ namespace TapSDK.Core.Standalone
             // name 长度256非空，不符合的丢事件，打log
             if (!checkLength(name))
             {
-                TapLog.Error(name + " Event name length should be less than or equal to 256 characters.");
+                Debug.LogError(name + " Event name length should be less than or equal to 256 characters.");
                 return;
             }
             Dictionary<string, object> prop = Json.Deserialize(properties) as Dictionary<string, object>;
@@ -207,12 +207,12 @@ namespace TapSDK.Core.Standalone
             }
             if (!checkLength(key))
             {
-                TapLog.Error(key + " Property key length should be less than or equal to 256 characters.");
+                Debug.LogError(key + " Property key length should be less than or equal to 256 characters.");
                 return;
             }
             if (!checkLength(value))
             {
-                TapLog.Error(value + " Property value length should be less than or equal to 256 characters.");
+                Debug.LogError(value + " Property value length should be less than or equal to 256 characters.");
                 return;
             }
             Tracker.AddCommonProperty(key, value);
@@ -287,7 +287,7 @@ namespace TapSDK.Core.Standalone
             }
             if (amount <= 0 || amount > 100000000000)
             {
-                TapLog.Error(amount + " is invalid, amount should be in range (0, 100000000000]");
+                UnityEngine.Debug.LogError(amount + " is invalid, amount should be in range (0, 100000000000]");
                 return;
             }
             Tracker.LogPurchasedEvent(orderID, productName, amount, currencyType, paymentMethod, properties);
@@ -313,7 +313,7 @@ namespace TapSDK.Core.Standalone
         /// <param name="value">oaid</param>
         public void SetOAID(string value)
         {
-            TapLog.Log("SetOAID called in PC platform (empty implementation)");
+            Debug.Log("SetOAID called in PC platform (empty implementation)");
         }
 
         /// <summary>
@@ -321,7 +321,7 @@ namespace TapSDK.Core.Standalone
         /// </summary>
         public void LogDeviceLoginEvent()
         {
-            TapLog.Log("LogDeviceLoginEvent called in PC platform (empty implementation)");
+            Debug.Log("LogDeviceLoginEvent called in PC platform (empty implementation)");
         }
 
         /// <summary>
@@ -402,12 +402,12 @@ namespace TapSDK.Core.Standalone
                 {
                     if (property.Key.Length <= 0 || property.Key.Length > 256)
                     {
-                        TapLog.Log(property.Key + " Property key length should be more then 0 and less than or equal to 256 characters.");
+                        Debug.Log(property.Key + " Property key length should be more then 0 and less than or equal to 256 characters.");
                         continue;
                     }
                     if (property.Value.ToString().Length > 256)
                     {
-                        TapLog.Log(property.Value + " Property value length should be less than or equal to 256 characters.");
+                        Debug.Log(property.Value + " Property value length should be less than or equal to 256 characters.");
                         continue;
                     }
                     filteredProperties.Add(property.Key, property.Value);

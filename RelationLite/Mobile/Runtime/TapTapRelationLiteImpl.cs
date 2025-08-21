@@ -7,7 +7,6 @@ using TapSDK.Core.Internal;
 using TapSDK.Core.Internal.Utils;
 using Newtonsoft.Json;
 using System.Runtime.InteropServices;
-using TapSDK.Core.Internal.Log;
 #if UNITY_IOS
 using UnityEngine.iOS;
 #endif
@@ -33,12 +32,12 @@ namespace TapSDK.RelationLite
         {
             _clientId = clientId;
             _regionType = regionType;
-            TapLog.Log($"TapTapRelationLite Init with clientId: {clientId}, regionType: {regionType}");
+            Debug.Log($"TapTapRelationLite Init with clientId: {clientId}, regionType: {regionType}");
         }
 
         public void InviteGame()
         {
-            TapLog.Log("TapTapRelationLite InviteGame");
+            Debug.Log("TapTapRelationLite InviteGame");
 
             EngineBridge.GetInstance().CallHandler(new Command.Builder()
                 .Service(SERVICE_NAME)
@@ -50,7 +49,7 @@ namespace TapSDK.RelationLite
 
         public void InviteTeam(string teamId)
         {
-            TapLog.Log($"TapTapRelationLite InviteTeam with teamId: {teamId}");
+            Debug.Log($"TapTapRelationLite InviteTeam with teamId: {teamId}");
 
             EngineBridge.GetInstance().CallHandler(new Command.Builder()
                 .Service(SERVICE_NAME)
@@ -63,7 +62,7 @@ namespace TapSDK.RelationLite
 
         public void GetFriendsList(string nextPageToken, ITapTapRelationLiteRequestCallback callback)
         {
-            TapLog.Log($"TapTapRelationLite GetFriendsList with nextPageToken: {nextPageToken}");
+            Debug.Log($"TapTapRelationLite GetFriendsList with nextPageToken: {nextPageToken}");
 
             EngineBridge.GetInstance().CallHandler(new Command.Builder()
                 .Service(SERVICE_NAME)
@@ -99,7 +98,7 @@ namespace TapSDK.RelationLite
                     catch (Exception e)
                     {
                         callback.OnFriendsListResult("", new List<RelationLiteUserItem>());
-                        TapLog.Error($"GetFriendsList parse result error: {e.Message}");
+                        Debug.LogError($"GetFriendsList parse result error: {e.Message}");
                     }
                 });
 
@@ -107,7 +106,7 @@ namespace TapSDK.RelationLite
 
         public void GetFollowingList(string nextPageToken, ITapTapRelationLiteRequestCallback callback)
         {
-            TapLog.Log($"TapTapRelationLite GetFollowingList with nextPageToken: {nextPageToken}");
+            Debug.Log($"TapTapRelationLite GetFollowingList with nextPageToken: {nextPageToken}");
 
             EngineBridge.GetInstance().CallHandler(new Command.Builder()
                 .Service(SERVICE_NAME)
@@ -143,7 +142,7 @@ namespace TapSDK.RelationLite
                     catch (Exception e)
                     {
                         callback.OnFollowingListResult("", new List<RelationLiteUserItem>());
-                        TapLog.Error($"GetFollowingList parse result error: {e.Message}");
+                        Debug.LogError($"GetFollowingList parse result error: {e.Message}");
                     }
                 });
 
@@ -151,7 +150,7 @@ namespace TapSDK.RelationLite
 
         public void GetFansList(string nextPageToken, ITapTapRelationLiteRequestCallback callback)
         {
-            TapLog.Log($"TapTapRelationLite GetFansList with nextPageToken: {nextPageToken}");
+            Debug.Log($"TapTapRelationLite GetFansList with nextPageToken: {nextPageToken}");
 
             EngineBridge.GetInstance().CallHandler(new Command.Builder()
                 .Service(SERVICE_NAME)
@@ -187,7 +186,7 @@ namespace TapSDK.RelationLite
                     catch (Exception e)
                     {
                         callback.OnFansListResult("", new List<RelationLiteUserItem>());
-                        TapLog.Error($"GetFansList parse result error: {e.Message}");
+                        Debug.LogError($"GetFansList parse result error: {e.Message}");
                     }
                 });
 
@@ -195,7 +194,7 @@ namespace TapSDK.RelationLite
 
         public void SyncRelationshipWithOpenId(int action, string nickname, string friendNickname, string friendOpenId, ITapTapRelationLiteRequestCallback callback)
         {
-            TapLog.Log($"TapTapRelationLite SyncRelationshipWithOpenId with action: {action}, nickname: {nickname}, friendNickname: {friendNickname}, friendOpenId: {friendOpenId}");
+            Debug.Log($"TapTapRelationLite SyncRelationshipWithOpenId with action: {action}, nickname: {nickname}, friendNickname: {friendNickname}, friendOpenId: {friendOpenId}");
 
             EngineBridge.GetInstance().CallHandler(new Command.Builder()
                 .Service(SERVICE_NAME)
@@ -241,7 +240,7 @@ namespace TapSDK.RelationLite
                     catch (Exception e)
                     {
                         callback.OnSyncRelationshipFail(e.Message, "", "");
-                        TapLog.Error($"SyncRelationshipWithOpenId parse result error: {e.Message}");
+                        Debug.LogError($"SyncRelationshipWithOpenId parse result error: {e.Message}");
                     }
                 });
 
@@ -249,7 +248,7 @@ namespace TapSDK.RelationLite
 
         public void SyncRelationshipWithUnionId(int action, string nickname, string friendNickname, string friendUnionId, ITapTapRelationLiteRequestCallback callback)
         {
-            TapLog.Log($"TapTapRelationLite SyncRelationshipWithUnionId with action: {action}, nickname: {nickname}, friendNickname: {friendNickname}, friendUnionId: {friendUnionId}");
+            Debug.Log($"TapTapRelationLite SyncRelationshipWithUnionId with action: {action}, nickname: {nickname}, friendNickname: {friendNickname}, friendUnionId: {friendUnionId}");
 
             EngineBridge.GetInstance().CallHandler(new Command.Builder()
                 .Service(SERVICE_NAME)
@@ -295,7 +294,7 @@ namespace TapSDK.RelationLite
                     catch (Exception e)
                     {
                         callback.OnSyncRelationshipFail(e.Message, "", "");
-                        TapLog.Error($"SyncRelationshipWithOpenId parse result error: {e.Message}");
+                        Debug.LogError($"SyncRelationshipWithOpenId parse result error: {e.Message}");
                     }
                 });
 
@@ -303,7 +302,7 @@ namespace TapSDK.RelationLite
 
         public void ShowTapUserProfile(string openId, string unionId)
         {
-            TapLog.Log($"TapTapRelationLite ShowTapUserProfile with openId: {openId}, unionId: {unionId}");
+            Debug.Log($"TapTapRelationLite ShowTapUserProfile with openId: {openId}, unionId: {unionId}");
 
             EngineBridge.GetInstance().CallHandler(new Command.Builder()
                 .Service(SERVICE_NAME)
@@ -322,7 +321,7 @@ namespace TapSDK.RelationLite
             if (!callbacks.Contains(callback))
             {
                 callbacks.Add(callback);
-                TapLog.Log("TapTapRelationLite RegisterRelationLiteCallback");
+                Debug.Log("TapTapRelationLite RegisterRelationLiteCallback");
             }
         }
 
@@ -347,10 +346,10 @@ namespace TapSDK.RelationLite
                     {
                         return;
                     }
-                    TapLog.Log("TapSdk4UnityDemo -->> Bridge Callback == " + JsonConvert.SerializeObject(result));
+                    Debug.Log("TapSdk4UnityDemo -->> Bridge Callback == " + JsonConvert.SerializeObject(result));
 
                 });
-                TapLog.Log("TapTapRelationLite UnregisterRelationLiteCallback");
+                Debug.Log("TapTapRelationLite UnregisterRelationLiteCallback");
             }
         }
 
@@ -378,7 +377,7 @@ namespace TapSDK.RelationLite
                 {
                     return;
                 }
-                TapLog.Log("TapSdk4UnityDemo -->> Bridge Callback == " + JsonConvert.SerializeObject(result));
+                Debug.Log("TapSdk4UnityDemo -->> Bridge Callback == " + JsonConvert.SerializeObject(result));
                 var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
                 var code = SafeDictionary.GetValue<int>(dic, "relation_lite_result_code");
 
@@ -389,7 +388,7 @@ namespace TapSDK.RelationLite
 
             });
 
-            TapLog.Log("TapTapRelationLite InitRegisterCallBack");
+            Debug.Log("TapTapRelationLite InitRegisterCallBack");
         }
     }
 }

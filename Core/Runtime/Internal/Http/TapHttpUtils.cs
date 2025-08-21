@@ -3,7 +3,6 @@ using System.Text;
 using System.Collections.Specialized;
 using System.Net.Http;
 using UnityEngine;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core.Internal.Http {
     public class TapHttpUtils {
@@ -37,7 +36,7 @@ namespace TapSDK.Core.Internal.Http {
                 sb.AppendLine($"Content: {content}");
             }
             sb.AppendLine("=== HTTP Request End ===");
-            TapLog.Log(sb.ToString());
+            Debug.Log(sb.ToString());
         }
 
         public static void PrintResponse(HttpResponseMessage response, string content = null) {
@@ -52,7 +51,7 @@ namespace TapSDK.Core.Internal.Http {
                 sb.AppendLine($"Content: {content}");
             }
             sb.AppendLine("=== HTTP Response End ===");
-            TapLog.Log(sb.ToString());
+            Debug.Log(sb.ToString());
         }
 
         public static NameValueCollection ParseQueryString(string queryString)

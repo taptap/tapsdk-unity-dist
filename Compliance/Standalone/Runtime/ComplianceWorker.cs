@@ -17,7 +17,6 @@ using UnityEngine;
 using System.Linq;
 using TapSDK.Compliance.Standalone.Internal;
 using TapSDK.Core.Standalone.Internal.Http;
-using TapSDK.Core.Internal.Log;
 
 
 namespace TapSDK.Compliance
@@ -56,12 +55,12 @@ namespace TapSDK.Compliance
                 } 
                 catch (TaskCanceledException) 
                 {
-                    TapLog.Log(string.Format("[TapTap: ChinaCompliance] Close manual verification panel."));
+                    TapLogger.Debug(string.Format("[TapTap: ChinaCompliance] Close manual verification panel."));
                     throw;
                 } 
                 catch (Exception e) 
                 {
-                    TapLog.Error(string.Format("[TapTap: ChinaCompliance] manual verification exception! {0}", e.ToString()));
+                    TapLogger.Error(string.Format("[TapTap: ChinaCompliance] manual verification exception! {0}", e.ToString()));
                    
                     if (e is HttpRequestException || e is WebException)
                     {
@@ -134,7 +133,7 @@ namespace TapSDK.Compliance
                 return await GetVerificationResult(userId);
             }
             catch (Exception e) {
-                TapLog.Error("[TapTap: ChinaCompliance] " + e.ToString());
+                TapLogger.Error("[TapTap: ChinaCompliance] " + e.ToString());
                 return StartUpResult.INVALID_CLIENT_OR_NETWORK_ERROR;
             }
         
@@ -200,15 +199,15 @@ namespace TapSDK.Compliance
                 }
             }
             catch (Exception e) {
-                TapLog.Error(e.ToString());
+                TapLogger.Error(e.ToString());
                 UIManager.Instance.CloseLoading();
                 var aae = e as TapException;
                 if (aae != null && aae.code >= (int)HttpStatusCode.InternalServerError && aae.code < 600) {
                     tcs.TrySetResult(1);
-                    TapLog.Warning($"[Compliance] 通过 code 拿去实名信息网络错误,将打断认证流程");
+                    TapLogger.Warn($"[Compliance] 通过 code 拿去实名信息网络错误,将打断认证流程");
                 }
                 else {
-                    TapLog.Warning($"[Compliance] 通过 code 拿去实名信息失败,将启动手动认证");
+                    TapLogger.Warn($"[Compliance] 通过 code 拿去实名信息失败,将启动手动认证");
                     tcs.TrySetResult(1);
                 }
             }
@@ -225,14 +224,14 @@ namespace TapSDK.Compliance
             DateTimeOffset now = DateTimeOffset.FromUnixTimeSeconds(GetCurrentTime()).ToOffset(DateTimeOffset.Now.Offset);
             string currentDate = now.ToString( "yyyy-MM-dd" );
             List<string> holidays = TapTapComplianceManager.CurrentUserAntiResult.localConfig.timeRangeConfig.holidays;
-            TapLog.Log("current date = " + currentDate + " holidays = " + holidays.ToArray());
+            TapLogger.Debug("current date = " + currentDate + " holidays = " + holidays.ToArray());
             if(holidays.Contains(currentDate)){
                 DateTimeOffset strictStart = Config.StrictStartTime;
                 DateTimeOffset strictEnd = Config.StrictEndTime;
                 bool playable;
-                TapLog.Log(" now = " + now.TimeOfDay + " ,start = " + strictStart.TimeOfDay + ", end = " + strictEnd.TimeOfDay);
+                TapLogger.Debug(" now = " + now.TimeOfDay + " ,start = " + strictStart.TimeOfDay + ", end = " + strictEnd.TimeOfDay);
                 playable = now.TimeOfDay >= strictStart.TimeOfDay && now.TimeOfDay < strictEnd.TimeOfDay;
-                TapLog.Log("check result = " + playable);
+                TapLogger.Debug("check result = " + playable);
                 return playable;
             }
             return false;
@@ -240,7 +239,7 @@ namespace TapSDK.Compliance
 
         private long GetCurrentTime(){
             long serverTime = TapHttpTime.GetCurrentServerTime();
-            TapLog.Log("current serverTime = " + serverTime + " localTime = " + GetCurrentLocalTime());
+            TapLogger.Debug("current serverTime = " + serverTime + " localTime = " + GetCurrentLocalTime());
             if ( serverTime > 0){
                 return serverTime;
             }
@@ -296,11 +295,13 @@ namespace TapSDK.Compliance
             TapTapAccount tapAccount = await TapTapLogin.Instance.GetCurrentTapAccount();
             AccessToken accessToken =  tapAccount?.accessToken;
             bool isTapUser = accessToken != null;
-            TapLog.Log(" Verification current = " + Verification.Current );            
+            TapLogger.Debug(" Verification current = " + Verification.Current );            
             //0 不使用手动验证;1 主动使用手动认证; 2 保底触发(被动)使用手动验证
             try {
                 accessToken = await GetAccessToken(accessToken);
                 if (accessToken != null) {
+                    TapLogger.Debug("[TapTap: ChinaCompliance] 获得登录Access Token!Token结果: {0}\n是否包括Compliance: {1}",
+                        accessToken.ToJson(), HaveComplianceScope(accessToken));
                     if (HaveComplianceScope(accessToken)) {
                         // 0-正常;1-异常;-1-实名失败
                         var fetchResult = await FetchByTapToken(userId, accessToken);
@@ -320,26 +321,26 @@ namespace TapSDK.Compliance
                     }
                 }
                 else {
-                    TapLog.Log("[TapTap: ChinaCompliance] 不能登录Access Token!直接降级为手动认证");
+                    TapLogger.Debug("[TapTap: ChinaCompliance] 不能登录Access Token!直接降级为手动认证");
                     mannualVerify = 2;
                 }
             }
             catch (AggregateException aggregateException) {
                 var cancelException = aggregateException.InnerException as TaskCanceledException;
                 if (cancelException != null) {
-                    TapLog.Log("[TapTap: ChinaCompliance] 获得登录Access Token 中主动退出! 触发 AggregateException.TaskCanceledException");
+                    TapLogger.Debug("[TapTap: ChinaCompliance] 获得登录Access Token 中主动退出! 触发 AggregateException.TaskCanceledException");
                     tcs.TrySetResult(StartUpResult.REAL_NAME_STOP);
                     return tcs.Task.Result;
                 }
             }
             catch (TaskCanceledException) {
-                TapLog.Log("[TapTap: ChinaCompliance] 获得登录Access Token 中主动退出! 触发 TaskCanceledException");
+                TapLogger.Debug("[TapTap: ChinaCompliance] 获得登录Access Token 中主动退出! 触发 TaskCanceledException");
                 tcs.TrySetResult(StartUpResult.REAL_NAME_STOP);
                 return tcs.Task.Result;
             }
 
             catch (ComplianceException aae) {
-                TapLog.Log(
+                TapLogger.Debug(
                     $"[TapTap: ChinaCompliance] 获取快速实名制信息出错! code: {aae.Code} error: {aae.Error} errorMsg: {aae.Description}");
                 //TapToken过期->重新授权实名流程
                 if (aae.message.ToLower().Contains("refuse quick verify")) {
@@ -350,7 +351,7 @@ namespace TapSDK.Compliance
                 }
             }
             catch (Exception e) {
-                TapLog.Log(string.Format("[TapTap: ChinaCompliance] 获得登录Access Token 碰到错误,降级为手动验证! 错误信息: {0}", e.ToString()));
+                TapLogger.Debug(string.Format("[TapTap: ChinaCompliance] 获得登录Access Token 碰到错误,降级为手动验证! 错误信息: {0}", e.ToString()));
                 mannualVerify = 2;
             }
             
@@ -361,7 +362,7 @@ namespace TapSDK.Compliance
                     await VerifyManuallyAsync();
                 }
                 catch (TaskCanceledException) {
-                    TapLog.Log("[TapTap: ChinaCompliance] 手动实名制过程中主动退出! 触发 TaskCanceledException");
+                    TapLogger.Debug("[TapTap: ChinaCompliance] 手动实名制过程中主动退出! 触发 TaskCanceledException");
                     tcs.TrySetResult(StartUpResult.REAL_NAME_STOP);
                     return tcs.Task.Result;
                 }
@@ -382,7 +383,7 @@ namespace TapSDK.Compliance
             if (isTapUser) {
                 haveCompliance = HaveComplianceScope(accessToken);
             }
-            TapLog.Log($"[TapTap: ChinaCompliance] 启动快速实名制. 是否为Tap用户: {isTapUser} 是否包含Complaince: {haveCompliance}");
+            TapLogger.Debug($"[TapTap: ChinaCompliance] 启动快速实名制. 是否为Tap用户: {isTapUser} 是否包含Complaince: {haveCompliance}");
             return await InternalGetAccessToken(isTapUser, haveCompliance, accessToken);
         }
 
@@ -395,7 +396,7 @@ namespace TapSDK.Compliance
             string permission = useAgeRange ? SCOPE_COMPLIANCE : SCOPE_COMPLIANCE_BASIC;
             bool justShowConfirmBtn = isTapUser && !haveCompliance|| !Config.Current.useManual;
             var goQuickVerify = await ShowQuickVerifyTipWindow(justShowConfirmBtn);
-            TapLog.Log($"[TapTap: ChinaCompliance] 因为不是Tap用户启动快速认证提示弹窗!弹窗结果: {goQuickVerify}");
+            TapLogger.Debug($"[TapTap: ChinaCompliance] 因为不是Tap用户启动快速认证提示弹窗!弹窗结果: {goQuickVerify}");
             // 同意授权
             if (goQuickVerify) {
                 getToken = () =>
@@ -409,7 +410,7 @@ namespace TapSDK.Compliance
             }
             //不同意授权
             else {
-                TapLog.Log("[TapTap: ChinaCompliance] 用户拒绝快速认证!");
+                TapLogger.Debug("[TapTap: ChinaCompliance] 用户拒绝快速认证!");
             }
             
             // 不同意快速认证: 需要降级为手动
@@ -429,7 +430,7 @@ namespace TapSDK.Compliance
                     }
                 }
                 catch (Exception e) {
-                    TapLog.Error(e.ToString());
+                    TapLogger.Error(e.ToString());
                     throw;
                 }
             }

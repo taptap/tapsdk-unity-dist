@@ -8,7 +8,6 @@ using System.Net.Http.Headers;
 using System.Text;
 using Newtonsoft.Json;
 using TapSDK.Core.Internal.Json;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core.Internal.Http {
     public class TapHttpClient {
@@ -131,7 +130,7 @@ namespace TapSDK.Core.Internal.Http {
                 code = (int)error["code"];
                 message = error["error"].ToString();
             } catch (Exception e) {
-                TapLog.Error(e.Message ?? "");
+                TapLogger.Error(e);
             }
             return new TapException(code, message);
         }

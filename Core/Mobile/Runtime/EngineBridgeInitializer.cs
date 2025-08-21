@@ -1,6 +1,5 @@
 using UnityEngine;
 using TapSDK.Core.Internal;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core.Mobile
 {
@@ -13,7 +12,7 @@ namespace TapSDK.Core.Mobile
         {
             if (!isInitialized)
             {
-                TapLog.Log("Initializing EngineBridge");
+                Debug.Log("Initializing EngineBridge");
 
                 // TODO: android 注册桥接
                 // #if UNITY_ANDROID

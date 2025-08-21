@@ -5,7 +5,6 @@ using System.Threading.Tasks;
 using Newtonsoft.Json;
 using TapSDK.Core;
 using UnityEngine;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Compliance.Internal 
 {
@@ -33,7 +32,7 @@ namespace TapSDK.Compliance.Internal
 
         internal async Task<T> Load<T>() where T : class 
         {
-            TapLog.Log(_filePath);
+            TapLogger.Debug(_filePath);
             if (!File.Exists(_filePath)) 
             {
                 return null;  
@@ -52,7 +51,7 @@ namespace TapSDK.Compliance.Internal
             } 
             catch (Exception e) 
             {
-                TapLog.Error(e);
+                TapLogger.Error(e);
                 Delete();
                 return null;
             }
@@ -62,7 +61,7 @@ namespace TapSDK.Compliance.Internal
         {
             if (obj == null) 
             {
-                TapLog.Error("Saved object is null.");
+                TapLogger.Error("Saved object is null.");
                 return;
             }
 
@@ -73,7 +72,7 @@ namespace TapSDK.Compliance.Internal
             } 
             catch (Exception e) 
             {
-                TapLog.Error(e);
+                TapLogger.Error(e);
                 return;
             }
 

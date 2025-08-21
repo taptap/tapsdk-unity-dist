@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using TapSDK.Core.Internal;
 using UnityEngine;
 using System.Reflection;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core {
     public class TapTapEvent {
@@ -15,7 +14,7 @@ namespace TapSDK.Core {
             platformWrapper = PlatformTypeUtils.CreatePlatformImplementationObject(typeof(ITapEventPlatform),
                 "TapSDK.Core") as ITapEventPlatform;
             if(platformWrapper == null) {
-                TapLog.Error("PlatformWrapper is null");
+                Debug.LogError("PlatformWrapper is null");
             }
         }
 

@@ -2,7 +2,6 @@
 using System.Collections;
 using System.Threading.Tasks;
 using TapSDK.Core;
-using TapSDK.Core.Internal.Log;
 using TapSDK.Login;
 using UnityEngine;
 using Network = TapSDK.Compliance.Internal.Network;
@@ -31,7 +30,7 @@ namespace TapSDK.Compliance
 
         internal static void StartUp(int inverval = 0) 
         {
-            TapLog.Log("StartUp " );
+            TapLogger.Debug("StartUp " );
             if(inverval > 0){
                 pollInterval = inverval;
             }
@@ -52,7 +51,7 @@ namespace TapSDK.Compliance
         
         internal static void StartCountdownRemainTime() 
         {
-            TapLog.Log("StartCountdownRemainTime  " );
+            TapLogger.Debug("StartCountdownRemainTime  " );
             if (current == null) 
             {
                 GameObject pollGo = new GameObject(ANTI_ADDICTION_POLL_NAME);
@@ -118,7 +117,7 @@ namespace TapSDK.Compliance
         /// <param name="pauseStatus"></param>
         void OnApplicationPause(bool pauseStatus)
         {
-            TapLog.Log("Anti OnApplicationPause " + pauseStatus);
+            TapLogger.Debug("Anti OnApplicationPause " + pauseStatus);
            if(pauseStatus){
                 TapTapComplianceManager.LeaveGame();
            }else{

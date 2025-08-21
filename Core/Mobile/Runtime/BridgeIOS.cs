@@ -2,7 +2,6 @@
 using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using UnityEngine;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core
 {
@@ -49,9 +48,11 @@ namespace TapSDK.Core
                 if (result.onceTime && BridgeIOS.GetInstance().GetConcurrentDictionary()
                     .TryRemove(result.callbackId, out Action<Result> outAction))
                 {
-                    TapLog.Log($"TapSDK resolved current Action:{result.callbackId}");
+                    Debug.Log($"TapSDK resolved current Action:{result.callbackId}");
                 }
             }
+
+            Debug.Log($"TapSDK iOS BridgeAction last Count:{BridgeIOS.GetInstance().GetConcurrentDictionary().Count}");
         }
         
         

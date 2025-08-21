@@ -1,13 +1,13 @@
 {
-    "name": "com.taptap.tapsdk.unity.iap",
+    "name": "com.taptap.sdk.iap",
     "displayName": "TapTapSDK IAP",
     "description": "TapTapSDK IAP",
-    "version": "4.8.1-beta.4",
+    "version": "4.7.2-beta.0",
     "unity": "2019.4",
     "license": "MIT",
     "dependencies": {
         "com.unity.purchasing": "3.1.0",
-        "com.taptap.tapsdk.unity.core": "4.8.1-beta.4",
+        "com.taptap.sdk.core": "4.7.2-beta.0",
         "com.google.external-dependency-manager": "1.2.179"
     }
 }

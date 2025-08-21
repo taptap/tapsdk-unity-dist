@@ -6,7 +6,6 @@ using System.Net.Http.Headers;
 using System.Threading;
 using System.Threading.Tasks;
 using TapSDK.Core;
-using TapSDK.Core.Internal.Log;
 using TapSDK.Core.Internal.Utils;
 using TapSDK.Core.Standalone;
 using TapSDK.Core.Standalone.Internal.Http;
@@ -49,7 +48,7 @@ namespace TapSDK.Login.Internal
             TapTapSdk.SDKInitialize(clientId, regionType == TapTapRegionType.CN);
             AccountManager.Instance.Init();
 
-            TapLog.Log("RegisterListenerForTapClientCheck ");
+            TapLogger.Debug("RegisterListenerForTapClientCheck ");
             RegisterListenerForTapClientCheck();
 
             _ = CheckAndRefreshToken();
@@ -188,7 +187,7 @@ namespace TapSDK.Login.Internal
         {
             string info = "{\"device_id\":\"" + SystemInfo.deviceModel + "\"}";
             string sdkUA = "client_id=" + TapTapSdk.ClientId + "&uuid=" + SystemInfo.deviceUniqueIdentifier;
-            TapLog.Log("LoginWithScopes start in thread = " + Thread.CurrentThread.ManagedThreadId);
+            TapLogger.Debug("LoginWithScopes start in thread = " + Thread.CurrentThread.ManagedThreadId);
             TaskCompletionSource<T> taskCompletionSource = new TaskCompletionSource<T>();
 
             string responseType = "code";
@@ -200,8 +199,8 @@ namespace TapSDK.Login.Internal
             string codeChallengeMethod = "S256";
             TapLoginClientBridge.TapLoginResponseByTapClient response = await TapLoginClientBridge.LoginWithScopesAsync(scopes,
             responseType, redirectUri, codeChallenge, state, codeChallengeMethod, versionCode, sdkUA, info);
-            TapLog.Log("start handle login result");
-            TapLog.Log("LoginWithScopes handle in thread = " + Thread.CurrentThread.ManagedThreadId);
+            TapLogger.Debug("start handle login result");
+            TapLogger.Debug("LoginWithScopes handle in thread = " + Thread.CurrentThread.ManagedThreadId);
 
             if (response.isCancel)
             {
@@ -213,7 +212,7 @@ namespace TapSDK.Login.Internal
             }
             else
             {
-                TapLog.Log("login success prepare get token");
+                TapLogger.Debug("login success prepare get token");
                 try
                 {
                     Uri uri = new Uri(response.redirectUri);
@@ -262,13 +261,13 @@ namespace TapSDK.Login.Internal
                     }
                     else
                     {
-                        TapLog.Log("login success prepare get token but get  error " + error);
+                        TapLogger.Debug("login success prepare get token but get  error " + error);
                         throw new TapException((int)TapErrorCode.ERROR_CODE_UNDEFINED, error ?? "数据解析异常");
                     }
                 }
                 catch (Exception ex)
                 {
-                    TapLog.Log("login success prepare get token  fail " + ex.Message);
+                    TapLogger.Debug("login success prepare get token  fail " + ex.Message);
                     taskCompletionSource.TrySetException(ex);
                 }
             }
@@ -353,7 +352,7 @@ namespace TapSDK.Login.Internal
         {
             EventManager.AddListener(EventManager.IsLaunchedFromTapTapPCFinished, (openId) =>
             {
-                TapLog.Log("receive IsLaunchedFromTapTapPCFinished event");
+                TapLogger.Debug("receive IsLaunchedFromTapTapPCFinished event");
                 if (openId is string userId && !string.IsNullOrEmpty(userId))
                 {
                     CheckLoginStateWithTapClient(userId);
@@ -374,7 +373,7 @@ namespace TapSDK.Login.Internal
                 if (account.openId != openId)
                 {
                     isCacheUserSameWithTapClient = false;
-                    TapLog.Log("receive IsLaunchedFromTapTapPCFinished event and not same");
+                    TapLogger.Debug("receive IsLaunchedFromTapTapPCFinished event and not same");
                     Logout();
                 }
                 else
@@ -432,7 +431,7 @@ namespace TapSDK.Login.Internal
             }
             catch (Exception e)
             {
-                TapLog.Log("refresh TapToken fail reason : " + e.Message + "\n stack = " + e.StackTrace);
+                Debug.Log("refresh TapToken fail reason : " + e.Message + "\n stack = " + e.StackTrace);
             }
         }
     }

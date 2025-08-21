@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using TapSDK.Core.Internal;
 using System.Collections.Generic;
-using TapSDK.Core.Internal.Log;
 using UnityEngine;
 
 namespace TapSDK.Core.Mobile
@@ -14,7 +13,7 @@ namespace TapSDK.Core.Mobile
 
         public TapEventMobile()
         {
-            TapLog.Log("TapEventMobile constructor");
+            Debug.Log("TapEventMobile constructor");
             EngineBridgeInitializer.Initialize();
         }
 
@@ -25,7 +24,7 @@ namespace TapSDK.Core.Mobile
 
         public void SetUserID(string userID)
         {
-            TapLog.Log("TapEventMobile SetUserID = " + userID);
+            Debug.Log("TapEventMobile SetUserID = " + userID);
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("setUserID")
                 .Args("userID", userID)
@@ -34,7 +33,7 @@ namespace TapSDK.Core.Mobile
 
         public void SetUserID(string userID, string properties)
         {
-            TapLog.Log("TapEventMobile SetUserID" + userID + properties);
+            Debug.Log("TapEventMobile SetUserID" + userID + properties);
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("setUserID")
                 .Args("userID", userID)
@@ -44,7 +43,7 @@ namespace TapSDK.Core.Mobile
 
         public void ClearUser()
         {
-            TapLog.Log("TapEventMobile ClearUser");
+            Debug.Log("TapEventMobile ClearUser");
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("clearUser")
                 .CommandBuilder());
@@ -55,13 +54,13 @@ namespace TapSDK.Core.Mobile
             string deviceId = Bridge.CallWithReturnValue(EngineBridgeInitializer.GetBridgeServer()
                 .Method("getDeviceId")
                 .CommandBuilder());
-            TapLog.Log("TapEventMobile GetDeviceId = " + deviceId);
+            Debug.Log("TapEventMobile GetDeviceId = " + deviceId);
             return deviceId;
         }
 
         public void LogEvent(string name, string properties)
         {
-            TapLog.Log("TapEventMobile LogEvent" + name + properties);
+            Debug.Log("TapEventMobile LogEvent" + name + properties);
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("logEvent")
                 .Args("name", name)
@@ -71,7 +70,7 @@ namespace TapSDK.Core.Mobile
 
         public void DeviceInitialize(string properties)
         {
-            TapLog.Log("TapEventMobile DeviceInitialize" + properties);
+            Debug.Log("TapEventMobile DeviceInitialize" + properties);
 #if UNITY_IOS
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("deviceInitialize")
@@ -87,7 +86,7 @@ namespace TapSDK.Core.Mobile
 
         public void DeviceUpdate(string properties)
         {
-            TapLog.Log("TapEventMobile DeviceUpdate" + properties);
+            Debug.Log("TapEventMobile DeviceUpdate" + properties);
 #if UNITY_IOS
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("deviceUpdate")
@@ -103,7 +102,7 @@ namespace TapSDK.Core.Mobile
 
         public void DeviceAdd(string properties)
         {
-            TapLog.Log("TapEventMobile DeviceAdd" + properties);
+            Debug.Log("TapEventMobile DeviceAdd" + properties);
 #if UNITY_IOS
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("deviceAdd")
@@ -119,7 +118,7 @@ namespace TapSDK.Core.Mobile
 
         public void UserInitialize(string properties)
         {
-            TapLog.Log("TapEventMobile UserInitialize" + properties);
+            Debug.Log("TapEventMobile UserInitialize" + properties);
 #if UNITY_IOS
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("userInitialize")
@@ -135,7 +134,7 @@ namespace TapSDK.Core.Mobile
 
         public void UserUpdate(string properties)
         {
-            TapLog.Log("TapEventMobile UserUpdate" + properties);
+            Debug.Log("TapEventMobile UserUpdate" + properties);
 #if UNITY_IOS
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("userUpdate")
@@ -151,7 +150,7 @@ namespace TapSDK.Core.Mobile
 
         public void UserAdd(string properties)
         {
-            TapLog.Log("TapEventMobile UserAdd" + properties);
+            Debug.Log("TapEventMobile UserAdd" + properties);
 #if UNITY_IOS
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("userAdd")
@@ -167,7 +166,7 @@ namespace TapSDK.Core.Mobile
 
         public void AddCommonProperty(string key, string value)
         {
-            TapLog.Log("TapEventMobile AddCommonProperty" + key + value);
+            Debug.Log("TapEventMobile AddCommonProperty" + key + value);
 #if UNITY_IOS
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("addCommonProperty")
@@ -185,7 +184,7 @@ namespace TapSDK.Core.Mobile
 
         public void AddCommon(string properties)
         {
-            TapLog.Log("TapEventMobile AddCommon" + properties);
+            Debug.Log("TapEventMobile AddCommon" + properties);
 #if UNITY_IOS
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("addCommon")
@@ -201,7 +200,7 @@ namespace TapSDK.Core.Mobile
 
         public void ClearCommonProperty(string key)
         {
-            TapLog.Log("TapEventMobile ClearCommonProperty");
+            Debug.Log("TapEventMobile ClearCommonProperty");
 
 #if UNITY_IOS
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
@@ -218,7 +217,7 @@ namespace TapSDK.Core.Mobile
 
         public void ClearCommonProperties(string[] keys)
         {
-            TapLog.Log("TapEventMobile ClearCommonProperties");
+            Debug.Log("TapEventMobile ClearCommonProperties");
 
 #if UNITY_IOS
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
@@ -235,7 +234,7 @@ namespace TapSDK.Core.Mobile
 
         public void ClearAllCommonProperties()
         {
-            TapLog.Log("TapEventMobile ClearAllCommonProperties");
+            Debug.Log("TapEventMobile ClearAllCommonProperties");
 
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("clearAllCommonProperties")
@@ -244,7 +243,7 @@ namespace TapSDK.Core.Mobile
 
         public void LogChargeEvent(string orderID, string productName, long amount, string currencyType, string paymentMethod, string properties)
         {
-            TapLog.Log("TapEventMobile LogChargeEvent" + orderID);
+            Debug.Log("TapEventMobile LogChargeEvent" + orderID);
 
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("logPurchasedEvent")
@@ -259,7 +258,7 @@ namespace TapSDK.Core.Mobile
 
         public void RegisterDynamicProperties(Func<string> callback)
         {
-            TapLog.Log("RegisterDynamicProperties called" + callback);
+            Debug.Log("RegisterDynamicProperties called" + callback);
 #if UNITY_IOS
             IOSNativeWrapper.RegisterDynamicProperties(callback);
 #else
@@ -269,7 +268,7 @@ namespace TapSDK.Core.Mobile
 
         public void SetOAID(string value)
         {
-            TapLog.Log("TapEventMobile SetOAID" + value);
+            Debug.Log("TapEventMobile SetOAID" + value);
 #if UNITY_ANDROID
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("setOAID")
@@ -280,7 +279,7 @@ namespace TapSDK.Core.Mobile
 
         public void LogDeviceLoginEvent()
         {
-            TapLog.Log("TapEventMobile LogDeviceLoginEvent");
+            Debug.Log("TapEventMobile LogDeviceLoginEvent");
 #if UNITY_ANDROID
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("logDeviceLoginEvent")

@@ -6,7 +6,6 @@ using System.Linq;
 using System.IO;
 using UnityEngine;
 using TapSDK.Core;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core.Standalone.Internal {
     public class Prefs {
@@ -39,7 +38,7 @@ namespace TapSDK.Core.Standalone.Internal {
                     Dictionary<string, object> jsonData = Json.Deserialize(json) as Dictionary<string, object>;
                     data = new ConcurrentDictionary<string, object>(jsonData);
                 } catch (Exception e) {
-                    TapLog.Error(e.Message);
+                    TapLogger.Error(e.Message);
                     File.Delete(persistentFilePath);
                 }
             }
@@ -89,7 +88,7 @@ namespace TapSDK.Core.Standalone.Internal {
                     string json = Json.Serialize(dict);
                     File.WriteAllText(persistentFilePath, json);
                 } catch (Exception e) {
-                    TapLog.Error(e.Message);
+                    TapLogger.Error(e.Message);
                 }
             }
         }

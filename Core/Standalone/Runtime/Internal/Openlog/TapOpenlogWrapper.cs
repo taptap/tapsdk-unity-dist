@@ -25,8 +25,8 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
             "env": "local",
             "platform": "abc",
             "ua": "TapSDK-Android/3.28.0",
-            "client_id": "***",
-            "client_token": "***",
+            "client_id": "uZ8Yy6cSXVOR6AMRPj",
+            "client_token": "AVhR1Bu9qfLR1cGbZMAdZ5rzJSxfoEiQaFf1T2P7",
             "modules": [
                 "app_duration"
             ],

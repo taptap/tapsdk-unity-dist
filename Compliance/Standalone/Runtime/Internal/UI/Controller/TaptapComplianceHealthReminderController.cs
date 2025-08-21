@@ -4,7 +4,6 @@ using TapSDK.UI;
 using UnityEngine;
 using TapSDK.Compliance.Model;
 using TapSDK.Core;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Compliance.Internal {
     public class TaptapComplianceHealthReminderController : BasePanelController
@@ -58,21 +57,21 @@ namespace TapSDK.Compliance.Internal {
             titleText.text = title;
             // 替换富文本标签
             //周六、周日和法定节假日每日 20 时至 21 时向未成年人提供 60 分钟网络游戏服务
-            TapLog.Log("remain tip = " + content);    
+            TapLogger.Debug("remain tip = " + content);    
             if(content.Contains("# ${remaining} #")){    
                 string timeDesc;
                 if(playable.RemainTime >= 60){
                     int remainTime = (int)Math.Ceiling(playable.RemainTime * 1d / 60);
                     timeDesc = remainTime.ToString();
                     content = content.Replace("# ${remaining} #", timeDesc);
-                    TapLog.Log("remain tip = " + content); 
+                    TapLogger.Debug("remain tip = " + content); 
                 }else{
                     int index = content.IndexOf("# ${remaining} #");
                     string substring1 = content.Substring(0,index);
                     string substring2 = content.Substring(index)
                         .Replace("# ${remaining} #", playable.RemainTime.ToString())
                         .Replace("分钟","秒");
-                    TapLog.Log("remain tip sub1 = " + substring1 + " sub2 = " + substring2); 
+                    TapLogger.Debug("remain tip sub1 = " + substring1 + " sub2 = " + substring2); 
                     content = substring1 + substring2;    
                 }
             }

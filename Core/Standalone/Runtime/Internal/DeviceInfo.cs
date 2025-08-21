@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using System.Net.NetworkInformation;
 using UnityEngine;
 using System.Diagnostics;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core.Standalone.Internal
 {
@@ -88,7 +87,7 @@ namespace TapSDK.Core.Standalone.Internal
       }
       catch (Exception e)
       {
-        TapLog.Log("GetMacAddress Exception " + e.Message);
+        UnityEngine.Debug.Log("GetMacAddress Exception " + e.Message);
       }
       macAddressList = $"[{string.Join(",", mac_addrs)}]";
       firstMacAddress = mac_addrs.Count > 0 ? mac_addrs[0].Replace("\"", "") : string.Empty;

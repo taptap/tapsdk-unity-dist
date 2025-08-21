@@ -5,7 +5,6 @@ using System.Collections;
 using TapSDK.Core;
 using TapSDK.Core.Internal;
 using System.Collections.Generic;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core.Mobile{
     internal class AndroidNativeWrapper
@@ -41,7 +40,7 @@ namespace TapSDK.Core.Mobile{
                 }
                 catch (Exception e)
                 {
-                    TapLog.Error("Failed to get dynamic properties: " + e.Message);
+                    Debug.LogError("Failed to get dynamic properties: " + e.Message);
                 }
                 return null;
             }

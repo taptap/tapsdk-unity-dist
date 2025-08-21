@@ -1,12 +1,12 @@
 {
-    "name": "com.taptap.tapsdk.unity.moment",
+    "name": "com.taptap.sdk.moment",
     "displayName": "TapTapSDK Moment",
     "description": "TapTapSDK Moment",
-    "version": "4.8.1-beta.4",
+    "version": "4.7.2-beta.0",
     "unity": "2019.4",
     "license": "MIT",
     "dependencies": {
-        "com.taptap.tapsdk.unity.core": "4.8.1-beta.4",
-        "com.taptap.tapsdk.unity.login": "4.8.1-beta.4"
+        "com.taptap.sdk.core": "4.7.2-beta.0",
+        "com.taptap.sdk.login": "4.7.2-beta.0"
     }
 }

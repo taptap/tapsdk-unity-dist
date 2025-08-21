@@ -118,7 +118,7 @@ namespace TapSDK.Core.Standalone
         {
             if (coreOptions == null)
             {
-                TapLog.Log("coreOptions is null");
+                Debug.Log("coreOptions is null");
                 return;
             }
             TapLog.Log("UpdateLanguage called with language: " + language);

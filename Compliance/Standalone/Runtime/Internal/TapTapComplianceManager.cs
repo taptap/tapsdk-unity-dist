@@ -11,7 +11,6 @@ using TapSDK.Core;
 using UnityEngine;
 using TapSDK.Login;
 using Network = TapSDK.Compliance.Internal.Network;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Compliance 
 {
@@ -192,7 +191,7 @@ namespace TapSDK.Compliance
         {
             if (CanPlay && needResumePoll)
             {
-                TapLog.Log("enter game in antiAddiciton  " );
+                TapLogger.Debug("enter game in antiAddiciton  " );
                 CompliancePoll.StartUp();
                 needResumePoll = false;
             }
@@ -202,7 +201,7 @@ namespace TapSDK.Compliance
         {
             if (CanPlay && CompliancePoll.StartPoll)
             {
-                TapLog.Log("leave game in antiAddiciton ");
+                TapLogger.Debug("leave game in antiAddiciton ");
                 CompliancePoll.Logout();
                 needResumePoll = true;
             }

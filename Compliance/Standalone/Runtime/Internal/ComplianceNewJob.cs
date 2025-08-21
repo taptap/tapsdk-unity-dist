@@ -10,7 +10,6 @@ using TapSDK.Core.Standalone;
 using TapSDK.Core.Internal.Utils;
 using Newtonsoft.Json;
 using TapSDK.UI;
-using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Compliance
 {
@@ -119,12 +118,12 @@ namespace TapSDK.Compliance
             }
             if (string.IsNullOrEmpty(userId)) 
             {
-                TapLog.Error(" current user is invalid:" + userId);
+                TapLogger.Error(" current user is invalid:" + userId);
                 return;
             }
             // 如果正在处理中，直接返回
             if (isCheckingUser) {
-                TapLog.Log(" current user is checking so return");
+                TapLogger.Debug(" current user is checking so return");
                 return;
             }
             isCheckingUser = true;

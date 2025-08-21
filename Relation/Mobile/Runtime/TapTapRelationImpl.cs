@@ -6,7 +6,6 @@ using UnityEngine;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Runtime.InteropServices;
-using TapSDK.Core.Internal.Log;
 #if UNITY_IOS
 using UnityEngine.iOS;
 #endif
@@ -28,7 +27,13 @@ namespace TapSDK.Relation.Mobile
 
         public void Init(string clientId, TapTapRegionType regionType, int screenOrientation)
         {
-
+            EngineBridge.GetInstance().CallHandler(new Command.Builder()
+                            .Service(SERVICE_NAME)
+                            .Method("setOrientation")
+                            .Args("orientation", screenOrientation)
+                            .Callback(false)
+                            .OnceTime(true)
+                            .CommandBuilder());
         }
 
         public void StartMessenger()
@@ -116,7 +121,7 @@ namespace TapSDK.Relation.Mobile
                     }
                     catch (Exception e)
                     {
-                        TapLog.Error($"GetNewFansCount parse result error: {e.Message}");
+                        Debug.LogError($"GetNewFansCount parse result error: {e.Message}");
                         callback(0);
                     }
                 });
@@ -154,7 +159,7 @@ namespace TapSDK.Relation.Mobile
                     }
                     catch (Exception e)
                     {
-                        TapLog.Error($"GetUnreadMessageCount parse result error: {e.Message}");
+                        Debug.LogError($"GetUnreadMessageCount parse result error: {e.Message}");
                         callback(0);
                     }
                 });
@@ -213,7 +218,7 @@ namespace TapSDK.Relation.Mobile
                 {
                     return;
                 }
-                TapLog.Log("Relation -->> Bridge Callback == " + JsonConvert.SerializeObject(result));
+                Debug.Log("TapSdk4UnityDemo -->> Bridge Callback == " + JsonConvert.SerializeObject(result));
                 var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
                 var code = SafeDictionary.GetValue<int>(dic, "relation_code");
                 var newFansCount = SafeDictionary.GetValue<int>(dic, "new_fans_count");
