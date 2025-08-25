@@ -4,6 +4,7 @@ using System.Diagnostics;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
 using TapSDK.Core;
+using TapSDK.Core.Internal.Utils;
 using TapSDK.Core.Standalone.Internal.Openlog;
 
 namespace TapSDK.Login.Internal
@@ -50,11 +51,13 @@ namespace TapSDK.Login.Internal
                 {
                     DataStorage.SaveString(_account, null);
                     TapAppDurationStandalone.OnLogout();
+                    EventManager.TriggerEvent(EventManager.OnTapUserChanged, "");
                 }
                 else
                 {
                     DataStorage.SaveString(_account, value.ToJson());
                     TapAppDurationStandalone.OnLogin(value?.openId);
+                    EventManager.TriggerEvent(EventManager.OnTapUserChanged, "");
                 }
             }
         }

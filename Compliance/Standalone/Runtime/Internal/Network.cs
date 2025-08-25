@@ -8,6 +8,7 @@ using TapSDK.Core;
 using TapSDK.Login;
 using TapSDK.Login.Internal;
 using System.Net;
+using TapSDK.Core.Internal.Log;
 
 
 namespace TapSDK.Compliance.Internal
@@ -113,14 +114,14 @@ namespace TapSDK.Compliance.Internal
         }
         
         private static string GetMacToken(AccessToken token, Uri uri, long timestamp = 0) {
-            TapLogger.Debug(" uri = " + uri.Host + " path = " + uri.PathAndQuery + " token mac = "
+            TapLog.Log(" uri = " + uri.Host + " path = " + uri.PathAndQuery + " token mac = "
              + token.macKey);
             int ts = (int)timestamp;
             if (ts == 0) {
                 var dt = DateTime.UtcNow - new DateTime(1970, 1, 1);
                 ts = (int)dt.TotalSeconds;
             }
-            TapLogger.Debug(" GetMacToken ts = " + ts);
+            TapLog.Log(" GetMacToken ts = " + ts);
             var sign = "MAC " + LoginService.GetAuthorizationHeader(token.kid,
                 token.macKey,
                 token.macAlgorithm,
@@ -172,7 +173,7 @@ namespace TapSDK.Compliance.Internal
             };
             UserComplianceConfigResult response = await HttpClient.Get<UserComplianceConfigResult>(path, headers, queryParams);
             #if UNITY_EDITOR
-            TapLogger.Debug($"检查用户状态: ageLimit: {response.userState.ageLimit} ageCheck: {response.ageCheckResult.allow}  IsAdult: {response.userState.isAdult} ");
+            TapLog.Log($"检查用户状态: ageLimit: {response.userState.ageLimit} ageCheck: {response.ageCheckResult.allow}  IsAdult: {response.userState.isAdult} ");
             #endif
             return response;
         }
@@ -194,7 +195,7 @@ namespace TapSDK.Compliance.Internal
             };
             PlayableResult response = await HttpClient.Post<PlayableResult>(path, headers, data, queryParams);
             #if UNITY_EDITOR
-            TapLogger.Debug($"检查是否可玩结果: remainTime: {response.RemainTime}  Content: {response.Content}");
+            TapLog.Log($"检查是否可玩结果: remainTime: {response.RemainTime}  Content: {response.Content}");
             #endif
             return response;
         }

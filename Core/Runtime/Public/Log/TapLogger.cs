@@ -8,7 +8,7 @@ namespace TapSDK.Core {
         /// </summary>
         /// <value>The log delegate.</value>
         public static Action<TapLogLevel, string> LogDelegate {
-            get; set;
+            internal get; set;
         }
 
         public static void Debug(string log) {

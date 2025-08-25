@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using TapSDK.Core;
 using System;
 using TapSDK.Update.Internal;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Update.Mobile {
     public class TapUpdateMobile : ITapUpdateBridge {
@@ -26,7 +27,7 @@ namespace TapSDK.Update.Mobile {
                 .OnceTime(false)
                 .CommandBuilder();
             EngineBridge.GetInstance().CallHandler(command, (result) => {
-                UnityEngine.Debug.LogFormat("TapUpdate::UpdateGame result:{0}", result.ToJSON());
+                TapLog.Log("TapUpdate::UpdateGame result: " +  result.ToJSON());
                 if (result.code == Result.RESULT_SUCCESS && result.content.ToLower().Contains("cancel")) {
                     onCancel?.Invoke();
                     return;

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections;
+using TapSDK.Core.Internal.Log;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -75,7 +76,7 @@ namespace TapSDK.UI
             #if UNITY_EDITOR
             if (canvas == null)
             {
-                Debug.LogErrorFormat("[TapSDK UI] BasePanel Must Be Related To Canvas Component!");
+                TapLog.Log("[TapSDK UI] BasePanel Must Be Related To Canvas Component!");
             }
             #endif
         }

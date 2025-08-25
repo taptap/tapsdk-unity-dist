@@ -6,6 +6,7 @@ using System.Collections.Generic;
 using System;
 using UnityEngine.Animations;
 using System.Linq;
+using TapSDK.Core.Internal.Log;
 
 #if PLATFORM_STANDALONE_WIN 
 namespace TapSDK.License.Standalone {
@@ -151,7 +152,6 @@ namespace TapSDK.License.Standalone {
 
         public void SetTestEnvironment(bool isTest)
         {
-            TapLogger.Warn($"{nameof(SetTestEnvironment)} NOT implemented.");
         }
 
         public void PurchaseDLC(string skuId)

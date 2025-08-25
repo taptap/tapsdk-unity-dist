@@ -6,6 +6,7 @@ using UnityEngine;
 using System.Collections.Generic;
 using Newtonsoft.Json;
 using System.Runtime.InteropServices;
+using TapSDK.Core.Internal.Log;
 #if UNITY_IOS
 using UnityEngine.iOS;
 #endif
@@ -82,7 +83,7 @@ namespace TapSDK.Moment.Mobile
         public void Publish(PublishMetaData publishMetaData)
         {
             string json = JsonConvert.SerializeObject(publishMetaData);
-            Debug.Log("TapSdk4UnityDemo -->> PublishMetaData json = " + json);
+            TapLog.Log("Moment -->> PublishMetaData json = " + json);
             EngineBridge.GetInstance().CallHandler(new Command.Builder()
                 .Service(SERVICE_NAME)
                 .Method("publish")
@@ -125,7 +126,7 @@ namespace TapSDK.Moment.Mobile
                 var code = SafeDictionary.GetValue<int>(dic, "code");
                 var msg = SafeDictionary.GetValue<string>(dic, "msg");
                 // 
-                Debug.Log("TapSdk4UnityDemo -->> Callback code = " + code + " , msg = " + msg);
+                TapLog.Log("TapSdk4UnityDemo -->> Callback code = " + code + " , msg = " + msg);
                 callback(code, msg);
             });
         }

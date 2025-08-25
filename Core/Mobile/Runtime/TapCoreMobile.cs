@@ -7,6 +7,7 @@ using TapSDK.Core.Internal.Utils;
 using System.Collections.Generic;
 using UnityEngine;
 using Newtonsoft.Json;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core.Mobile
 {
@@ -16,14 +17,14 @@ namespace TapSDK.Core.Mobile
 
         public TapCoreMobile()
         {
-            Debug.Log("TapCoreMobile constructor");
+            TapLog.Log("TapCoreMobile constructor");
             TapLoom.Initialize();
             EngineBridgeInitializer.Initialize();
         }
 
         public void Init(TapTapSdkOptions coreOption, TapTapSdkBaseOptions[] otherOptions)
         {
-            Debug.Log("TapCoreMobile SDK inited");
+            TapLog.Log("TapCoreMobile SDK inited");
             SetPlatformAndVersion(TapTapSDK.SDKPlatform, TapTapSDK.Version);
             string coreOptionsJson = JsonUtility.ToJson(coreOption);
             string[] otherOptionsJson = otherOptions.Select(option => JsonConvert.SerializeObject(option)).ToArray();
@@ -36,7 +37,7 @@ namespace TapSDK.Core.Mobile
 
         private void SetPlatformAndVersion(string platform, string version)
         {
-            Debug.Log("TapCoreMobile SetPlatformAndVersion called with platform: " + platform + " and version: " + version);
+            TapLog.Log("TapCoreMobile SetPlatformAndVersion called with platform: " + platform + " and version: " + version);
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("setPlatformAndVersion")
                 .Args("platform", TapTapSDK.SDKPlatform)
@@ -47,7 +48,7 @@ namespace TapSDK.Core.Mobile
 
         private void SetSDKArtifact(string value)
         {
-            Debug.Log("TapCoreMobile SetSDKArtifact called with value: " + value);
+            TapLog.Log("TapCoreMobile SetSDKArtifact called with value: " + value);
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("setSDKArtifact")
                 .Args("artifact", "Unity")
@@ -61,7 +62,7 @@ namespace TapSDK.Core.Mobile
 
         public void UpdateLanguage(TapTapLanguageType language)
         {
-            Debug.Log("TapCoreMobile UpdateLanguage language: " + language);
+            TapLog.Log("TapCoreMobile UpdateLanguage language: " + language);
             Bridge.CallHandler(EngineBridgeInitializer.GetBridgeServer()
                 .Method("updateLanguage")
                 .Args("language", (int)language)

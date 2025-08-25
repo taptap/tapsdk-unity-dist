@@ -49,7 +49,6 @@ namespace TapTap.Achievement.Standalone
 
         private void OnClick(BaseEventData data)
         {
-            Debug.Log("Toast clicked!"); // 点击事件处理逻辑
             // 打开成就详情页面
             TapTapAchievement.ShowAchievements();
         }

@@ -1,0 +1,22 @@
+{
+    "name": "TapSDK.CloudSave.Standalone.Runtime",
+    "references": [
+        "GUID:7c2220358fcd84098b82fbaf24ae7073",
+        "GUID:cdf1346592073467a860c3effd9679d4",
+        "GUID:e8754b6153389406c963cd52996cc80f",
+        "GUID:56f3da7a178484843974054bafe77e73",
+        "GUID:7d5ef2062f3704e1ab74aac0e4d5a1a7"
+    ],
+    "includePlatforms": [
+        "Editor",
+        "WindowsStandalone64"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

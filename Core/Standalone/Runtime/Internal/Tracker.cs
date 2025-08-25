@@ -4,6 +4,7 @@ using TapSDK.Core.Standalone;
 using System.Threading.Tasks;
 using UnityEngine;
 using TapSDK.Core.Internal.Utils;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core.Standalone.Internal {
     public class Tracker {
@@ -93,7 +94,7 @@ namespace TapSDK.Core.Standalone.Internal {
             }
 
             Dictionary<string, object> dynamicProps = dynamicPropsDelegate?.GetDynamicProperties();
-            TapLogger.Debug("dynamicProps: " + dynamicProps);
+            TapLog.Log("dynamicProps: " + dynamicProps);
             if (dynamicProps != null) {
                 foreach (KeyValuePair<string, object> kv in dynamicProps) {
                     props[kv.Key] = kv.Value;
@@ -101,7 +102,7 @@ namespace TapSDK.Core.Standalone.Internal {
             }
 
             if (name == Constants.DEVICE_LOGIN) { // Device login 事件带上初始化时的自定义属性
-                TapLogger.Debug("customProps: " + customProps);
+                TapLog.Log("customProps: " + customProps);
                 if (customProps != null) {
                     foreach (KeyValuePair<string, object> kv in customProps) {
                         props[kv.Key] = kv.Value;
@@ -117,7 +118,7 @@ namespace TapSDK.Core.Standalone.Internal {
                 props["open_id"] = open_id;
             }
 
-            TapLogger.Debug("properties: " + properties);
+            TapLog.Log("properties: " + properties);
             if (properties != null) {
                 foreach (KeyValuePair<string, object> kv in properties) {
                     props[kv.Key] = kv.Value;
@@ -151,7 +152,7 @@ namespace TapSDK.Core.Standalone.Internal {
         /// <param name="properties"></param>
         public void TrackDeviceProperties(string type, Dictionary<string, object> properties) {
             if (string.IsNullOrWhiteSpace(Identity.DeviceId)) {
-                TapLogger.Error("DeviceId is NULL.");
+                TapLog.Error("DeviceId is NULL.");
                 return;
             }
 
@@ -167,7 +168,7 @@ namespace TapSDK.Core.Standalone.Internal {
         public void TrackUserProperties(string type, Dictionary<string, object> properties) {
             string userId = TapCoreStandalone.User.Id;
             if (string.IsNullOrWhiteSpace(userId)) {
-                TapLogger.Error("UserId is NULL.");
+                TapLog.Error("UserId is NULL.");
                 return;
             }
 
@@ -292,7 +293,7 @@ namespace TapSDK.Core.Standalone.Internal {
         private bool IsInitialized {
             get {
                 if (string.IsNullOrWhiteSpace(TapCoreStandalone.coreOptions.clientId)) {
-                    TapLogger.Error("MUST be initialized.");
+                    TapLog.Error("MUST be initialized.");
                     return false;
                 }
                 return true;

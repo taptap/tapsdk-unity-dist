@@ -7,7 +7,7 @@ namespace TapSDK.Login
     public class TapTapLogin
     {
 
-        public static readonly string Version = "4.7.2";
+        public static readonly string Version = "4.8.1-beta.6";
 
         public const string TAP_LOGIN_SCOPE_BASIC_INFO = "basic_info";
         public const string TAP_LOGIN_SCOPE_PUBLIC_PROFILE = "public_profile";

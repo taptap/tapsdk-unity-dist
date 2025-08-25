@@ -7,6 +7,7 @@ using UnityEngine;
 using Newtonsoft.Json;
 using TapSDK.Compliance.Model;
 using TapSDK.Core;
+using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Compliance.Internal 
 {
@@ -38,7 +39,7 @@ namespace TapSDK.Compliance.Internal
         {
             while(true){
                 //从服务端加载
-                TapLogger.Debug("start feat global config from server");
+                TapLog.Log("start feat global config from server");
                 try 
                 {
                     Current = await Network.FetchConfig(userId);
@@ -50,14 +51,14 @@ namespace TapSDK.Compliance.Internal
                 } 
                 catch (Exception e) 
                 {
-                    TapLogger.Error(e);
+                    TapLog.Error(e);
                     if (e is ComplianceException aee && aee.code < 500)
                     {
                         return false;
                     }
                 }
 
-                TapLogger.Debug("start feat global config from local");
+                TapLog.Log("start feat global config from local");
         
                 // 从设备缓存加载
                 try 
@@ -68,7 +69,7 @@ namespace TapSDK.Compliance.Internal
                 } 
                 catch (Exception e) 
                 {
-                    TapLogger.Error(e);
+                    TapLog.Error(e);
                 }
                 //使用本地默认
                 // _localConfig = LoadFromBuiltin(); 

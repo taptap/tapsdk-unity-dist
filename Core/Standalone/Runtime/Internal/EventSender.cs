@@ -183,7 +183,7 @@ namespace TapSDK.Core.Standalone.Internal
 
                 if (string.IsNullOrEmpty(GetEventCacheFileName()))
                 {
-                    Debug.LogError("EventFilePath is null or empty");
+                    TapLog.Error("EventFilePath is null or empty");
                     return;
                 }
 
@@ -198,7 +198,7 @@ namespace TapSDK.Core.Standalone.Internal
             }
             catch (Exception ex)
             {
-                Debug.LogError("SaveEvents Exception - " + ex.Message);
+                TapLog.Error("SaveEvents Exception - " + ex.Message);
             }
         }
 

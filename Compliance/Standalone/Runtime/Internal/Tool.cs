@@ -4,6 +4,7 @@ using System.IO;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using TapSDK.Core.Internal.Log;
 using UnityEngine;
 
 namespace TapSDK.Compliance.Internal
@@ -93,7 +94,7 @@ namespace TapSDK.Compliance.Internal
             }
             catch (Exception e)
             {
-                Debug.LogErrorFormat("RSA Encrypt Error! input: {0} key: {1}\n Msg: {2}", input, key, e.Message);
+                TapLog.Error(" TapCompliance RSA Encrypt Error!");
                 return null;
             }
         }

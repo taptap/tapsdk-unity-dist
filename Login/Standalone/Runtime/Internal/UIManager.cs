@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using TapSDK.Core.Internal.Log;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -27,7 +28,7 @@ namespace TapSDK.Login.Internal
         {
             if (containerObj == null || uiElements.Count == 0)
             {
-                Debug.LogError("No UIElement can be popped.");
+                TapLog.Error("No UIElement can be popped.");
             }
             else
             {
@@ -35,7 +36,7 @@ namespace TapSDK.Login.Internal
 
                 if (targetName != null && !targetName.Equals(element.name))
                 {
-                    Debug.LogError("Could not find specify UIElement : " + targetName);
+                    TapLog.Error("Could not find specify UIElement : " + targetName);
                     return;
                 }
 
