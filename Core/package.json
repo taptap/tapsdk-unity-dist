@@ -1,5 +1,5 @@
 {
-    "name": "com.taptap.tapsdk.unity.core",
+    "name": "com.taptap.sdk.core",
     "displayName": "TapTapSDK Core",
     "description": "TapTapSDK Core",
     "version": "4.8.1",

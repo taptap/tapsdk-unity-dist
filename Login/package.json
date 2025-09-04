@@ -1,11 +1,11 @@
 {
-    "name": "com.taptap.tapsdk.unity.login",
+    "name": "com.taptap.sdk.login",
     "displayName": "TapTapSDK Login",
     "description": "TapTapSDK Login",
     "version": "4.8.1",
     "unity": "2019.4",
     "license": "MIT",
     "dependencies": {
-        "com.taptap.tapsdk.unity.core": "4.8.1"
+        "com.taptap.sdk.core": "4.8.1"
     }
 }

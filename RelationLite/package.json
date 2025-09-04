@@ -1,12 +1,12 @@
 {
-    "name": "com.taptap.tapsdk.unity.relationlite",
+    "name": "com.taptap.sdk.relationlite",
     "displayName": "TapTapSDK RelationLite",
     "description": "TapTapSDK RelationLite",
     "version": "4.8.1",
     "unity": "2019.4",
     "license": "MIT",
     "dependencies": {
-        "com.taptap.tapsdk.unity.core": "4.8.1",
-        "com.taptap.tapsdk.unity.login": "4.8.1"
+        "com.taptap.sdk.core": "4.8.1",
+        "com.taptap.sdk.login": "4.8.1"
     }
 }
