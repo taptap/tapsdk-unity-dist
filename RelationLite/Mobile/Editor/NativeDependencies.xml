@@ -4,6 +4,6 @@
     <repositories>
       <repository>https://repo.maven.apache.org/maven2</repository>
     </repositories>
-    <androidPackage spec="com.taptap.sdk:tap-relation-lite-unity:4.8.1-beta.6"/>
+    <androidPackage spec="com.taptap.sdk:tap-relation-lite-unity:4.8.1-beta.7"/>
   </androidPackages>
 </dependencies>

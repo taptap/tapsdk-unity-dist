@@ -39,16 +39,6 @@ namespace TapSDK.Leaderboard.Mobile
 
         public void OpenUserProfile(string openId, string unionId)
         {
-            if (string.IsNullOrEmpty(openId))
-            {
-                TapLog.Error("OpenUserProfile failed: openId is null or empty.");
-                return;
-            }
-            
-            if (!string.IsNullOrEmpty(unionId))
-            {
-                TapLog.Warning("OpenUserProfile: unionId is not used in mobile platform, it will be ignored.");
-            }
             var command = new Command.Builder()
                 .Service(SERVICE_NAME)
                 .Method("openUserProfile")

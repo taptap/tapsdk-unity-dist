@@ -71,7 +71,7 @@ namespace TapSDK.Relation
         }
 
 
-        public static readonly string Version = "4.8.1-beta.6";
+        public static readonly string Version = "4.8.1";
 
 
     }
