@@ -1,4 +1,5 @@
 using System;
+using System.Threading.Tasks;
 using TapSDK.Core;
 
 namespace TapSDK.RelationLite
@@ -11,15 +12,15 @@ namespace TapSDK.RelationLite
 
         void InviteTeam(string teamId);
 
-        void GetFriendsList(string nextPageToken, ITapTapRelationLiteRequestCallback callback);
+        Task<RelationLiteUserResult> GetFriendsList(string nextPageToken);
 
-        void GetFollowingList(string nextPageToken, ITapTapRelationLiteRequestCallback callback);
+        Task<RelationLiteUserResult> GetFollowingList(string nextPageToken);
 
-        void GetFansList(string nextPageToken, ITapTapRelationLiteRequestCallback callback);
+        Task<RelationLiteUserResult> GetFansList(string nextPageToken);
 
-        void SyncRelationshipWithOpenId(int action, string nickname,string friendNickname, string friendOpenId, ITapTapRelationLiteRequestCallback callback);
+        Task SyncRelationshipWithOpenId(int action, string nickname,string friendNickname, string friendOpenId);
 
-        void SyncRelationshipWithUnionId(int action, string nickname,string friendNickname, string friendUnionId, ITapTapRelationLiteRequestCallback callback);
+        Task SyncRelationshipWithUnionId(int action, string nickname,string friendNickname, string friendUnionId);
 
         void ShowTapUserProfile(string openId, string unionId);
         

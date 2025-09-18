@@ -1,4 +1,5 @@
 using System.IO;
+using System.Linq;
 using UnityEditor;
 # if UNITY_IOS
 using UnityEditor.Callbacks;
@@ -29,16 +30,18 @@ namespace TapSDK.Core.Editor
                 return;
             }
 
-            proj.AddBuildProperty(target, "OTHER_LDFLAGS", "-ObjC");
-            proj.AddBuildProperty(unityFrameworkTarget, "OTHER_LDFLAGS", "-ObjC");
+            // proj.AddBuildProperty(target, "OTHER_LDFLAGS", "-ObjC");
+            // proj.AddBuildProperty(unityFrameworkTarget, "OTHER_LDFLAGS", "-ObjC");
 
             proj.SetBuildProperty(target, "ENABLE_BITCODE", "NO");
-            proj.SetBuildProperty(target, "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES", "YES");
+            // proj.SetBuildProperty(target, "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES", "YES");
             proj.SetBuildProperty(target, "SWIFT_VERSION", "5.0");
             proj.SetBuildProperty(target, "CLANG_ENABLE_MODULES", "YES");
 
             proj.SetBuildProperty(unityFrameworkTarget, "ENABLE_BITCODE", "NO");
-            proj.SetBuildProperty(unityFrameworkTarget, "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES", "NO");
+            // proj.SetBuildProperty(unityFrameworkTarget, "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES", "YES");
+            proj.SetBuildProperty(unityFrameworkTarget, "BUILD_LIBRARY_FOR_DISTRIBUTION", "YES");
+
             proj.SetBuildProperty(unityFrameworkTarget, "SWIFT_VERSION", "5.0");
             proj.SetBuildProperty(unityFrameworkTarget, "CLANG_ENABLE_MODULES", "YES");
 
@@ -55,6 +58,31 @@ namespace TapSDK.Core.Editor
             proj.AddFileToBuild(unityFrameworkTarget,
                 proj.AddFile("usr/lib/libsqlite3.tbd", "libsqlite3.tbd", PBXSourceTree.Sdk));
 
+            proj.WriteToFile(projPath);
+            // PodFile 使用动态库
+            string podfilePath = Path.Combine(path, "Podfile");
+            if (!File.Exists(podfilePath))
+            {
+                Debug.LogWarning("Podfile not found.");
+                return;
+            }
+
+            string podfileContent = File.ReadAllText(podfilePath);
+
+            // // 替换 use_frameworks! 的设置（默认是 static）
+            // if (podfileContent.Contains("use_frameworks! :linkage => :static"))
+            // {
+            //     podfileContent = podfileContent.Replace("use_frameworks! :linkage => :static", "use_frameworks! :linkage => :dynamic");
+            // }
+            // else if (!podfileContent.Contains("use_frameworks!"))
+            // {
+            //     // 插入 use_frameworks! 如果没有
+            //     podfileContent = podfileContent.Replace("platform :ios, '13.0'", "platform :ios, '13.0'\nuse_frameworks!");
+            // }
+            podfileContent += "\ninstall! 'cocoapods', :warn_for_unused_master_specs_repo => false";
+
+            File.WriteAllText(podfilePath, podfileContent);
+            Debug.Log("Podfile modified to use dynamic frameworks.");
             // if (TapSDKCoreCompile.HandlerIOSSetting(path,
             //     Application.dataPath,
             //     "TapCommonResource",

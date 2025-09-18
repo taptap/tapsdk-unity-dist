@@ -4,8 +4,14 @@ using System.Linq;
 using UnityEditor;
 using UnityEditor.PackageManager;
 using UnityEngine;
+using System.Diagnostics;
+using System.Text.RegularExpressions;
+
+
+
 #if UNITY_IOS
 using System;
+using Google;
 using UnityEditor.iOS.Xcode;
 
 #endif
@@ -17,13 +23,13 @@ namespace TapSDK.Core.Editor
 #if UNITY_IOS
         public static string GetProjPath(string path)
         {
-            Debug.Log($"SDX , GetProjPath path:{path}");
+            UnityEngine.Debug.Log($"SDX , GetProjPath path:{path}");
             return PBXProject.GetPBXProjectPath(path);
         }
 
         public static PBXProject ParseProjPath(string path)
         {
-            Debug.Log($"SDX , ParseProjPath path:{path}");
+            UnityEngine.Debug.Log($"SDX , ParseProjPath path:{path}");
             var proj = new PBXProject();
             proj.ReadFromString(File.ReadAllText(path));
             return proj;
@@ -32,11 +38,11 @@ namespace TapSDK.Core.Editor
         public static string GetUnityFrameworkTarget(PBXProject proj)
         {
 #if UNITY_2019_3_OR_NEWER
-            Debug.Log("SDX , GetUnityFrameworkTarget UNITY_2019_3_OR_NEWER");
+            UnityEngine.Debug.Log("SDX , GetUnityFrameworkTarget UNITY_2019_3_OR_NEWER");
             string target = proj.GetUnityFrameworkTargetGuid();
             return target;
 #endif
-            Debug.Log("SDX , GetUnityFrameworkTarget");
+            UnityEngine.Debug.Log("SDX , GetUnityFrameworkTarget");
             var unityPhoneTarget = proj.TargetGuidByName("Unity-iPhone");
             return unityPhoneTarget;
         }
@@ -44,11 +50,11 @@ namespace TapSDK.Core.Editor
         public static string GetUnityTarget(PBXProject proj)
         {
 #if UNITY_2019_3_OR_NEWER
-            Debug.Log("SDX , GetUnityTarget UNITY_2019_3_OR_NEWER");
+            UnityEngine.Debug.Log("SDX , GetUnityTarget UNITY_2019_3_OR_NEWER");
             string target = proj.GetUnityMainTargetGuid();
             return target;
 #endif
-            Debug.Log("SDX , GetUnityTarget");
+            UnityEngine.Debug.Log("SDX , GetUnityTarget");
             var unityPhoneTarget = proj.TargetGuidByName("Unity-iPhone");
             return unityPhoneTarget;
         }
@@ -96,7 +102,7 @@ namespace TapSDK.Core.Editor
 
             var parentFolder = Directory.GetParent(appDataPath).FullName;
 
-            Debug.Log($"ProjectFolder path:{parentFolder}" + " resourcePath： " + resourcePath + " parentFolder: " + parentFolder);
+            UnityEngine.Debug.Log($"ProjectFolder path:{parentFolder}" + " resourcePath： " + resourcePath + " parentFolder: " + parentFolder);
 
             if (Directory.Exists(resourcePath))
             {
@@ -108,7 +114,7 @@ namespace TapSDK.Core.Editor
             if (podSpecName != null && podSpecName.Length > 0 && Directory.Exists(podSpecPath))
             {
                 resourcePath = Path.Combine(path + "/Pods", podSpecName + "/Frameworks");
-                Debug.Log($"Find {moduleName} use pods resourcePath:{resourcePath}");
+                UnityEngine.Debug.Log($"Find {moduleName} use pods resourcePath:{resourcePath}");
             }
             else
             {
@@ -119,7 +125,7 @@ namespace TapSDK.Core.Editor
 
                 var localPackagePath = TapFileHelper.FilterFileByPrefix(parentFolder, moduleName);
 
-                Debug.Log($"Find {moduleName} path: remote = {remotePackagePath} asset = {assetLocalPackagePath} local = {localPackagePath}");
+                UnityEngine.Debug.Log($"Find {moduleName} path: remote = {remotePackagePath} asset = {assetLocalPackagePath} local = {localPackagePath}");
                 var tdsResourcePath = "";
 
                 if (!string.IsNullOrEmpty(remotePackagePath))
@@ -142,7 +148,7 @@ namespace TapSDK.Core.Editor
 
                 tdsResourcePath = $"{tdsResourcePath}/Plugins/iOS/Resource";
 
-                Debug.Log($"Find {moduleName} path:{tdsResourcePath}");
+                UnityEngine.Debug.Log($"Find {moduleName} path:{tdsResourcePath}");
 
                 if (!Directory.Exists(tdsResourcePath))
                 {
@@ -154,8 +160,11 @@ namespace TapSDK.Core.Editor
             foreach (var name in bundleNames)
             {
                 var relativePath = GetRelativePath(Path.Combine(resourcePath, name), path);
-                var fileGuid = proj.AddFile(relativePath, relativePath, PBXSourceTree.Source);
-                proj.AddFileToBuild(target, fileGuid);
+                if (!proj.ContainsFileByRealPath(relativePath))
+                {
+                    var fileGuid = proj.AddFile(relativePath, relativePath, PBXSourceTree.Source);
+                    proj.AddFileToBuild(target, fileGuid);
+                }
             }
 
             File.WriteAllText(projPath, proj.WriteToString());
@@ -171,7 +180,7 @@ namespace TapSDK.Core.Editor
             Uri aboslutePathUri = new Uri(absolutePath);
             Uri rootPathUri = new Uri(rootPath);
             var relateivePath = rootPathUri.MakeRelativeUri(aboslutePathUri).ToString();
-            Debug.LogFormat($"[TapSDKCoreCompile] GetRelativePath absolutePath:{absolutePath} rootPath:{rootPath} relateivePath:{relateivePath} ");
+            UnityEngine.Debug.LogFormat($"[TapSDKCoreCompile] GetRelativePath absolutePath:{absolutePath} rootPath:{rootPath} relateivePath:{relateivePath} ");
             return relateivePath;
         }
 
@@ -205,7 +214,7 @@ namespace TapSDK.Core.Editor
                     : macosXCodePlistPath;
             }
 
-            Debug.Log($"plist path:{plistPath}");
+            UnityEngine.Debug.Log($"plist path:{plistPath}");
 
             var plist = new PlistDocument();
             plist.ReadFromString(File.ReadAllText(plistPath));
@@ -222,16 +231,19 @@ namespace TapSDK.Core.Editor
             {
                 plistElementList = rootDic.CreateArray("LSApplicationQueriesSchemes");
             }
-            
+
             string listData = "";
-            foreach (var item in plistElementList.values) {
-                if ( item is PlistElementString ){
+            foreach (var item in plistElementList.values)
+            {
+                if (item is PlistElementString)
+                {
                     listData += item.AsString() + ";";
                 }
             }
             foreach (var t in items)
             {
-                if (!listData.Contains(t + ";")) {
+                if (!listData.Contains(t + ";"))
+                {
                     plistElementList.AddString(t);
                 }
             }
@@ -278,7 +290,7 @@ namespace TapSDK.Core.Editor
                 array2.AddString($"open-taptap-{taptapId}");
             }
 
-            Debug.Log("TapSDK change plist Success");
+            UnityEngine.Debug.Log("TapSDK change plist Success");
             File.WriteAllText(plistPath, plist.WriteToString());
             return true;
         }
@@ -292,6 +304,189 @@ namespace TapSDK.Core.Editor
 
             var dic = (Dictionary<string, object>)Plist.readPlist(infoPlistPath);
             return (from item in dic where item.Key.Equals(key) select (string)item.Value).FirstOrDefault();
+        }
+
+        public static void ExecutePodCommand(string command, string workingDirectory)
+        {
+            string podPath = FindPodPath();
+            if (string.IsNullOrEmpty(podPath))
+            {
+                UnityEngine.Debug.LogError("[CocoaPods] search pod install path failed");
+                return;
+            }
+            UnityEngine.Debug.Log("[CocoaPods] search pod install path :" + podPath);
+            command = command.Replace("pod", podPath);
+            command = "export LANG=en_US.UTF-8 && " + command;
+            var process = new Process
+            {
+                StartInfo = new ProcessStartInfo
+                {
+                    FileName = "/bin/bash",
+                    Arguments = $"-c \"{command}\"",
+                    WorkingDirectory = workingDirectory,
+                    RedirectStandardOutput = true,
+                    RedirectStandardError = true,
+                    UseShellExecute = false,
+                    CreateNoWindow = true
+                }
+            };
+
+            process.Start();
+            process.WaitForExit();
+
+            string output = process.StandardOutput.ReadToEnd();
+            string error = process.StandardError.ReadToEnd();
+
+            if (!string.IsNullOrEmpty(output))
+                UnityEngine.Debug.Log($"[CocoaPods] Output: {output}");
+
+            if (!string.IsNullOrEmpty(error))
+                UnityEngine.Debug.LogError($"[CocoaPods] Error: {error}");
+
+            if (process.ExitCode == 0)
+                UnityEngine.Debug.Log($"[CocoaPods] Success: {command}");
+            else
+                UnityEngine.Debug.LogError($"[CocoaPods] Failed: {command} (Exit code: {process.ExitCode})");
+        }
+
+        private static string FindPodPath()
+        {
+            string whichResult = RunBashCommand("-l -c \"which pod\"");
+            whichResult = whichResult.Replace("\n", "");
+            if (!string.IsNullOrEmpty(whichResult) && File.Exists(whichResult))
+            {
+                UnityEngine.Debug.Log($"[PodFinder] Found pod at which result: {whichResult}");
+                return whichResult;
+            }
+
+            string[] CommonPaths = new string[]
+            {
+                "/usr/local/bin",
+                "/usr/bin",
+                "/opt/homebrew/bin"
+            };
+            // 1. 先在常见路径查找 pod
+            foreach (var path in CommonPaths)
+            {
+                string podPath = Path.Combine(path, "pod");
+                if (File.Exists(podPath))
+                {
+                    UnityEngine.Debug.Log($"[PodFinder] Found pod at common path: {podPath}");
+                    return podPath;
+                }
+            }
+            // 2. 如果没找到，执行 gem environment 查找
+            string gemEnvOutput = RunBashCommand("-l -c \"gem environment\"");
+
+            if (string.IsNullOrEmpty(gemEnvOutput))
+            {
+                UnityEngine.Debug.LogWarning("[PodFinder] gem environment output is empty.");
+                return null;
+            }
+
+            // 3. 解析 EXECUTABLE DIRECTORY
+            string execDir = ParseGemEnvironment(gemEnvOutput, @"EXECUTABLE DIRECTORY:\s*(.+)");
+            if (!string.IsNullOrEmpty(execDir))
+            {
+                string podPath = Path.Combine(execDir.Trim(), "pod");
+                if (File.Exists(podPath))
+                {
+                    UnityEngine.Debug.Log($"[PodFinder] Found pod via EXECUTABLE DIRECTORY: {podPath}");
+                    return podPath;
+                }
+            }
+
+            // 4. 解析 GEM PATHS，尝试从每个路径下的 bin 文件夹查找 pod
+            var gemPaths = ParseGemEnvironmentMultiple(gemEnvOutput, @"GEM PATHS:\s*((?:- .+\n)+)");
+            if (gemPaths != null)
+            {
+                foreach (var gemPath in gemPaths)
+                {
+                    // 一般 pod 会在 bin 文件夹或同级目录中
+                    string podPath1 = Path.Combine(gemPath.Trim(), "bin", "pod");
+                    string podPath2 = Path.Combine(gemPath.Trim(), "pod"); // 备选路径
+
+                    if (File.Exists(podPath1))
+                    {
+                        UnityEngine.Debug.Log($"[PodFinder] Found pod via GEM PATHS (bin): {podPath1}");
+                        return podPath1;
+                    }
+
+                    if (File.Exists(podPath2))
+                    {
+                        UnityEngine.Debug.Log($"[PodFinder] Found pod via GEM PATHS: {podPath2}");
+                        return podPath2;
+                    }
+                }
+            }
+
+            UnityEngine.Debug.LogWarning("[PodFinder] pod executable not found.");
+            return null;
+        }
+    
+        private static string RunBashCommand(string arguments)
+        {
+            try
+            {
+                using (var process = new Process())
+                {
+                    process.StartInfo.FileName = "/bin/bash";
+                    process.StartInfo.Arguments = arguments;
+                    process.StartInfo.RedirectStandardOutput = true;
+                    process.StartInfo.RedirectStandardError = true;
+                    process.StartInfo.UseShellExecute = false;
+                    process.StartInfo.CreateNoWindow = true;
+
+                    process.Start();
+                    string output = process.StandardOutput.ReadToEnd();
+                    string err = process.StandardError.ReadToEnd();
+                    process.WaitForExit();
+
+                    if (!string.IsNullOrEmpty(err))
+                    {
+                        UnityEngine.Debug.LogWarning($"[PodFinder] bash error: {err}");
+                    }
+
+                    return output;
+                }
+            }
+            catch (Exception e)
+            {
+                UnityEngine.Debug.LogError($"[PodFinder] Exception running bash command: {e}");
+                return null;
+            }
+        }
+
+        private static string ParseGemEnvironment(string input, string pattern)
+        {
+            var match = Regex.Match(input, pattern);
+            if (match.Success && match.Groups.Count > 1)
+            {
+                return match.Groups[1].Value.Trim();
+            }
+            return null;
+        }
+
+        private static string[] ParseGemEnvironmentMultiple(string input, string pattern)
+        {
+            var match = Regex.Match(input, pattern, RegexOptions.Multiline);
+            if (!match.Success || match.Groups.Count < 2) return null;
+
+            string block = match.Groups[1].Value;
+
+            // 每行格式是类似 "- /path/to/gem"
+            var lines = block.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+            var paths = new System.Collections.Generic.List<string>();
+            foreach (var line in lines)
+            {
+                string trimmed = line.Trim();
+                if (trimmed.StartsWith("- "))
+                {
+                    paths.Add(trimmed.Substring(2).Trim());
+                }
+            }
+
+            return paths.ToArray();
         }
 #endif
     }

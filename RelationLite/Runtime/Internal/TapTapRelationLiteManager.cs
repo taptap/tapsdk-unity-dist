@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TapSDK.Core;
 using TapSDK.Core.Internal.Utils;
 
@@ -46,29 +47,29 @@ namespace TapSDK.RelationLite.Internal
             _impl?.InviteTeam(teamId);
         }
 
-        public void GetFriendsList(string nextPageToken, ITapTapRelationLiteRequestCallback callback)
+        public Task<RelationLiteUserResult> GetFriendsList(string nextPageToken)
         {
-            _impl?.GetFriendsList(nextPageToken, callback);
+           return _impl?.GetFriendsList(nextPageToken);
         }
 
-        public void GetFollowingList(string nextPageToken, ITapTapRelationLiteRequestCallback callback)
+        public Task<RelationLiteUserResult> GetFollowingList(string nextPageToken)
         {
-            _impl?.GetFollowingList(nextPageToken, callback);
+            return _impl?.GetFollowingList(nextPageToken);
         }
 
-        public void GetFansList(string nextPageToken, ITapTapRelationLiteRequestCallback callback)
+        public Task<RelationLiteUserResult> GetFansList(string nextPageToken)
         {
-            _impl?.GetFansList(nextPageToken, callback);
+            return _impl?.GetFansList(nextPageToken);
         }
 
-        public void SyncRelationshipWithOpenId(int action, string nickname, string friendNickname, string friendOpenId, ITapTapRelationLiteRequestCallback callback)
+        public Task SyncRelationshipWithOpenId(int action, string nickname, string friendNickname, string friendOpenId)
         {
-            _impl?.SyncRelationshipWithOpenId(action, nickname, friendNickname, friendOpenId, callback);
+            return _impl?.SyncRelationshipWithOpenId(action, nickname, friendNickname, friendOpenId);
         }
 
-        public void SyncRelationshipWithUnionId(int action, string nickname, string friendNickname, string friendUnionId, ITapTapRelationLiteRequestCallback callback)
+        public Task SyncRelationshipWithUnionId(int action, string nickname, string friendNickname, string friendUnionId)
         {
-            _impl?.SyncRelationshipWithUnionId(action, nickname, friendNickname, friendUnionId, callback);
+            return _impl?.SyncRelationshipWithUnionId(action, nickname, friendNickname, friendUnionId);
         }
 
         public void ShowTapUserProfile(string openId, string unionId)

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using TapSDK.RelationLite.Internal;
 using TapSDK.Core;
 using TapSDK.Core.Internal.Utils;
+using System.Threading.Tasks;
 
 namespace TapSDK.RelationLite
 {
@@ -32,29 +33,29 @@ namespace TapSDK.RelationLite
             TapTapRelationLiteManager.Instance.InviteTeam(teamId);
         }
 
-        public static void GetFriendsList(string nextPageToken, ITapTapRelationLiteRequestCallback callback)
+        public static Task<RelationLiteUserResult> GetFriendsList(string nextPageToken)
         {
-            TapTapRelationLiteManager.Instance.GetFriendsList(nextPageToken, callback);
+           return TapTapRelationLiteManager.Instance.GetFriendsList(nextPageToken);
         }
 
-        public static void GetFollowingList(string nextPageToken, ITapTapRelationLiteRequestCallback callback)
+        public static Task<RelationLiteUserResult> GetFollowingList(string nextPageToken)
         {
-            TapTapRelationLiteManager.Instance.GetFollowingList(nextPageToken, callback);
+            return TapTapRelationLiteManager.Instance.GetFollowingList(nextPageToken);
         }
 
-        public static void GetFansList(string nextPageToken, ITapTapRelationLiteRequestCallback callback)
+        public static Task<RelationLiteUserResult> GetFansList(string nextPageToken)
         {
-            TapTapRelationLiteManager.Instance.GetFansList(nextPageToken, callback);
+            return TapTapRelationLiteManager.Instance.GetFansList(nextPageToken);
         }
 
-        public static void SyncRelationshipWithOpenId(int action, string nickname, string friendNickname, string friendOpenId, ITapTapRelationLiteRequestCallback callback)
+        public static Task SyncRelationshipWithOpenId(int action, string nickname, string friendNickname, string friendOpenId)
         {
-            TapTapRelationLiteManager.Instance.SyncRelationshipWithOpenId(action, nickname, friendNickname, friendOpenId, callback);
+           return TapTapRelationLiteManager.Instance.SyncRelationshipWithOpenId(action, nickname, friendNickname, friendOpenId);
         }
 
-        public static void SyncRelationshipWithUnionId(int action, string nickname, string friendNickname, string friendUnionId, ITapTapRelationLiteRequestCallback callback)
+        public static Task SyncRelationshipWithUnionId(int action, string nickname, string friendNickname, string friendUnionId)
         {
-            TapTapRelationLiteManager.Instance.SyncRelationshipWithUnionId(action, nickname, friendNickname, friendUnionId, callback);
+            return TapTapRelationLiteManager.Instance.SyncRelationshipWithUnionId(action, nickname, friendNickname, friendUnionId);
         }
 
         public static void ShowTapUserProfile(string openId, string unionId)
@@ -72,6 +73,6 @@ namespace TapSDK.RelationLite
             TapTapRelationLiteManager.Instance.UnregisterRelationLiteCallback(callback);
         }
 
-        public static readonly string Version = "4.8.1";
+        public static readonly string Version = "4.8.2";
     }
 } 

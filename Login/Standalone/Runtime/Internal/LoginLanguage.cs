@@ -62,33 +62,33 @@ namespace TapSDK.Login.Internal
         {
             switch (TapLocalizeManager.GetCurrentLanguage())
             {
-                case TapLanguage.ZH_HANS:
+                case TapTapLanguageType.zh_Hans:
                     return Instance.zh;
-                case TapLanguage.EN:
+                case TapTapLanguageType.en:
                     return Instance.en;
-                case TapLanguage.ID:
+                case TapTapLanguageType.id:
                     return Instance.id;
-                case TapLanguage.JA:
+                case TapTapLanguageType.ja:
                     return Instance.ja;
-                case TapLanguage.KO:
+                case TapTapLanguageType.ko:
                     return Instance.ko;
-                case TapLanguage.TH:
+                case TapTapLanguageType.th:
                     return Instance.th;
-                case TapLanguage.ZH_HANT:
+                case TapTapLanguageType.zh_Hant:
                     return Instance.tw;
-                case TapLanguage.DE:
+                case TapTapLanguageType.de:
                     return Instance.de;
-                case TapLanguage.ES:
+                case TapTapLanguageType.es:
                     return Instance.es;
-                case TapLanguage.FR:
+                case TapTapLanguageType.fr:
                     return Instance.fr;
-                case TapLanguage.PT:
+                case TapTapLanguageType.pt:
                     return Instance.pt;
-                case TapLanguage.RU:
+                case TapTapLanguageType.ru:
                     return Instance.ru;
-                case TapLanguage.TR:
+                case TapTapLanguageType.tr:
                     return Instance.tr;
-                case TapLanguage.VI:
+                case TapTapLanguageType.vi:
                     return Instance.vi;
                 default:
                     return Instance.en;
@@ -190,7 +190,7 @@ namespace TapSDK.Login.Internal
         }
 
         public string QrNoticeScanToLogin() {
-            return "to scan the code";
+            return "To Scan The Code";
         }
 
         public string WebLogin() {

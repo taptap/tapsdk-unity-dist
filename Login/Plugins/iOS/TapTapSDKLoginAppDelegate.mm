@@ -1,7 +1,6 @@
 
 #import <UIKit/UIKit.h>
 #import <Foundation/Foundation.h>
-#import <TapTapBasicToolsSDK/TapTapSDKVerifyProtocol.h>
 #import <TapTapLoginSDK/TapTapLoginSDK-Swift.h>
 #import "UnityAppController.h"
 #import <UIKit/UIKit.h>

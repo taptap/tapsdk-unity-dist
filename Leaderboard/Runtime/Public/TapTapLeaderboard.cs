@@ -13,7 +13,7 @@ namespace TapSDK.Leaderboard
         /// <summary>
         /// SDK版本号
         /// </summary>
-        public static readonly string Version = "4.8.1";
+        public static readonly string Version = "4.8.2";
 
         /// <summary>
         /// 打开排行榜页面
@@ -39,11 +39,10 @@ namespace TapSDK.Leaderboard
         /// 批量提交用户排行榜分数（一次最多提交5个分数）
         /// </summary>
         /// <param name="scores">分数列表</param>
-        /// <param name="callback">回调</param>
-        public static void SubmitScores(List<SubmitScoresRequest.ScoreItem> scores,
-            ITapTapLeaderboardResponseCallback<SubmitScoresResponse> callback)
+        /// <returns>提交结果</returns>
+        public static Task<SubmitScoresResponse> SubmitScores(List<SubmitScoresRequest.ScoreItem> scores)
         {
-            TapTapLeaderboardManager.Instance.SubmitScores(scores, callback);
+            return TapTapLeaderboardManager.Instance.SubmitScores(scores);
         }
 
         /// <summary>
@@ -53,20 +52,18 @@ namespace TapSDK.Leaderboard
         /// <param name="leaderboardCollection">排行榜集合</param>
         /// <param name="nextPage">下一页标识</param>
         /// <param name="periodToken">周期标识</param>
-        /// <param name="callback">回调</param>
-        public static void LoadLeaderboardScores(
+        /// <returns>排行榜分数结果</returns>
+        public static Task<LeaderboardScoreResponse> LoadLeaderboardScores(
             string leaderboardId,
             string leaderboardCollection,
             string nextPage,
-            string periodToken,
-            ITapTapLeaderboardResponseCallback<LeaderboardScoreResponse> callback)
+            string periodToken)
         {
-            TapTapLeaderboardManager.Instance.LoadLeaderboardScores(
+            return TapTapLeaderboardManager.Instance.LoadLeaderboardScores(
                 leaderboardId,
                 leaderboardCollection,
                 nextPage,
-                periodToken,
-                callback
+                periodToken
             );
         }
 
@@ -76,18 +73,16 @@ namespace TapSDK.Leaderboard
         /// <param name="leaderboardId">排行榜ID</param>
         /// <param name="leaderboardCollection">排行榜集合</param>
         /// <param name="periodToken">周期标识</param>
-        /// <param name="callback">回调</param>
-        public static void LoadCurrentPlayerLeaderboardScore(
+        /// <returns>用户分数结果</returns>
+        public static Task<UserScoreResponse> LoadCurrentPlayerLeaderboardScore(
             string leaderboardId,
             string leaderboardCollection,
-            string periodToken,
-            ITapTapLeaderboardResponseCallback<UserScoreResponse> callback)
+            string periodToken)
         {
-            TapTapLeaderboardManager.Instance.LoadCurrentPlayerLeaderboardScore(
+            return TapTapLeaderboardManager.Instance.LoadCurrentPlayerLeaderboardScore(
                 leaderboardId,
                 leaderboardCollection,
-                periodToken,
-                callback
+                periodToken
             );
         }
 
@@ -98,20 +93,18 @@ namespace TapSDK.Leaderboard
         /// <param name="leaderboardCollection">排行榜集合</param>
         /// <param name="periodToken">周期标识</param>
         /// <param name="maxCount">最大数量，-1表示不限制</param>
-        /// <param name="callback">回调</param>
-        public static void LoadPlayerCenteredScores(
+        /// <returns>排行榜分数结果</returns>
+        public static Task<LeaderboardScoreResponse> LoadPlayerCenteredScores(
             string leaderboardId,
             string leaderboardCollection,
             string periodToken,
-            int? maxCount,
-            ITapTapLeaderboardResponseCallback<LeaderboardScoreResponse> callback)
+            int? maxCount)
         {
-            TapTapLeaderboardManager.Instance.LoadPlayerCenteredScores(
+            return TapTapLeaderboardManager.Instance.LoadPlayerCenteredScores(
                 leaderboardId,
                 leaderboardCollection,
                 periodToken,
-                maxCount,
-                callback
+                maxCount
             );
         }
 

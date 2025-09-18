@@ -48,9 +48,10 @@ namespace TapSDK.Leaderboard.Mobile
             EngineBridge.GetInstance().CallHandler(command);
         }
 
-        public void SubmitScores(List<SubmitScoresRequest.ScoreItem> scores,
-            ITapTapLeaderboardResponseCallback<SubmitScoresResponse> callback)
+        public Task<SubmitScoresResponse> SubmitScores(List<SubmitScoresRequest.ScoreItem> scores)
         {
+            TapLog.Log("[TapTapLeaderboardImpl] SubmitScores called with Task<SubmitScoresResponse> return type (NEW API)");
+            var taskSource = new TaskCompletionSource<SubmitScoresResponse>();
             var command = new Command.Builder()
                 .Service(SERVICE_NAME)
                 .Method("submitScores")
@@ -60,50 +61,59 @@ namespace TapSDK.Leaderboard.Mobile
                 .CommandBuilder();
             EngineBridge.GetInstance().CallHandler(command, result =>
             {
-                if (result.code != Result.RESULT_SUCCESS)
+                try
                 {
-                    return;
+                    if (result.code != Result.RESULT_SUCCESS || string.IsNullOrEmpty(result.content))
+                    {
+                        taskSource.TrySetException(new TapException(-1, "Failed to submit scores: code=" + result.code + " content=" + result.content));
+                        return;
+                    }
+                    
+                    TapLog.Log("SubmitScores, result ==>>> " + JsonConvert.SerializeObject(result));
+                    var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
+                    var status = SafeDictionary.GetValue<string>(dic, "status");
+                    switch (status)
+                    {
+                        case "success":
+                            var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
+                            TapLog.Log("submit scores success: " + jsonStr);
+                            var data = JsonConvert.DeserializeObject<SubmitScoresResponse>(jsonStr);
+                            if (data != null)
+                            {
+                                taskSource.TrySetResult(data);
+                            }
+                            else
+                            {
+                                taskSource.TrySetException(new TapException(-1, "json convert failed: content=" + jsonStr));
+                            }
+                            break;
+                        case "failure":
+                            var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
+                            var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
+                            TapLog.Log("failed to submit scores, errorCode: " + errorCode + ", errorMsg: " + errorMsg);
+                            taskSource.TrySetException(new TapException(errorCode, errorMsg));
+                            break;
+                        default:
+                            taskSource.TrySetException(new TapException(-1, "Unknown status: " + status));
+                            break;
+                    }
                 }
-
-                if (string.IsNullOrEmpty(result.content))
+                catch (Exception e)
                 {
-                    return;
-                }
-                
-                TapLog.Log("SubmitScores, result ==>>> " + JsonConvert.SerializeObject(result));
-                var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
-                var status = SafeDictionary.GetValue<string>(dic, "status");
-                switch (status)
-                {
-                    case "success":
-                        var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
-                        TapLog.Log("submit scores success: " + jsonStr);
-                        var data = JsonConvert.DeserializeObject<SubmitScoresResponse>(jsonStr);
-                        if (callback != null)
-                        {
-                            callback.OnSuccess(data);
-                        }
-                        break;
-                    case "failure":
-                        var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
-                        var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
-                        TapLog.Log("failed to submit scores, errorCode: " + errorCode + ", errorMsg: " + errorMsg);
-                        if (callback != null)
-                        {
-                            callback.OnFailure(errorCode, errorMsg);
-                        }
-                        break;
+                    taskSource.TrySetException(new TapException(-1, "Failed to submit scores: error=" + e.Message + ", content=" + result.content));
                 }
             });
+            return taskSource.Task;
         }
 
-        public void LoadLeaderboardScores(
+        public Task<LeaderboardScoreResponse> LoadLeaderboardScores(
             string leaderboardId,
             string leaderboardCollection,
             string nextPage,
-            string periodToken,
-            ITapTapLeaderboardResponseCallback<LeaderboardScoreResponse> callback)
+            string periodToken)
         {
+            TapLog.Log("[TapTapLeaderboardImpl] LoadLeaderboardScores called with Task<LeaderboardScoreResponse> return type (NEW API)");
+            var taskSource = new TaskCompletionSource<LeaderboardScoreResponse>();
             var command = new Command.Builder()
                 .Service(SERVICE_NAME)
                 .Method("loadLeaderboardScores")
@@ -111,106 +121,128 @@ namespace TapSDK.Leaderboard.Mobile
                 .Args("leaderboardCollection", leaderboardCollection)
                 .Args("nextPage", nextPage)
                 .Args("periodToken", periodToken)
+                .Callback(true)
+                .OnceTime(true)
                 .CommandBuilder();
             
             EngineBridge.GetInstance().CallHandler(command, result =>
             {
-                if (result.code != Result.RESULT_SUCCESS)
+                try
                 {
-                    return;
+                    if (result.code != Result.RESULT_SUCCESS || string.IsNullOrEmpty(result.content))
+                    {
+                        taskSource.TrySetException(new TapException(-1, "Failed to load leaderboard scores: code=" + result.code + " content=" + result.content));
+                        return;
+                    }
+                    
+                    TapLog.Log("LoadLeaderboardScores, result ==>>> " + JsonConvert.SerializeObject(result));
+                    var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
+                    var status = SafeDictionary.GetValue<string>(dic, "status");
+                    switch (status)
+                    {
+                        case "success":
+                            var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
+                            TapLog.Log("load leaderboard scores success: " + jsonStr);
+                            var data = JsonConvert.DeserializeObject<LeaderboardScoreResponse>(jsonStr);
+                            if (data != null)
+                            {
+                                taskSource.TrySetResult(data);
+                            }
+                            else
+                            {
+                                taskSource.TrySetException(new TapException(-1, "json convert failed: content=" + jsonStr));
+                            }
+                            break;
+                        case "failure":
+                            var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
+                            var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
+                            TapLog.Log("load leaderboard scores failed, errorCode: " + errorCode + ", errorMsg: " + errorMsg);
+                            taskSource.TrySetException(new TapException(errorCode, errorMsg));
+                            break;
+                        default:
+                            taskSource.TrySetException(new TapException(-1, "Unknown status: " + status));
+                            break;
+                    }
                 }
-
-                if (string.IsNullOrEmpty(result.content))
+                catch (Exception e)
                 {
-                    return;
-                }
-                
-                TapLog.Log("LoadLeaderboardScores, result ==>>> " + JsonConvert.SerializeObject(result));
-                var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
-                var status = SafeDictionary.GetValue<string>(dic, "status");
-                switch (status)
-                {
-                    case "success":
-                        var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
-                        TapLog.Log("load leaderboard scores success: " + jsonStr);
-                        var data = JsonConvert.DeserializeObject<LeaderboardScoreResponse>(jsonStr);
-                        if (callback != null)
-                        {
-                            callback.OnSuccess(data);
-                        }
-                        break;
-                    case "failure":
-                        var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
-                        var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
-                        TapLog.Log("load leaderboard scores failed, errorCode: " + errorCode + ", errorMsg: " + errorMsg);
-                        if (callback != null)
-                        {
-                            callback.OnFailure(errorCode, errorMsg);
-                        }
-                        break;
+                    taskSource.TrySetException(new TapException(-1, "Failed to load leaderboard scores: error=" + e.Message + ", content=" + result.content));
                 }
             });
+            return taskSource.Task;
         }
 
-        public void LoadCurrentPlayerLeaderboardScore(
+        public Task<UserScoreResponse> LoadCurrentPlayerLeaderboardScore(
             string leaderboardId,
             string leaderboardCollection,
-            string periodToken,
-            ITapTapLeaderboardResponseCallback<UserScoreResponse> callback)
+            string periodToken)
         {
+            TapLog.Log("[TapTapLeaderboardImpl] LoadCurrentPlayerLeaderboardScore called with Task<UserScoreResponse> return type (NEW API)");
+            var taskSource = new TaskCompletionSource<UserScoreResponse>();
             var command = new Command.Builder()
                 .Service(SERVICE_NAME)
                 .Method("loadCurrentPlayerLeaderboardScore")
                 .Args("leaderboardId", leaderboardId)
                 .Args("leaderboardCollection", leaderboardCollection)
                 .Args("periodToken", periodToken)
+                .Callback(true)
+                .OnceTime(true)
                 .CommandBuilder();
             EngineBridge.GetInstance().CallHandler(command, result =>
             {
-                if (result.code != Result.RESULT_SUCCESS)
+                try
                 {
-                    return;
+                    if (result.code != Result.RESULT_SUCCESS || string.IsNullOrEmpty(result.content))
+                    {
+                        taskSource.TrySetException(new TapException(-1, "Failed to load current player leaderboard score: code=" + result.code + " content=" + result.content));
+                        return;
+                    }
+                    
+                    TapLog.Log("LoadCurrentPlayerLeaderboardScore, result ==>>> " + JsonConvert.SerializeObject(result));
+                    var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
+                    var status = SafeDictionary.GetValue<string>(dic, "status");
+                    switch (status)
+                    {
+                        case "success":
+                            var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
+                            TapLog.Log("Load current player leaderboard score success: " + jsonStr);
+                            var data = JsonConvert.DeserializeObject<UserScoreResponse>(jsonStr);
+                            if (data != null)
+                            {
+                                taskSource.TrySetResult(data);
+                            }
+                            else
+                            {
+                                taskSource.TrySetException(new TapException(-1, "json convert failed: content=" + jsonStr));
+                            }
+                            break;
+                        case "failure":
+                            var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
+                            var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
+                            TapLog.Log("Load current player leaderboard score failed: errorCode: " + errorCode + ", errorMsg: " + errorMsg);
+                            taskSource.TrySetException(new TapException(errorCode, errorMsg));
+                            break;
+                        default:
+                            taskSource.TrySetException(new TapException(-1, "Unknown status: " + status));
+                            break;
+                    }
                 }
-
-                if (string.IsNullOrEmpty(result.content))
+                catch (Exception e)
                 {
-                    return;
-                }
-                
-                TapLog.Log("LoadCurrentPlayerLeaderboardScore, result ==>>> " + JsonConvert.SerializeObject(result));
-                var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
-                var status = SafeDictionary.GetValue<string>(dic, "status");
-                switch (status)
-                {
-                    case "success":
-                        var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
-                        TapLog.Log("Load current player leaderboard score success: " + jsonStr);
-                        var data = JsonConvert.DeserializeObject<UserScoreResponse>(jsonStr);
-                        if (callback != null)
-                        {
-                            callback.OnSuccess(data);
-                        }
-                        break;
-                    case "failure":
-                        var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
-                        var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
-                        TapLog.Log("Load current player leaderboard score failed: errorCode: " + errorCode + ", errorMsg: " + errorMsg);
-                        if (callback != null)
-                        {
-                            callback.OnFailure(errorCode, errorMsg);
-                        }
-                        break;
+                    taskSource.TrySetException(new TapException(-1, "Failed to load current player leaderboard score: error=" + e.Message + ", content=" + result.content));
                 }
             });
+            return taskSource.Task;
         }
 
-        public void LoadPlayerCenteredScores(
+        public Task<LeaderboardScoreResponse> LoadPlayerCenteredScores(
             string leaderboardId,
             string leaderboardCollection,
             string periodToken,
-            int? maxCount,
-            ITapTapLeaderboardResponseCallback<LeaderboardScoreResponse> callback)
+            int? maxCount)
         {
+            TapLog.Log("[TapTapLeaderboardImpl] LoadPlayerCenteredScores called with Task<LeaderboardScoreResponse> return type (NEW API)");
+            var taskSource = new TaskCompletionSource<LeaderboardScoreResponse>();
             var command = new Command.Builder()
                 .Service(SERVICE_NAME)
                 .Method("loadPlayerCenteredScores")
@@ -218,44 +250,54 @@ namespace TapSDK.Leaderboard.Mobile
                 .Args("leaderboardCollection", leaderboardCollection)
                 .Args("periodToken", periodToken)
                 .Args("maxCount", maxCount)
+                .Callback(true)
+                .OnceTime(true)
                 .CommandBuilder();
             EngineBridge.GetInstance().CallHandler(command, result =>
             {
-                if (result.code != Result.RESULT_SUCCESS)
+                try
                 {
-                    return;
+                    if (result.code != Result.RESULT_SUCCESS || string.IsNullOrEmpty(result.content))
+                    {
+                        taskSource.TrySetException(new TapException(-1, "Failed to load player centered scores: code=" + result.code + " content=" + result.content));
+                        return;
+                    }
+                    
+                    TapLog.Log("LoadPlayerCenteredScores, result ==>>> " + JsonConvert.SerializeObject(result));
+                    var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
+                    var status = SafeDictionary.GetValue<string>(dic, "status");
+                    switch (status)
+                    {
+                        case "success":
+                            var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
+                            TapLog.Log("Load player centered scores success: " + jsonStr);
+                            var data = JsonConvert.DeserializeObject<LeaderboardScoreResponse>(jsonStr);
+                            if (data != null)
+                            {
+                                taskSource.TrySetResult(data);
+                            }
+                            else
+                            {
+                                taskSource.TrySetException(new TapException(-1, "json convert failed: content=" + jsonStr));
+                            }
+                            break;
+                        case "failure":
+                            var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
+                            var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
+                            TapLog.Log("Load failed load player centered scores:: errorCode: " + errorCode + ", errorMsg: " + errorMsg);
+                            taskSource.TrySetException(new TapException(errorCode, errorMsg));
+                            break;
+                        default:
+                            taskSource.TrySetException(new TapException(-1, "Unknown status: " + status));
+                            break;
+                    }
                 }
-
-                if (string.IsNullOrEmpty(result.content))
+                catch (Exception e)
                 {
-                    return;
-                }
-                
-                TapLog.Log("LoadPlayerCenteredScores, result ==>>> " + JsonConvert.SerializeObject(result));
-                var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
-                var status = SafeDictionary.GetValue<string>(dic, "status");
-                switch (status)
-                {
-                    case "success":
-                        var jsonStr = SafeDictionary.GetValue<string>(dic, "data");
-                        TapLog.Log("Load player centered scores success: " + jsonStr);
-                        var data = JsonConvert.DeserializeObject<LeaderboardScoreResponse>(jsonStr);
-                        if (callback != null)
-                        {
-                            callback.OnSuccess(data);
-                        }
-                        break;
-                    case "failure":
-                        var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
-                        var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
-                        TapLog.Log("Load failed load player centered scores:: errorCode: " + errorCode + ", errorMsg: " + errorMsg);
-                        if (callback != null)
-                        {
-                            callback.OnFailure(errorCode, errorMsg);
-                        }
-                        break;
+                    taskSource.TrySetException(new TapException(-1, "Failed to load player centered scores: error=" + e.Message + ", content=" + result.content));
                 }
             });
+            return taskSource.Task;
         }
 
         public void SetShareCallback(ITapTapLeaderboardShareCallback callback)
@@ -323,28 +365,61 @@ namespace TapSDK.Leaderboard.Mobile
                 .CommandBuilder();
             EngineBridge.GetInstance().CallHandler(command, (result) =>
             {
-                if (result.code != Result.RESULT_SUCCESS)
+                try
                 {
-                    return;
-                }
+                    if (result.code != Result.RESULT_SUCCESS)
+                    {
+                        TapLog.Log("InitRegisterCallBack failed with code: " + result.code);
+                        return;
+                    }
 
-                if (string.IsNullOrEmpty(result.content))
-                {
-                    return;
+                    if (string.IsNullOrEmpty(result.content))
+                    {
+                        TapLog.Log("InitRegisterCallBack result content is empty");
+                        return;
+                    }
+                    
+                    TapLog.Log("InitRegisterCallBack result content: " + result.content);
+                    var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
+                    var status = SafeDictionary.GetValue<string>(dic, "status");
+                    switch (status)
+                    {
+                        case "success":
+                            // Fix: data is already an object, not a string that needs deserialization
+                            var dataDic = SafeDictionary.GetValue<Dictionary<string, object>>(dic, "data");
+                            if (dataDic != null)
+                            {
+                                var code = SafeDictionary.GetValue<int>(dataDic, "code");
+                                var message = SafeDictionary.GetValue<string>(dataDic, "message");
+                                TapLog.Log("InitRegisterCallBack callback result - code: " + code + ", message: " + message);
+                                foreach (var callback in callbacks)
+                                {
+                                    callback.OnLeaderboardResult(code, message);
+                                }
+                            }
+                            else
+                            {
+                                TapLog.Log("InitRegisterCallBack data field is null or invalid");
+                            }
+                            break;
+                        
+                        case "failure":
+                            var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
+                            var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
+                            TapLog.Log("InitRegisterCallBack failed - errorCode: " + errorCode + ", errorMsg: " + errorMsg);
+                            foreach (var callback in callbacks)
+                            {
+                                callback.OnLeaderboardResult(errorCode, errorMsg);
+                            }
+                            break;
+                        default:
+                            TapLog.Log("InitRegisterCallBack unknown status: " + status);
+                            break;
+                    }
                 }
-                
-                var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
-                var status = SafeDictionary.GetValue<string>(dic, "status");
-                switch (status)
+                catch (Exception e)
                 {
-                    case "failure":
-                        var errorCode = SafeDictionary.GetValue<int>(dic, "errCode");
-                        var errorMsg = SafeDictionary.GetValue<string>(dic, "errMessage");
-                        foreach (var callback in callbacks)
-                        {
-                            callback.OnLeaderboardResult(errorCode, errorMsg);
-                        }
-                        break;
+                    TapLog.Log("InitRegisterCallBack exception: " + e.Message + ", content: " + result.content);
                 }
             });
         }

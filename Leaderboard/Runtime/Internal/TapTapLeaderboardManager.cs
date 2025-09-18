@@ -1,4 +1,5 @@
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using TapSDK.Core.Internal.Utils;
 
 namespace TapSDK.Leaderboard.Runtime.Internal
@@ -24,35 +25,33 @@ namespace TapSDK.Leaderboard.Runtime.Internal
         public void OpenLeaderboard(string leaderboardId, string collection) =>
             _platform.OpenLeaderboard(leaderboardId, collection);
 
-        public void SubmitScores(List<SubmitScoresRequest.ScoreItem> scores,
-            ITapTapLeaderboardResponseCallback<SubmitScoresResponse> callback)
+        public Task<SubmitScoresResponse> SubmitScores(List<SubmitScoresRequest.ScoreItem> scores)
         {
-            _platform.SubmitScores(scores, callback);
+            return _platform.SubmitScores(scores);
         }
 
-        public void LoadLeaderboardScores(
+        public Task<LeaderboardScoreResponse> LoadLeaderboardScores(
             string leaderboardId,
             string leaderboardCollection,
             string nextPage,
-            string periodToken,
-            ITapTapLeaderboardResponseCallback<LeaderboardScoreResponse> callback) =>
-            _platform.LoadLeaderboardScores(leaderboardId, leaderboardCollection, nextPage, periodToken, callback);
-
-        public void LoadCurrentPlayerLeaderboardScore(string leaderboardId,
-            string leaderboardCollection,
-            string periodToken,
-            ITapTapLeaderboardResponseCallback<UserScoreResponse> callback)
+            string periodToken)
         {
-            _platform.LoadCurrentPlayerLeaderboardScore(leaderboardId, leaderboardCollection, periodToken, callback);
+            return _platform.LoadLeaderboardScores(leaderboardId, leaderboardCollection, nextPage, periodToken);
         }
 
-        public void LoadPlayerCenteredScores(string leaderboardId,
+        public Task<UserScoreResponse> LoadCurrentPlayerLeaderboardScore(string leaderboardId,
+            string leaderboardCollection,
+            string periodToken)
+        {
+            return _platform.LoadCurrentPlayerLeaderboardScore(leaderboardId, leaderboardCollection, periodToken);
+        }
+
+        public Task<LeaderboardScoreResponse> LoadPlayerCenteredScores(string leaderboardId,
             string leaderboardCollection,
             string periodToken,
-            int? maxCount,
-            ITapTapLeaderboardResponseCallback<LeaderboardScoreResponse> callback)
+            int? maxCount)
         {
-            _platform.LoadPlayerCenteredScores(leaderboardId, leaderboardCollection, periodToken, maxCount, callback);
+            return _platform.LoadPlayerCenteredScores(leaderboardId, leaderboardCollection, periodToken, maxCount);
         }
 
         public void RegisterLeaderboardCallback(ITapTapLeaderboardCallback callback)

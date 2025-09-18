@@ -24,7 +24,7 @@ namespace TapSDK.Core
             }
         }
 
-        private TapLanguage _language = TapLanguage.AUTO;
+        private TapTapLanguageType _language = TapTapLanguageType.Auto;
         private bool _regionIsCn;
 
         public static void SetCurrentRegion(bool isCn)
@@ -32,39 +32,39 @@ namespace TapSDK.Core
             Instance._regionIsCn = isCn;
         }
 
-        public static void SetCurrentLanguage(TapLanguage language)
+        public static void SetCurrentLanguage(TapTapLanguageType language)
         {
             Instance._language = language;
         }
 
-        public static TapLanguage GetCurrentLanguage()
+        public static TapTapLanguageType GetCurrentLanguage()
         {
-            if (Instance._language != TapLanguage.AUTO) return Instance._language;
+            if (Instance._language != TapTapLanguageType.Auto) return Instance._language;
             Instance._language = GetSystemLanguage();
-            if (Instance._language == TapLanguage.AUTO)
+            if (Instance._language == TapTapLanguageType.Auto)
             {
-                Instance._language = Instance._regionIsCn ? TapLanguage.ZH_HANS : TapLanguage.EN;
+                Instance._language = Instance._regionIsCn ? TapTapLanguageType.zh_Hans : TapTapLanguageType.en;
             }
 
             return Instance._language;
         }
 
         public static string GetCurrentLanguageString() {
-            TapLanguage lang = GetCurrentLanguage();
+            TapTapLanguageType lang = GetCurrentLanguage();
             switch (lang) {
-                case TapLanguage.ZH_HANS:
+                case TapTapLanguageType.zh_Hans:
                     return "zh_CN";
-                case TapLanguage.EN:
+                case TapTapLanguageType.en:
                     return "en_US";
-                case TapLanguage.ZH_HANT:
+                case TapTapLanguageType.zh_Hant:
                     return "zh_TW";
-                case TapLanguage.JA:
+                case TapTapLanguageType.ja:
                     return "ja_JP";
-                case TapLanguage.KO:
+                case TapTapLanguageType.ko:
                     return "ko_KR";
-                case TapLanguage.TH:
+                case TapTapLanguageType.th:
                     return "th_TH";
-                case TapLanguage.ID:
+                case TapTapLanguageType.id:
                     return "id_ID";
                 default:
                     return null;
@@ -72,53 +72,53 @@ namespace TapSDK.Core
         }
 
         public static string GetCurrentLanguageString2() {
-            TapLanguage lang = GetCurrentLanguage();
+            TapTapLanguageType lang = GetCurrentLanguage();
             switch (lang) {
-                case TapLanguage.ZH_HANS:
+                case TapTapLanguageType.zh_Hans:
                     return "zh-CN";
-                case TapLanguage.EN:
+                case TapTapLanguageType.en:
                     return "en-US";
-                case TapLanguage.ZH_HANT:
+                case TapTapLanguageType.zh_Hant:
                     return "zh-TW";
-                case TapLanguage.JA:
+                case TapTapLanguageType.ja:
                     return "ja-JP";
-                case TapLanguage.KO:
+                case TapTapLanguageType.ko:
                     return "ko-KR";
-                case TapLanguage.TH:
+                case TapTapLanguageType.th:
                     return "th-TH";
-                case TapLanguage.ID:
+                case TapTapLanguageType.id:
                     return "id-ID";
                 default:
                     return null;
             }
         }
 
-        private static TapLanguage GetSystemLanguage()
+        private static TapTapLanguageType GetSystemLanguage()
         {
-            var lang = TapLanguage.AUTO;
+            var lang = TapTapLanguageType.Auto;
             var sysLanguage = Application.systemLanguage;
             switch (sysLanguage)
             {
                 case SystemLanguage.ChineseSimplified:
-                    lang = TapLanguage.ZH_HANS;
+                    lang = TapTapLanguageType.zh_Hans;
                     break;
                 case SystemLanguage.English:
-                    lang = TapLanguage.EN;
+                    lang = TapTapLanguageType.en;
                     break;
                 case SystemLanguage.ChineseTraditional:
-                    lang = TapLanguage.ZH_HANT;
+                    lang = TapTapLanguageType.zh_Hant;
                     break;
                 case SystemLanguage.Japanese:
-                    lang = TapLanguage.JA;
+                    lang = TapTapLanguageType.ja;
                     break;
                 case SystemLanguage.Korean:
-                    lang = TapLanguage.KO;
+                    lang = TapTapLanguageType.ko;
                     break;
                 case SystemLanguage.Thai:
-                    lang = TapLanguage.TH;
+                    lang = TapTapLanguageType.th;
                     break;
                 case SystemLanguage.Indonesian:
-                    lang = TapLanguage.ID;
+                    lang = TapTapLanguageType.id;
                     break;
             }
 

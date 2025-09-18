@@ -4,6 +4,12 @@
     <repositories>
       <repository>https://repo.maven.apache.org/maven2</repository>
     </repositories>
-    <androidPackage spec="com.taptap.sdk:tap-relation-lite-unity:4.8.1-beta.7"/>
+    <androidPackage spec="com.taptap.sdk:tap-relation-lite-unity:4.8.2"/>
   </androidPackages>
+  <iosPods>
+    <sources>
+      <source>https://github.com/CocoaPods/Specs.git</source>
+    </sources>
+    <iosPod addToAllTargets="false" bitcodeEnabled="false" name="TapTapRelationLiteSDK" version="4.8.2"/>
+  </iosPods>
 </dependencies>

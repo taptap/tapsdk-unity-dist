@@ -72,7 +72,7 @@ namespace TapSDK.Login.Internal {
 
             ILoginLang lang = LoginLanguage.GetCurrentLang();
             titleText.text = lang.QrTitleLogin();
-            tipsText.text = $"{lang.QrNoticeUse()} <b>TapTap</b> {lang.QrNoticeClient()}{lang.QrNoticeScanToLogin()}";
+            tipsText.text = $"{lang.QrNoticeUse()} <b>TapTap</b> {lang.QrNoticeClient()} {lang.QrNoticeScanToLogin()}";
 
             // 加载二维码
             _ = RefreshQRCode(clientId, scopes);
