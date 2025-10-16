@@ -12,7 +12,7 @@ using System.ComponentModel;
 
 namespace TapSDK.Core {
     public class TapTapSDK {
-        public static readonly string Version = "4.8.2";
+        public static readonly string Version = "4.8.3";
         
         public static string SDKPlatform = "TapSDK-Unity";
 
