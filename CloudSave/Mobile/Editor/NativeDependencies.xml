@@ -4,12 +4,12 @@
     <repositories>
       <repository>https://repo.maven.apache.org/maven2</repository>
     </repositories>
-    <androidPackage spec="com.taptap.sdk:tap-cloudsave-unity:4.8.3"/>
+    <androidPackage spec="com.taptap.sdk:tap-cloudsave-unity:4.8.4-beta.0"/>
   </androidPackages>
   <iosPods>
     <sources>
       <source>https://github.com/CocoaPods/Specs.git</source>
     </sources>
-    <iosPod addToAllTargets="false" bitcodeEnabled="false" name="TapTapCloudSaveSDK" version="4.8.3"/>
+    <iosPod addToAllTargets="false" bitcodeEnabled="false" name="TapTapCloudSaveSDK" version="4.8.4-beta.0"/>
   </iosPods>
 </dependencies>

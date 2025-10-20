@@ -43,7 +43,7 @@ namespace TapSDK.Moment
     public class TapTapMoment
     {
 
-        public static readonly string Version = "4.8.3";
+        public static readonly string Version = "4.8.4-beta.0";
 
         // 显示动态页面
         public static void open()
