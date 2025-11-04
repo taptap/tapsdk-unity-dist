@@ -1,4 +1,0 @@
-<linker>
-  <assembly fullname="TapSDK.IAP.Runtime" preserve="all" />
-  <assembly fullname="TapSDK.IAP.Mobile.Runtime" preserve="all" />
-</linker>

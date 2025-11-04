@@ -32,7 +32,7 @@ public class BuildPostProcessor
                 "com.taptap.sdk.compliance",
                 "Compliance",
                 new[] {"TapTapComplianceResource.bundle"},
-                target, projPath, proj, "TapTapComplianceSDK"))
+                target, projPath, proj))
             {
                 Debug.Log("TapCompliance add Bundle Success!");
                 return;

@@ -26,6 +26,11 @@ namespace TapSDK.CloudSave.Internal
             Bridge?.RegisterCloudSaveCallback(callback);
         }
 
+        internal static void UnregisterCloudSaveCallback(ITapCloudSaveCallback callback)
+        {
+            Bridge?.UnregisterCloudSaveCallback(callback);
+        }
+
         internal static Task<ArchiveData> CreateArchive(ArchiveMetadata metadata, string archiveFilePath, string archiveCoverPath) =>
             Bridge?.CreateArchive(metadata, archiveFilePath, archiveCoverPath);
 

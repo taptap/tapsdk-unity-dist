@@ -32,6 +32,11 @@ namespace TapSDK.Achievement
 
         public static TapAchievementResult FromJson(string json)
         {
+            // 修复：添加null/空字符串检查，防止反序列化崩溃
+            if (string.IsNullOrEmpty(json))
+            {
+                throw new System.ArgumentException("Cannot deserialize null or empty JSON string to TapAchievementResult");
+            }
             return JsonConvert.DeserializeObject<TapAchievementResult>(json);
         }
     }

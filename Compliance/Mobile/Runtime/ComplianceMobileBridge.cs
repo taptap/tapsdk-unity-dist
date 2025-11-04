@@ -78,9 +78,31 @@ namespace TapSDK.Compliance.Mobile.Runtime
                         ComplianceCallbackData callbackData = new ComplianceCallbackData();
 #if UNITY_IOS
                     result.content = RemoveFontColor(result.content);
+
+                    // 修复：在RemoveFontColor之后再次检查content，防止null导致反序列化失败
+                    if (string.IsNullOrEmpty(result.content))
+                    {
+                        TapLog.Error("[Unity:Compliance] callback content is null or empty after RemoveFontColor");
+                        callbackList.ForEach((item) =>
+                        {
+                            item?.Invoke(-1, "[Unity:Compliance] callback content is empty after processing");
+                        });
+                        return;
+                    }
+
                     var callbackOriginData = JsonConvert.DeserializeObject<ComplianceCallbackOriginData>(result.content);
                     callbackData.code = callbackOriginData.code;
-                    callbackData.extras = JsonConvert.DeserializeObject<MsgExtraParams>(callbackOriginData.extras);
+
+                    // 修复：检查extras是否为null或空，防止反序列化失败
+                    if (!string.IsNullOrEmpty(callbackOriginData.extras))
+                    {
+                        callbackData.extras = JsonConvert.DeserializeObject<MsgExtraParams>(callbackOriginData.extras);
+                    }
+                    else
+                    {
+                        TapLog.Log("[Unity:Compliance] callback extras is null or empty, using default MsgExtraParams");
+                        callbackData.extras = new MsgExtraParams();
+                    }
 #else
                         callbackData = JsonConvert.DeserializeObject<ComplianceCallbackData>(result.content);
 #endif

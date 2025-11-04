@@ -33,8 +33,7 @@ public class BuildPostProcessor
                 "com.taptap.sdk.relation",
                 "Relation",
                 new[] { "TapTapRelationResource.bundle" },
-                target, projPath, proj,
-                "TapTapRelationSDK"))
+                target, projPath, proj))
             {
                 UnityEngine.Debug.Log("TapRelation add Bundle Success!");
             }
@@ -44,8 +43,7 @@ public class BuildPostProcessor
                 "com.taptap.sdk.profile",
                 "Profile",
                 new[] { "TapTapProfileResource.bundle" },
-                target, projPath, proj,
-                "TapTapProfileSDK"))
+                target, projPath, proj))
             {
                 UnityEngine.Debug.Log("TapProfile add Bundle Success!");
                 TapSDKCoreCompile.ExecutePodCommand("pod deintegrate && pod install", path);

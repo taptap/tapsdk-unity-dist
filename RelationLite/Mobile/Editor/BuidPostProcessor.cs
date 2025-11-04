@@ -32,8 +32,7 @@ public class BuildPostProcessor
                 "com.taptap.sdk.relationlite",
                 "RelationLite",
                 new[] {"TapTapRelationLiteResource.bundle"},
-                target, projPath, proj,
-                "TapTapRelationLiteSDK"))
+                target, projPath, proj))
             {
                 Debug.Log("TapRelationLite add Bundle Success!");
             }
@@ -43,8 +42,7 @@ public class BuildPostProcessor
                 "com.taptap.sdk.profile",
                 "Profile",
                 new[] {"TapTapProfileResource.bundle"},
-                target, projPath, proj,
-                "TapTapProfileSDK"))
+                target, projPath, proj))
             {
                 Debug.Log("TapProfile add Bundle Success!");
                 TapSDKCoreCompile.ExecutePodCommand("pod deintegrate && pod install", path);

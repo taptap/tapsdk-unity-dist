@@ -38,7 +38,8 @@ namespace TapSDK.Core
 
             Action<Result> action = null;
 
-            if (actionDic != null && actionDic.ContainsKey(result.callbackId))
+            // 修复：检查callbackId是否为null或空，防止ArgumentNullException
+            if (actionDic != null && !string.IsNullOrEmpty(result.callbackId) && actionDic.ContainsKey(result.callbackId))
             {
                 action = actionDic[result.callbackId];
             }
@@ -46,11 +47,21 @@ namespace TapSDK.Core
             if (action != null)
             {
                 action(result);
-                if (result.onceTime && BridgeIOS.GetInstance().GetConcurrentDictionary()
+                if (result.onceTime && !string.IsNullOrEmpty(result.callbackId) && BridgeIOS.GetInstance().GetConcurrentDictionary()
                     .TryRemove(result.callbackId, out Action<Result> outAction))
                 {
                     TapLog.Log($"TapSDK resolved current Action:{result.callbackId}");
                 }
+            }
+            else if (string.IsNullOrEmpty(result.callbackId))
+            {
+                // 记录调试信息：当callbackId为空时
+                TapLog.Log($"TapSDK received result without callbackId, result: {resultJson}");
+            }
+            else
+            {
+                // 记录调试信息：当找不到对应的action时
+                TapLog.Log($"TapSDK no action found for callbackId: {result.callbackId}");
             }
         }
         

@@ -1,4 +1,0 @@
-<linker>
-  <assembly fullname="TapSDK.Achievement.Runtime" preserve="all" />
-  <assembly fullname="TapSDK.Achievement.Mobile.Runtime" preserve="all" />
-</linker>

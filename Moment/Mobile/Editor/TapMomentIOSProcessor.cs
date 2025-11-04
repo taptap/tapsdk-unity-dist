@@ -36,7 +36,7 @@ namespace TapTap.Moment.Editor
                 "com.taptap.sdk.moment",
                 "Moment",
                 new[] {"TapTapMomentResource.bundle"},
-                target, projPath, proj, "TapTapMomentSDK"))
+                target, projPath, proj))
             {
                 Debug.Log("TapMoment add Bundle Success!");
                 return;

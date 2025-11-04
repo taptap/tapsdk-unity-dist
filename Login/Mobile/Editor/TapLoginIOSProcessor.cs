@@ -78,7 +78,7 @@ namespace TapSDK.Login.Editor
                     "com.taptap.sdk.login",
                     "Login",
                     new[] {"TapTapLoginResource.bundle"},
-                    target, projPath1, proj, "TapTapLoginSDK"))
+                    target, projPath1, proj))
             {
                 Debug.Log("TapLogin add Bundle Success!");
                 return;

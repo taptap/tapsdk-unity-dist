@@ -33,8 +33,7 @@ public class BuildPostProcessor
                 "com.taptap.sdk.leaderboard",
                 "Leaderboard",
                 new[] { "TapTapLeaderboardResource.bundle" },
-                target, projPath, proj,
-                "TapTapLeaderboardSDK"))
+                target, projPath, proj))
             {
                 UnityEngine.Debug.Log("TapLeaderboard add Bundle Success!");
             }
@@ -44,8 +43,7 @@ public class BuildPostProcessor
                 "com.taptap.sdk.profile",
                 "Profile",
                 new[] { "TapTapProfileResource.bundle" },
-                target, projPath, proj,
-                "TapTapProfileSDK"))
+                target, projPath, proj))
             {
                 UnityEngine.Debug.Log("TapProfile add Bundle Success!");
                 TapSDKCoreCompile.ExecutePodCommand("pod deintegrate && pod install", path);

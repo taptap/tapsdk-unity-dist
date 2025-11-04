@@ -11,6 +11,8 @@ namespace TapSDK.CloudSave.Internal
 
         void RegisterCloudSaveCallback(ITapCloudSaveCallback callback);
 
+        void UnregisterCloudSaveCallback(ITapCloudSaveCallback callback);
+
         Task<ArchiveData> CreateArchive(ArchiveMetadata metadata, string archiveFilePath, string archiveCoverPath);
 
         Task<ArchiveData> UpdateArchive(string archiveUuid, ArchiveMetadata metadata, string archiveFilePath, string archiveCoverPath);

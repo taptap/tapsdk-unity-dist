@@ -114,6 +114,14 @@ namespace TapSDK.Achievement.Mobile
                         var code = SafeDictionary.GetValue<int>(dic, "code");
                         var resultJson = SafeDictionary.GetValue<string>(dic, "result");
                         TapAchievementLog.Log($"TapAchievementMobile -- success -- code: {code}, result: {resultJson}");
+
+                        // 修复：检查resultJson是否为null或空，防止反序列化失败
+                        if (string.IsNullOrEmpty(resultJson))
+                        {
+                            TapAchievementLog.Log("TapAchievementMobile -- success result is null or empty, skipping callback");
+                            return;
+                        }
+
                         TapAchievementResult tapAchievementResult = TapAchievementResult.FromJson(resultJson);
                         callbacks.ForEach((x) =>
                         {

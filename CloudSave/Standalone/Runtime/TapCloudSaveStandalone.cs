@@ -462,7 +462,6 @@ namespace TapSDK.CloudSave.Standalone
 
         public void RegisterCloudSaveCallback(ITapCloudSaveCallback callback)
         {
-            currentSaveCallback?.Clear();
             string seesionId = Guid.NewGuid().ToString();
             const string method = "registerCloudSaveCallback";
             TapCloudSaveTracker.Instance.TrackStart(method, seesionId);
@@ -474,6 +473,7 @@ namespace TapSDK.CloudSave.Standalone
             {
                 TapCloudSaveTracker.Instance.TrackSuccess(method, seesionId);
                 currentSaveCallback.Add(callback);
+                Log($"RegisterCloudSaveCallback: Added callback. Total callbacks: {currentSaveCallback.Count}");
             }
             else
             {
@@ -482,6 +482,42 @@ namespace TapSDK.CloudSave.Standalone
                     seesionId,
                     errorMessage: "callback has already registered"
                 );
+                Log("RegisterCloudSaveCallback: Callback already registered");
+            }
+        }
+
+        public void UnregisterCloudSaveCallback(ITapCloudSaveCallback callback)
+        {
+            string seesionId = Guid.NewGuid().ToString();
+            const string method = "unregisterCloudSaveCallback";
+            TapCloudSaveTracker.Instance.TrackStart(method, seesionId);
+            
+            if (currentSaveCallback != null && callback != null)
+            {
+                if (currentSaveCallback.Contains(callback))
+                {
+                    currentSaveCallback.Remove(callback);
+                    TapCloudSaveTracker.Instance.TrackSuccess(method, seesionId);
+                    Log($"UnregisterCloudSaveCallback: Removed callback. Remaining callbacks: {currentSaveCallback.Count}");
+                }
+                else
+                {
+                    TapCloudSaveTracker.Instance.TrackFailure(
+                        method,
+                        seesionId,
+                        errorMessage: "callback not found"
+                    );
+                    Log("UnregisterCloudSaveCallback: Callback not found");
+                }
+            }
+            else
+            {
+                TapCloudSaveTracker.Instance.TrackFailure(
+                    method,
+                    seesionId,
+                    errorMessage: "callback or callback list is null"
+                );
+                Log("UnregisterCloudSaveCallback: Callback or callback list is null");
             }
         }
 

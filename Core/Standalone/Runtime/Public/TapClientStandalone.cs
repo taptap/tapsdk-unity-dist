@@ -8,6 +8,7 @@ using System.Runtime.InteropServices;
 using TapSDK.Core.Standalone.Internal.Openlog;
 using System.Threading;
 using TapSDK.Core.Internal.Log;
+using UnityEditor;
 
 
 
@@ -77,7 +78,15 @@ namespace TapSDK.Core.Standalone
                     lastIsLaunchedFromTapTapPCResult = 0;
                     TapCoreTracker.Instance.TrackSuccess(TapCoreTracker.METHOD_LAUNCHER, sessionId, TapCoreTracker.SUCCESS_TYPE_RESTART);
                     TapLog.Log("IsLaunchedFromTapTapPC Quit game");
+#if UNITY_EDITOR
+                    TapLog.Log(
+                        $"本地测试文件配置错误，请确保 taptap_client_id.txt 文件拷贝到 {EditorApplication.applicationPath} 同级目录下"
+                    );
+                    EditorApplication.ExitPlaymode();
+#else
                     Application.Quit();
+#endif
+
                     return false;
                 }
                 else

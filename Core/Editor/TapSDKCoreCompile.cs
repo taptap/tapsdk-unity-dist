@@ -95,7 +95,7 @@ namespace TapSDK.Core.Editor
 
         public static bool HandlerIOSSetting(string path, string appDataPath, string resourceName,
             string modulePackageName,
-            string moduleName, string[] bundleNames, string target, string projPath, PBXProject proj, string podSpecName = "")
+            string moduleName, string[] bundleNames, string target, string projPath, PBXProject proj)
         {
 
             var resourcePath = Path.Combine(path, resourceName);
@@ -109,11 +109,11 @@ namespace TapSDK.Core.Editor
                 Directory.Delete(resourcePath, true);
             }
 
-            var podSpecPath = Path.Combine(path + "/Pods", podSpecName);
+            var podSpecPath = Path.Combine(path + "/Pods", "TapTapSDK");
             //使用 cocospod 远程依赖
-            if (podSpecName != null && podSpecName.Length > 0 && Directory.Exists(podSpecPath))
+            if (Directory.Exists(podSpecPath))
             {
-                resourcePath = Path.Combine(path + "/Pods", podSpecName + "/Frameworks");
+                resourcePath = Path.Combine(path + "/Pods", "TapTapSDK/Frameworks");
                 UnityEngine.Debug.Log($"Find {moduleName} use pods resourcePath:{resourcePath}");
             }
             else

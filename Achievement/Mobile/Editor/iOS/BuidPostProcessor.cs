@@ -32,8 +32,7 @@ public class BuildPostProcessor
                 "com.taptap.sdk.achievement",
                 "Achievement",
                 new[] {"TapTapAchievementResource.bundle"},
-                target, projPath, proj,
-                "TapTapAchievementSDK"))
+                target, projPath, proj))
             {
                 Debug.Log("TapAchievement add Bundle Success!");
                 return;
