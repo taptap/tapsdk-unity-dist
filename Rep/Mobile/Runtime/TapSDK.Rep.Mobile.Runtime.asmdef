@@ -1,0 +1,20 @@
+{
+    "name": "TapSDK.Rep.Mobile.Runtime",
+    "references": [
+        "TapSDK.Rep.Runtime",
+        "TapSDK.Core.Runtime",
+        "TapSDK.Core.Mobile.Runtime"
+    ],
+    "includePlatforms": [
+        "Android",
+        "iOS"
+    ],
+    "excludePlatforms": [],
+    "allowUnsafeCode": false,
+    "overrideReferences": false,
+    "precompiledReferences": [],
+    "autoReferenced": true,
+    "defineConstraints": [],
+    "versionDefines": [],
+    "noEngineReferences": false
+}

@@ -2,10 +2,10 @@
     "name": "com.taptap.sdk.login",
     "displayName": "TapTapSDK Login",
     "description": "TapTapSDK Login",
-    "version": "4.8.4-beta.1",
+    "version": "4.9.0",
     "unity": "2019.4",
     "license": "MIT",
     "dependencies": {
-        "com.taptap.sdk.core": "4.8.4-beta.1"
+        "com.taptap.sdk.core": "4.9.0"
     }
 }

@@ -4,12 +4,12 @@
     <repositories>
       <repository>https://repo.maven.apache.org/maven2</repository>
     </repositories>
-    <androidPackage spec="com.taptap.sdk:tap-achievement-unity:4.8.4"/>
+    <androidPackage spec="com.taptap.sdk:tap-achievement-unity:4.9.0"/>
   </androidPackages>
   <iosPods>
     <sources>
       <source>https://github.com/CocoaPods/Specs.git</source>
     </sources>
-    <iosPod addToAllTargets="false" bitcodeEnabled="false" name="TapTapSDK/Achievement" version="4.8.4"/>
+    <iosPod addToAllTargets="false" bitcodeEnabled="false" name="TapTapSDK/Achievement" version="4.9.0"/>
   </iosPods>
 </dependencies>
