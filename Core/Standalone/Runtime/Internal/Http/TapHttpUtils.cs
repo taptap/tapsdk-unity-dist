@@ -84,7 +84,7 @@ namespace TapSDK.Core.Standalone.Internal.Http
 
         internal static string GenerateLanguage()
         {
-            return Tracker.getServerLanguage();
+            return TapLocalizeManager.GetCurrentLanguageString();
         }
 
         internal static string GenerateDeviceId()

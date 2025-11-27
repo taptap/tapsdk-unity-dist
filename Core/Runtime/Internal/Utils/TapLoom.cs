@@ -15,7 +15,11 @@ namespace TapSDK.Core.Internal.Utils
         private static TapLoom _current;
         private int _count;
 
-         private bool isPause = false;
+        private bool isPause = false;
+
+        // 记录主线程 ID
+        private static int _mainThreadId = -1;
+
         public static TapLoom Current
         {
             get
@@ -29,6 +33,7 @@ namespace TapSDK.Core.Internal.Utils
         {
             _current = this;
             initialized = true;
+            _mainThreadId = Thread.CurrentThread.ManagedThreadId;
         }
 
         static bool initialized;
@@ -80,6 +85,11 @@ namespace TapSDK.Core.Internal.Utils
             }
         }
 
+        /// <summary>
+        /// 在线程池中执行任务，非主线程
+        /// </summary>
+        /// <param name="a"> 任务 </param>
+        /// <returns></returns>
         public static Thread RunAsync(Action a)
         {
             Initialize();
@@ -90,6 +100,65 @@ namespace TapSDK.Core.Internal.Utils
             Interlocked.Increment(ref numThreads);
             ThreadPool.QueueUserWorkItem(RunAction, a);
             return null;
+        }
+
+        /// <summary>
+        /// 阻塞式在主线程执行任务并返回值，当发生异常或超时时，返回默认值
+        /// </summary>
+        /// <param name="func"> 任务 </param>
+        /// <param name="defaultValue"> 默认值 </param>
+        /// <param name="timeout"> 超时时间，默认 100 毫秒</param>
+        /// <returns> 任务返回值或默认值 </returns>
+        public static object RunOnMainThreadSync(
+            Func<object> func,
+            object defaultValue,
+            int timeout = 100
+        )
+        {
+            // 主线程未就绪,直接返回默认值
+            if (_mainThreadId < 0)
+            {
+                return defaultValue;
+            }
+            // 已经在主线程，直接执行
+            if (Thread.CurrentThread.ManagedThreadId == _mainThreadId)
+            {
+                return func();
+            }
+            object result = defaultValue;
+            var evt = new ManualResetEvent(false);
+            try
+            {
+                QueueOnMainThread(() =>
+                {
+                    try
+                    {
+                        result = func();
+                    }
+                    catch (Exception ex)
+                    {
+                        TapLogger.Error("RunOnMainThreadSync failed " + ex.Message);
+                    }
+                    finally
+                    {
+                        try
+                        {
+                            evt.Set();
+                        }
+                        catch (ObjectDisposedException)
+                        {
+                            // evt 已被释放，直接忽略
+                        }
+                    }
+                });
+
+                evt.WaitOne(timeout);
+            }
+            finally
+            {
+                evt.Dispose(); // WaitOne 返回后再 Dispose
+            }
+            return result;
         }
 
         private static void RunAction(object action)

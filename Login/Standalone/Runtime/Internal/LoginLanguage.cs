@@ -1,4 +1,5 @@
 using TapSDK.Core;
+using TapSDK.Core.Standalone;
 
 namespace TapSDK.Login.Internal
 {

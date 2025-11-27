@@ -12,7 +12,7 @@ using System.ComponentModel;
 
 namespace TapSDK.Core {
     public class TapTapSDK {
-        public static readonly string Version = "4.9.0";
+        public static readonly string Version = "4.9.1";
         
         public static string SDKPlatform = "TapSDK-Unity";
 
@@ -38,11 +38,12 @@ namespace TapSDK.Core {
         {
             if (coreOption == null)
                 throw new ArgumentException("[TapSDK] options is null!");
+
             TapTapSDK.taptapSdkOptions = coreOption;
             TapLog.Enabled = coreOption.enableLog;
             platformWrapper?.Init(coreOption);
-            // 初始化各个模块
 
+            // 初始化各个模块
             Type[] initTaskTypes = GetInitTypeList();
             if (initTaskTypes != null)
             {
@@ -59,7 +60,6 @@ namespace TapSDK.Core {
                 }
             }
             TapTapEvent.Init(HandleEventOptions(coreOption));
-
         }
 
         public static void Init(TapTapSdkOptions coreOption, TapTapSdkBaseOptions[] otherOptions)
@@ -70,6 +70,7 @@ namespace TapSDK.Core {
             TapTapSDK.taptapSdkOptions = coreOption;
             TapLog.Enabled = coreOption.enableLog;
             platformWrapper?.Init(coreOption, otherOptions);
+
 
 
             Type[] initTaskTypes = GetInitTypeList();

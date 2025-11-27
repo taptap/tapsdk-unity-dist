@@ -70,8 +70,12 @@ namespace TapSDK.Core.Standalone
                 TapVerifyInitStateUtils.ShowVerifyErrorMsg("clientToken 不能为空", "clientToken 不能为空");
                 return;
             }
+
             TapLog.Log("SDK Init Options : ", "coreOption : " + JsonConvert.SerializeObject(coreOption) + "\notherOptions : " + JsonConvert.SerializeObject(otherOptions));
             coreOptions = coreOption;
+            // 设置区域与语言
+            TapLocalizeManager.SetCurrentRegion(coreOption.region == TapTapRegionType.CN);
+            TapLocalizeManager.SetCurrentLanguage(coreOption.preferredLanguage);
             if (Prefs == null)
             {
                 Prefs = new Prefs();
@@ -123,6 +127,7 @@ namespace TapSDK.Core.Standalone
             }
             TapLog.Log("UpdateLanguage called with language: " + language);
             coreOptions.preferredLanguage = language;
+            TapLocalizeManager.SetCurrentLanguage(language);
         }
 
         public static string getGatekeeperConfigUrl(string key)

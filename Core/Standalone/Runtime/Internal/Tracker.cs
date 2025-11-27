@@ -127,7 +127,7 @@ namespace TapSDK.Core.Standalone.Internal {
 
             props["is_automatically_log"] = isAutomationlly ? "true" : "false";
 
-            var language = getServerLanguage();
+            var language = TapLocalizeManager.GetCurrentLanguageString();
             props["sdk_locale"] = language;
             props["lang_system"] = DeviceInfo.GetLanguage();
 
@@ -237,43 +237,6 @@ namespace TapSDK.Core.Standalone.Internal {
                     default:
                         return "Unknown";
                 }
-            }
-        }
-
-        public static string getServerLanguage() {
-            // 将 TapCoreStandalone.coreOptions.preferredLanguage 转成 zh_TW/en/zh_CN/en_GB/jp/fil 等格式
-            switch (TapCoreStandalone.coreOptions.preferredLanguage) {
-                case TapTapLanguageType.zh_Hans:
-                    return "zh_CN";
-                case TapTapLanguageType.zh_Hant:
-                    return "zh_TW";
-                case TapTapLanguageType.en:
-                    return "en_US";
-                case TapTapLanguageType.ja:
-                    return "ja_JP";
-                case TapTapLanguageType.ko:
-                    return "ko_KR";
-                case TapTapLanguageType.th:
-                    return "th_TH";
-                case TapTapLanguageType.id:
-                    return "id_ID";
-                case TapTapLanguageType.de:
-                    return "de";
-                case TapTapLanguageType.es:
-                    return "es_ES";
-                case TapTapLanguageType.fr:
-                    return "fr";
-                case TapTapLanguageType.pt:
-                    return "pt_PT";
-                case TapTapLanguageType.ru:
-                    return "ru";
-                case TapTapLanguageType.tr:
-                    return "tr";
-                case TapTapLanguageType.vi:
-                    return "vi_VN";
-                default:
-                // 默认cn返回简体中文，Overseas返回英文
-                    return TapCoreStandalone.coreOptions.region == TapTapRegionType.CN ? "zh_CN" : "en_US";
             }
         }
 

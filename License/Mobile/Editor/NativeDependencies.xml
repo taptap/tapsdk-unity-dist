@@ -4,6 +4,6 @@
     <repositories>
       <repository>https://repo.maven.apache.org/maven2</repository>
     </repositories>
-    <androidPackage spec="com.taptap.sdk:tap-license:4.9.0"/>
+    <androidPackage spec="com.taptap.sdk:tap-license:4.9.1"/>
   </androidPackages>
 </dependencies>

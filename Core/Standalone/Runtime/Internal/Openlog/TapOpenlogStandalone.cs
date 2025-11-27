@@ -202,7 +202,7 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
             // 芯片型号，eg：Qualcomm Technologies, Inc SM7250
             generalParameter[TapOpenlogParamConstants.PARAM_HARDWARE] = SystemInfo.processorType;
             // SDK设置的地区，例如 zh_CN
-            generalParameter[TapOpenlogParamConstants.PARAM_SDK_LOCALE] = Tracker.getServerLanguage();
+            generalParameter[TapOpenlogParamConstants.PARAM_SDK_LOCALE] = TapLocalizeManager.GetCurrentLanguageString();
             // taptap的用户ID的外显ID（加密）
             generalParameter[TapOpenlogParamConstants.PARAM_OPEN_ID] = openid;
         }
@@ -227,7 +227,7 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
             // 网络类型，eg：wifi, mobile
             props[TapOpenlogParamConstants.PARAM_NETWORK_TYPE] = "";
             // SDK设置的地区，例如 zh_CN
-            props[TapOpenlogParamConstants.PARAM_SDK_LOCALE] = Tracker.getServerLanguage();
+            props[TapOpenlogParamConstants.PARAM_SDK_LOCALE] = TapLocalizeManager.GetCurrentLanguageString();
             return props;
         }
     }

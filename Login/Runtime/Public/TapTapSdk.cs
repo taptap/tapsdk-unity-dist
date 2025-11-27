@@ -15,7 +15,6 @@ namespace TapSDK.Login.Internal
         public static void SDKInitialize(string clientId, bool isCn) {
             ClientId = clientId;
             CurrentRegion = isCn ? (Region)new RegionCN() : new RegionIO();
-            TapLocalizeManager.SetCurrentRegion(isCn);
         }
     }
 }

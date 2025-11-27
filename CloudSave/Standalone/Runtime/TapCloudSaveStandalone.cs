@@ -28,6 +28,7 @@ namespace TapSDK.CloudSave.Standalone
         public void Init(TapTapSdkOptions options)
         {
             Log("TapCloudSave start init");
+            string lang = TapLocalizeManager.GetCurrentLanguageString();
             TapCloudSaveTracker.Instance.TrackInit();
             string cacheDir = Path.Combine(
                 Application.persistentDataPath,
@@ -61,7 +62,7 @@ namespace TapSDK.CloudSave.Standalone
                         { "client_id", options.clientId },
                         { "client_token", options.clientToken },
                         { "ua", TapHttpUtils.GenerateUserAgent() },
-                        { "lang", Tracker.getServerLanguage() },
+                        { "lang", lang },
                         { "platform", "PC" },
                         { "device_id", deviceID },
                         { "sdk_artifact", "Unity" },

@@ -1,6 +1,8 @@
+using System.Threading;
+using TapSDK.Core.Internal.Utils;
 using UnityEngine;
 
-namespace TapSDK.Core
+namespace TapSDK.Core.Standalone
 {
     public class TapLocalizeManager
     {
@@ -24,13 +26,14 @@ namespace TapSDK.Core
             }
         }
 
-        private TapTapLanguageType _language = TapTapLanguageType.Auto;
         private bool _regionIsCn;
 
         public static void SetCurrentRegion(bool isCn)
         {
             Instance._regionIsCn = isCn;
         }
+
+        private TapTapLanguageType _language = TapTapLanguageType.Auto;
 
         public static void SetCurrentLanguage(TapTapLanguageType language)
         {
@@ -39,14 +42,7 @@ namespace TapSDK.Core
 
         public static TapTapLanguageType GetCurrentLanguage()
         {
-            if (Instance._language != TapTapLanguageType.Auto) return Instance._language;
-            Instance._language = GetSystemLanguage();
-            if (Instance._language == TapTapLanguageType.Auto)
-            {
-                Instance._language = Instance._regionIsCn ? TapTapLanguageType.zh_Hans : TapTapLanguageType.en;
-            }
-
-            return Instance._language;
+            return Instance._language != TapTapLanguageType.Auto ? Instance._language : GetSystemLanguage();
         }
 
         public static string GetCurrentLanguageString() {
@@ -66,37 +62,38 @@ namespace TapSDK.Core
                     return "th_TH";
                 case TapTapLanguageType.id:
                     return "id_ID";
+                case TapTapLanguageType.de:
+                    return "de";
+                case TapTapLanguageType.es:
+                    return "es_ES";
+                case TapTapLanguageType.fr:
+                    return "fr";
+                case TapTapLanguageType.pt:
+                    return "pt_PT";
+                case TapTapLanguageType.ru:
+                    return "ru";
+                case TapTapLanguageType.tr:
+                    return "tr";
+                case TapTapLanguageType.vi:
+                    return "vi_VN";
                 default:
-                    return null;
+                    return Instance._regionIsCn ? "zh_CN" : "en_US";
             }
         }
 
         public static string GetCurrentLanguageString2() {
-            TapTapLanguageType lang = GetCurrentLanguage();
-            switch (lang) {
-                case TapTapLanguageType.zh_Hans:
-                    return "zh-CN";
-                case TapTapLanguageType.en:
-                    return "en-US";
-                case TapTapLanguageType.zh_Hant:
-                    return "zh-TW";
-                case TapTapLanguageType.ja:
-                    return "ja-JP";
-                case TapTapLanguageType.ko:
-                    return "ko-KR";
-                case TapTapLanguageType.th:
-                    return "th-TH";
-                case TapTapLanguageType.id:
-                    return "id-ID";
-                default:
-                    return null;
-            }
+            return GetCurrentLanguageString().Replace("_", "-");
         }
 
         private static TapTapLanguageType GetSystemLanguage()
         {
             var lang = TapTapLanguageType.Auto;
-            var sysLanguage = Application.systemLanguage;
+            // Application.systemLanguage 必须在主线程访问，所以这里需要使用 TapLoom 确保调用线程
+            var defaultSystemLanguage = Instance._regionIsCn ? SystemLanguage.ChineseSimplified : SystemLanguage.English;
+            var sysLanguage = TapLoom.RunOnMainThreadSync(
+                () => Application.systemLanguage,
+                defaultSystemLanguage
+            );
             switch (sysLanguage)
             {
                 case SystemLanguage.ChineseSimplified:
@@ -119,6 +116,9 @@ namespace TapSDK.Core
                     break;
                 case SystemLanguage.Indonesian:
                     lang = TapTapLanguageType.id;
+                    break;
+                default:
+                    lang = Instance._regionIsCn ? TapTapLanguageType.zh_Hans : TapTapLanguageType.en;
                     break;
             }
 

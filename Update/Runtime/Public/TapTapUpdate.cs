@@ -6,7 +6,7 @@ using System;
 namespace TapSDK.Update {
     public class TapTapUpdate {
 
-        public static readonly string Version = "4.9.0";
+        public static readonly string Version = "4.9.1";
         
         static readonly ITapUpdateBridge update;
 
