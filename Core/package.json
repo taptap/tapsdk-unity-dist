@@ -2,7 +2,7 @@
     "name": "com.taptap.sdk.core",
     "displayName": "TapTapSDK Core",
     "description": "TapTapSDK Core",
-    "version": "4.9.1",
+    "version": "4.9.2",
     "unity": "2019.4",
     "license": "MIT",
     "dependencies": {

@@ -151,14 +151,5 @@ namespace TapSDK.License.Mobile
             EngineBridge.GetInstance().CallHandler(command);
         }
 
-        public void SetTestEnvironment(bool isTest){
-            var command = new Command.Builder()
-                .Service(TAP_LICENSE_SERVICE)
-                .Method("setTestEnvironment")
-                .Args("testEnv", isTest)
-                .CommandBuilder();
-            EngineBridge.GetInstance().CallHandler(command);
-        }
-
     }
 }

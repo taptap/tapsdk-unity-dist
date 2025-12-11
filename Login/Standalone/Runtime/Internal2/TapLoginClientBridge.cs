@@ -13,24 +13,23 @@ namespace TapSDK.Login.Internal
     string codeChallenge, string state, string codeChallengeMethod, string versonCode, string sdkUa, string info)
         {
             taskCompletionSource = new TaskCompletionSource<TapLoginResponseByTapClient>();
-            await Task.Run(() =>
+            Task.Run(() =>
+            {
+                try
                 {
-                    try
+                    bool isStartSuccess = TapClientStandalone.StartLoginWithScopes(scopes, responseType, redirectUri, codeChallenge, state, codeChallengeMethod, versonCode, sdkUa, info, LoginDelegate);
+                    if (!isStartSuccess)
                     {
-                        bool isStartSuccess = TapClientStandalone.StartLoginWithScopes(scopes, responseType, redirectUri, codeChallenge, state, codeChallengeMethod, versonCode, sdkUa, info, LoginDelegate);
-                        if (!isStartSuccess)
-                        {
-                            taskCompletionSource.TrySetResult(new TapLoginResponseByTapClient("发起授权失败，请确认 Tap 客户端是否正常运行"));
-                            taskCompletionSource = null;
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        taskCompletionSource.TrySetResult(new TapLoginResponseByTapClient(false, e.Message));
+                        taskCompletionSource.TrySetResult(new TapLoginResponseByTapClient("发起授权失败，请确认 Tap 客户端是否正常运行"));
                         taskCompletionSource = null;
                     }
                 }
-            );
+                catch (Exception e)
+                {
+                    taskCompletionSource.TrySetResult(new TapLoginResponseByTapClient(e.Message));
+                    taskCompletionSource = null;
+                }
+            });
             return await taskCompletionSource.Task;
         }
 

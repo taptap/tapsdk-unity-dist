@@ -7,7 +7,7 @@ using TapSDK.Core;
 namespace TapSDK.License {
     public class TapTapLicense {
 
-        public static readonly string Version = "4.9.1";
+        public static readonly string Version = "4.9.2";
         
         static readonly ITapLicenseBridge license;
 
@@ -48,13 +48,6 @@ namespace TapSDK.License {
         public static void PurchaseDLC(string dlc) {
             license.PurchaseDLC(dlc);
         }
-
-        [Obsolete("No longer needed with new TapTap client and will be removed in the future")]
-        public static void SetTestEnvironment(bool isTest)
-        {
-            license.SetTestEnvironment(isTest);
-        }
-
     
     }
 }

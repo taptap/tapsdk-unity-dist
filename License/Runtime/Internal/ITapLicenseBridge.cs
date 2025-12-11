@@ -14,8 +14,5 @@ namespace TapSDK.License.Internal {
         void QueryDLC(string[] skus);
 
         void PurchaseDLC(string sku);
-
-        void SetTestEnvironment(bool isTest);
-
     }
 }

@@ -20,6 +20,23 @@ namespace TapSDK.Core.Mobile
             TapLog.Log("TapCoreMobile constructor");
             TapLoom.Initialize();
             EngineBridgeInitializer.Initialize();
+            // 由于当通过 Application.Quit 退出时，iOS 端不会收到 applicationWillTerminate 的通知，
+            // 所以不会调用 C++ 的 OnAppStop 方法，导致小概率会因 C++ 资源未正确释放触发崩溃，所以添加监听
+#if UNITY_IOS
+            EventManager.AddListener(
+                EventManager.OnApplicationQuit,
+                (quit) =>
+                {
+                    TapLog.Log("TapSDK Unity OnApplicationQuit");
+                    Bridge.CallHandler(
+                        EngineBridgeInitializer
+                            .GetBridgeServer()
+                            .Method("handleEngineQuitEvent")
+                            .CommandBuilder()
+                    );
+                }
+            );
+#endif
         }
 
         public void Init(TapTapSdkOptions coreOption, TapTapSdkBaseOptions[] otherOptions)

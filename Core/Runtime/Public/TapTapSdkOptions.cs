@@ -112,7 +112,7 @@ namespace TapSDK.Core
         /// <summary>
         /// 屏幕方向：0-竖屏 1-横屏
         /// </summary>
-        public int screenOrientation = 0;
+        public int screenOrientation = 1;
 
         [JsonProperty("moduleName")]
         private string _moduleName = "TapTapSDKCore";

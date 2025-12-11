@@ -149,11 +149,6 @@ namespace TapSDK.License.Standalone {
             }
         }
 
-
-        public void SetTestEnvironment(bool isTest)
-        {
-        }
-
         public void PurchaseDLC(string skuId)
         {
             if (!CheckInit())
