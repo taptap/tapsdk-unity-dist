@@ -2,11 +2,11 @@
     "name": "com.taptap.sdk.compliance",
     "displayName": "TapTapSDK Compliance",
     "description": "TapTapSDK Compliance",
-    "version": "4.9.2",
+    "version": "4.9.3",
     "unity": "2019.4",
     "license": "MIT",
     "dependencies": {
-        "com.taptap.sdk.core": "4.9.2",
-        "com.taptap.sdk.login": "4.9.2"
+        "com.taptap.sdk.core": "4.9.3",
+        "com.taptap.sdk.login": "4.9.3"
     }
 }
