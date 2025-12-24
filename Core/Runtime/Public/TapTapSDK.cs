@@ -1,19 +1,18 @@
 ﻿using System;
-using System.Threading.Tasks;
-using System.Linq;
-using TapSDK.Core.Internal;
 using System.Collections.Generic;
-
-using UnityEngine;
-using System.Reflection;
+using System.Linq;
+using System.Threading.Tasks;
+using TapSDK.Core.Internal;
 using TapSDK.Core.Internal.Init;
 using TapSDK.Core.Internal.Log;
-using System.ComponentModel;
+using UnityEngine;
 
-namespace TapSDK.Core {
-    public class TapTapSDK {
-        public static readonly string Version = "4.9.3";
-        
+namespace TapSDK.Core
+{
+    public class TapTapSDK
+    {
+        public static readonly string Version = "4.10.0-beta.1";
+
         public static string SDKPlatform = "TapSDK-Unity";
 
         public static TapTapSdkOptions taptapSdkOptions;
@@ -22,16 +21,19 @@ namespace TapSDK.Core {
 
         private static bool disableDurationStatistics;
 
-        public static bool DisableDurationStatistics {
+        public static bool DisableDurationStatistics
+        {
             get => disableDurationStatistics;
-            set {
-                disableDurationStatistics = value;
-            }
+            set { disableDurationStatistics = value; }
         }
 
-        static TapTapSDK() {
-            platformWrapper = PlatformTypeUtils.CreatePlatformImplementationObject(typeof(ITapCorePlatform),
-                "TapSDK.Core") as ITapCorePlatform;
+        static TapTapSDK()
+        {
+            platformWrapper =
+                PlatformTypeUtils.CreatePlatformImplementationObject(
+                    typeof(ITapCorePlatform),
+                    "TapSDK.Core"
+                ) as ITapCorePlatform;
         }
 
         public static void Init(TapTapSdkOptions coreOption)
@@ -71,7 +73,6 @@ namespace TapSDK.Core {
             TapLog.Enabled = coreOption.enableLog;
             platformWrapper?.Init(coreOption, otherOptions);
 
-
             Type[] initTaskTypes = GetInitTypeList();
             if (initTaskTypes != null)
             {
@@ -96,7 +97,10 @@ namespace TapSDK.Core {
         /// <param name="coreOption"></param>
         /// <param name="otherOptions"></param>
         /// <returns>TapEvent 属性</returns>
-        private static TapTapEventOptions HandleEventOptions(TapTapSdkOptions coreOption, TapTapSdkBaseOptions[] otherOptions = null)
+        private static TapTapEventOptions HandleEventOptions(
+            TapTapSdkOptions coreOption,
+            TapTapSdkBaseOptions[] otherOptions = null
+        )
         {
             TapTapEventOptions tapEventOptions = null;
             if (otherOptions != null && otherOptions.Length > 0)
@@ -115,9 +119,11 @@ namespace TapSDK.Core {
                 if (coreOption != null)
                 {
                     tapEventOptions.channel = coreOption.channel;
-                    tapEventOptions.disableAutoLogDeviceLogin = coreOption.disableAutoLogDeviceLogin;
+                    tapEventOptions.disableAutoLogDeviceLogin =
+                        coreOption.disableAutoLogDeviceLogin;
                     tapEventOptions.enableAutoIAPEvent = coreOption.enableAutoIAPEvent;
-                    tapEventOptions.overrideBuiltInParameters = coreOption.overrideBuiltInParameters;
+                    tapEventOptions.overrideBuiltInParameters =
+                        coreOption.overrideBuiltInParameters;
                     tapEventOptions.propertiesJson = coreOption.propertiesJson;
                 }
             }
@@ -129,16 +135,18 @@ namespace TapSDK.Core {
         {
             platformWrapper?.UpdateLanguage(language);
         }
-        
+
         // 是否通过 PC 启动器唤起游戏
         public static Task<bool> IsLaunchedFromTapTapPC()
         {
             return platformWrapper?.IsLaunchedFromTapTapPC();
         }
 
-        private static Type[] GetInitTypeList(){
+        private static Type[] GetInitTypeList()
+        {
             Type interfaceType = typeof(IInitTask);
-            Type[] initTaskTypes = AppDomain.CurrentDomain.GetAssemblies()
+            Type[] initTaskTypes = AppDomain
+                .CurrentDomain.GetAssemblies()
                 .Where(asssembly => asssembly.GetName().FullName.StartsWith("TapSDK"))
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(clazz => interfaceType.IsAssignableFrom(clazz) && clazz.IsClass)
@@ -146,5 +154,14 @@ namespace TapSDK.Core {
             return initTaskTypes;
         }
 
+        public static void SendOpenLog(
+            string project,
+            string version,
+            string action,
+            Dictionary<string, string> properties = null
+        )
+        {
+            platformWrapper.SendOpenLog(project, version, action, properties);
+        }
     }
 }

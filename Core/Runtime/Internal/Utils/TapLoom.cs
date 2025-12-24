@@ -1,9 +1,9 @@
-using UnityEngine;
+using System;
 using System.Collections;
 using System.Collections.Generic;
-using System;
-using System.Threading;
 using System.Linq;
+using System.Threading;
+using UnityEngine;
 
 namespace TapSDK.Core.Internal.Utils
 {
@@ -42,7 +42,6 @@ namespace TapSDK.Core.Internal.Utils
         {
             if (!initialized)
             {
-
                 if (!Application.isPlaying)
                     return;
                 initialized = true;
@@ -50,15 +49,16 @@ namespace TapSDK.Core.Internal.Utils
                 DontDestroyOnLoad(g);
                 _current = g.AddComponent<TapLoom>();
             }
-
         }
 
         private List<Action> _actions = new List<Action>();
+
         public struct DelayedQueueItem
         {
             public float time;
             public Action action;
         }
+
         private List<DelayedQueueItem> _delayed = new List<DelayedQueueItem>();
 
         List<DelayedQueueItem> _currentDelayed = new List<DelayedQueueItem>();
@@ -67,20 +67,26 @@ namespace TapSDK.Core.Internal.Utils
         {
             QueueOnMainThread(action, 0f);
         }
+
         public static void QueueOnMainThread(Action action, float time)
         {
             if (time != 0)
             {
                 lock (Current._delayed)
                 {
-                    Current._delayed.Add(new DelayedQueueItem { time = Time.time, action = action });
+                    Current._delayed.Add(
+                        new DelayedQueueItem { time = Time.time, action = action }
+                    );
                 }
             }
             else
             {
-                lock (Current._actions)
+                if (Current != null && Current._actions != null)
                 {
-                    Current._actions.Add(action);
+                    lock (Current._actions)
+                    {
+                        Current._actions.Add(action);
+                    }
                 }
             }
         }
@@ -167,37 +173,27 @@ namespace TapSDK.Core.Internal.Utils
             {
                 ((Action)action)();
             }
-            catch
-            {
-            }
+            catch { }
             finally
             {
                 Interlocked.Decrement(ref numThreads);
             }
-
         }
-
 
         void OnDisable()
         {
             if (_current == this)
             {
-
                 _current = null;
             }
         }
 
-
-
-        // Use this for initialization  
-        void Start()
-        {
-
-        }
+        // Use this for initialization
+        void Start() { }
 
         List<Action> _currentActions = new List<Action>();
 
-        // Update is called once per frame  
+        // Update is called once per frame
         void Update()
         {
             lock (_actions)
@@ -223,18 +219,22 @@ namespace TapSDK.Core.Internal.Utils
             }
         }
 
-        private void OnApplicationPause(bool pauseStatus) {
-             if (pauseStatus && isPause == false) {
+        private void OnApplicationPause(bool pauseStatus)
+        {
+            if (pauseStatus && isPause == false)
+            {
                 isPause = true;
                 EventManager.TriggerEvent(EventManager.OnApplicationPause, true);
             }
-            else if (!pauseStatus && isPause) {
+            else if (!pauseStatus && isPause)
+            {
                 isPause = false;
                 EventManager.TriggerEvent(EventManager.OnApplicationPause, false);
             }
         }
 
-         private void OnApplicationQuit(){
+        private void OnApplicationQuit()
+        {
             EventManager.TriggerEvent(EventManager.OnApplicationQuit, true);
         }
     }

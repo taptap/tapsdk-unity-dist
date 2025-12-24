@@ -6,6 +6,8 @@ using TapSDK.Login.Internal;
 using UnityEngine;
 using System.Runtime.InteropServices;
 using TapSDK.Core.Internal.Log;
+using TapSDK.Core.Internal.Utils;
+
 
 namespace TapSDK.Login.Mobile
 {
@@ -48,20 +50,7 @@ namespace TapSDK.Login.Mobile
                     TapLog.Log("🔍 [Unity Login] result != null: " + (result != null));
                     if (result != null)
                     {
-                        TapLog.Log("🔍 [Unity Login] result.content != null: " + (result.content != null));
-                        TapLog.Log("🔍 [Unity Login] result.content type: " + (result.content?.GetType().Name ?? "null"));
-                        TapLog.Log("🔍 [Unity Login] result.content length: " + (result.content?.Length ?? 0));
-                        TapLog.Log("🔍 [Unity Login] result.content value: '" + (result.content ?? "null") + "'");
-                        
-                        // 检查是否包含预期的关键字
-                        if (!string.IsNullOrEmpty(result.content))
-                        {
-                            TapLog.Log("🔍 [Unity Login] Contains 'code': " + result.content.Contains("code"));
-                            TapLog.Log("🔍 [Unity Login] Contains 'content': " + result.content.Contains("content"));
-                            TapLog.Log("🔍 [Unity Login] Contains 'message': " + result.content.Contains("message"));
-                            TapLog.Log("🔍 [Unity Login] Contains 'name': " + result.content.Contains("name"));
-                            TapLog.Log("🔍 [Unity Login] Contains 'openid': " + result.content.Contains("openid"));
-                        }
+                        TapLog.Log("🔍 [Unity Login] result.content == " + result.content);
                     }
                     
                     TapLog.Log("Login result: " + result.content);
@@ -77,19 +66,11 @@ namespace TapSDK.Login.Mobile
                     {
                         TapLog.Log("🔧 [Unity Login] Creating AccountWrapper...");
                         var wrapper = new AccountWrapper(result.content);
-                        TapLog.Log("✅ [Unity Login] AccountWrapper created successfully");
-                        TapLog.Log("🔍 [Unity Login] wrapper.code: " + wrapper.code);
-                        TapLog.Log("🔍 [Unity Login] wrapper.message: '" + (wrapper.message ?? "null") + "'");
-                        TapLog.Log("🔍 [Unity Login] wrapper.account != null: " + (wrapper.account != null));
+                        TapLog.Log("✅ [Unity Login] AccountWrapper created successfully wrappser ");
                         
                         if (wrapper.account != null)
                         {
-                            TapLog.Log("🔍 [Unity Login] Account details:");
-                            TapLog.Log("🔍 [Unity Login] - Name: '" + (wrapper.account.name ?? "null") + "'");
-                            TapLog.Log("🔍 [Unity Login] - OpenId: '" + (wrapper.account.openId ?? "null") + "'");
-                            TapLog.Log("🔍 [Unity Login] - UnionId: '" + (wrapper.account.unionId ?? "null") + "'");
-                            TapLog.Log("🔍 [Unity Login] - Email: '" + (wrapper.account.email ?? "null") + "'");
-                            TapLog.Log("🔍 [Unity Login] - Avatar: '" + (wrapper.account.avatar ?? "null") + "'");
+                            TapLog.Log("🔍 [Unity Login] Account details:" + wrapper.account);
                         }
                         
                         if (wrapper.code == 1)
@@ -100,6 +81,8 @@ namespace TapSDK.Login.Mobile
                         {
                             TapLog.Log("✅ [Unity Login] Login successful (code=0), setting result");
                             tsc.TrySetResult(wrapper.account);
+                            // 通知登录状态变更
+                            EventManager.TriggerEvent(EventManager.OnTapUserChanged, "");
                         }
                         else
                         {
@@ -123,6 +106,8 @@ namespace TapSDK.Login.Mobile
                 .Service(SERVICE_NAME)
                 .Method("logout")
                 .CommandBuilder());
+            // 通知登录状态变更
+            EventManager.TriggerEvent(EventManager.OnTapUserChanged, "");
         }
 
         public async Task<TapTapAccount> GetCurrentAccount()
@@ -140,10 +125,7 @@ namespace TapSDK.Login.Mobile
             TapLog.Log("🔍 [Unity Login] result != null: " + (result != null));
             if (result != null)
             {
-                TapLog.Log("🔍 [Unity Login] result.content != null: " + (result.content != null));
-                TapLog.Log("🔍 [Unity Login] result.content type: " + (result.content?.GetType().Name ?? "null"));
-                TapLog.Log("🔍 [Unity Login] result.content length: " + (result.content?.Length ?? 0));
-                
+                TapLog.Log("🔍 [Unity Login] result.content : " + result.content );
                 // 显示前200个字符，避免过长的日志
                 if (!string.IsNullOrEmpty(result.content))
                 {

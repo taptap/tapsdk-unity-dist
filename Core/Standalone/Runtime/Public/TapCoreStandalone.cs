@@ -238,7 +238,17 @@ namespace TapSDK.Core.Standalone
             throw new System.NotImplementedException();
 #endif
         }
-    }
+
+        public void SendOpenLog(
+            string project,
+            string version,
+            string action,
+            Dictionary<string, string> properties
+        )
+        {
+            TapOpenlogStandalone.LogBusiness(project, version, action, properties);
+        }
+ }
 
 
     public interface IOpenIDProvider
