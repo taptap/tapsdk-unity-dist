@@ -17,7 +17,7 @@ namespace TapSDK.OnlineBattle
 {
     public partial class TapTapOnlineBattle
     {
-        public static string Version = "4.10.0";
+        public static string Version = "4.10.0-beta.1";
         private static readonly bool isRND = false;
 
         // c 层是否初始化
