@@ -10,6 +10,8 @@ namespace TapSDK.CloudSave.Standalone
         internal const string DllName = "cloudsave_sdk";
 #elif UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
         internal const string DllName = "libcloudsave_sdk";
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
+        internal const string DllName = "libcloudsave_sdk";
 #endif
 
         /**
@@ -437,6 +439,7 @@ namespace TapSDK.CloudSave.Standalone
                 {
                     result = GetUTF8Byte(intPtr);
                 }
+
                 archiveDataSize = dataSize;
                 return result;
             }
@@ -478,6 +481,7 @@ namespace TapSDK.CloudSave.Standalone
                 {
                     result = GetUTF8Byte(intPtr);
                 }
+
                 return result;
             }
             finally

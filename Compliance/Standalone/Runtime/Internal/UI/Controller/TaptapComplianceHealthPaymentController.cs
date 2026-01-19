@@ -79,8 +79,7 @@ namespace TapSDK.Compliance.Internal
 
         private string ProcessContent(string content)
         {
-            return content
-                ?.Replace(" ", "\u00A0");
+            return content?.Replace(" ", "\u00A0")?.Replace("&nbsp;", "\u00A0");
         }
 
         private void OnOKButtonClicked()

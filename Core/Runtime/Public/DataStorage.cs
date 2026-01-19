@@ -13,6 +13,9 @@ namespace TapSDK.Core
     {
         private static Dictionary<string, string> dataCache;
         private static byte[] Keys = { 0x12, 0x34, 0x56, 0x78, 0x90, 0xAB, 0xCD, 0xEF };
+
+        // 缓存 MacAddress，避免多次获取
+        private static string cachedMacAddress;
         public static void SaveString(string key, string value)
         {
             string storageKey = GenerateStorageKey(key);
@@ -135,6 +138,10 @@ namespace TapSDK.Core
 
         private static string GetMacAddress()
         {
+            if (!string.IsNullOrEmpty(cachedMacAddress))
+            {
+                return cachedMacAddress;
+            }
             string physicalAddress = "FFFFFFFFFFFF";
             if (Platform.IsAndroid() || Platform.IsIOS())
             {
@@ -159,6 +166,7 @@ namespace TapSDK.Core
                     };
                 }
             }
+            cachedMacAddress = physicalAddress;
             return physicalAddress;
         }
 

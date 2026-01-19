@@ -1,18 +1,19 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
+using System.Linq;
 using TapSDK.Core.Internal;
+using System.Collections.Generic;
+
+using UnityEngine;
+using System.Reflection;
 using TapSDK.Core.Internal.Init;
 using TapSDK.Core.Internal.Log;
-using UnityEngine;
+using System.ComponentModel;
 
-namespace TapSDK.Core
-{
-    public class TapTapSDK
-    {
-        public static readonly string Version = "4.10.0-beta.1";
-
+namespace TapSDK.Core {
+    public class TapTapSDK {
+        public static readonly string Version = "4.9.3";
+        
         public static string SDKPlatform = "TapSDK-Unity";
 
         public static TapTapSdkOptions taptapSdkOptions;
@@ -21,19 +22,16 @@ namespace TapSDK.Core
 
         private static bool disableDurationStatistics;
 
-        public static bool DisableDurationStatistics
-        {
+        public static bool DisableDurationStatistics {
             get => disableDurationStatistics;
-            set { disableDurationStatistics = value; }
+            set {
+                disableDurationStatistics = value;
+            }
         }
 
-        static TapTapSDK()
-        {
-            platformWrapper =
-                PlatformTypeUtils.CreatePlatformImplementationObject(
-                    typeof(ITapCorePlatform),
-                    "TapSDK.Core"
-                ) as ITapCorePlatform;
+        static TapTapSDK() {
+            platformWrapper = PlatformTypeUtils.CreatePlatformImplementationObject(typeof(ITapCorePlatform),
+                "TapSDK.Core") as ITapCorePlatform;
         }
 
         public static void Init(TapTapSdkOptions coreOption)
@@ -73,6 +71,7 @@ namespace TapSDK.Core
             TapLog.Enabled = coreOption.enableLog;
             platformWrapper?.Init(coreOption, otherOptions);
 
+
             Type[] initTaskTypes = GetInitTypeList();
             if (initTaskTypes != null)
             {
@@ -97,10 +96,7 @@ namespace TapSDK.Core
         /// <param name="coreOption"></param>
         /// <param name="otherOptions"></param>
         /// <returns>TapEvent 属性</returns>
-        private static TapTapEventOptions HandleEventOptions(
-            TapTapSdkOptions coreOption,
-            TapTapSdkBaseOptions[] otherOptions = null
-        )
+        private static TapTapEventOptions HandleEventOptions(TapTapSdkOptions coreOption, TapTapSdkBaseOptions[] otherOptions = null)
         {
             TapTapEventOptions tapEventOptions = null;
             if (otherOptions != null && otherOptions.Length > 0)
@@ -119,13 +115,37 @@ namespace TapSDK.Core
                 if (coreOption != null)
                 {
                     tapEventOptions.channel = coreOption.channel;
-                    tapEventOptions.disableAutoLogDeviceLogin =
-                        coreOption.disableAutoLogDeviceLogin;
+                    tapEventOptions.disableAutoLogDeviceLogin = coreOption.disableAutoLogDeviceLogin;
                     tapEventOptions.enableAutoIAPEvent = coreOption.enableAutoIAPEvent;
-                    tapEventOptions.overrideBuiltInParameters =
-                        coreOption.overrideBuiltInParameters;
+                    tapEventOptions.overrideBuiltInParameters = coreOption.overrideBuiltInParameters;
                     tapEventOptions.propertiesJson = coreOption.propertiesJson;
+                    tapEventOptions.caid = coreOption.caid;
+                    tapEventOptions.enableAdvertiserIDCollection = coreOption.enableAdvertiserIDCollection;
+                    tapEventOptions.oaidCert = coreOption.oaidCert;
+                    tapEventOptions.disableReflectionOAID = coreOption.disableReflectionOAID;
                 }
+            }
+            else
+            {
+                if (
+                    string.IsNullOrEmpty(tapEventOptions.caid)
+                    && !string.IsNullOrEmpty(coreOption.caid)
+                )
+                {
+                    tapEventOptions.caid = coreOption.caid;
+                }
+                tapEventOptions.enableAdvertiserIDCollection =
+                    tapEventOptions.enableAdvertiserIDCollection || coreOption.enableAdvertiserIDCollection;
+
+                if (
+                    string.IsNullOrEmpty(tapEventOptions.oaidCert)
+                    && !string.IsNullOrEmpty(coreOption.oaidCert)
+                )
+                {
+                    tapEventOptions.oaidCert = coreOption.oaidCert;
+                }
+                tapEventOptions.disableReflectionOAID =
+                    tapEventOptions.disableReflectionOAID && coreOption.disableReflectionOAID;
             }
             return tapEventOptions;
         }
@@ -135,18 +155,16 @@ namespace TapSDK.Core
         {
             platformWrapper?.UpdateLanguage(language);
         }
-
+        
         // 是否通过 PC 启动器唤起游戏
         public static Task<bool> IsLaunchedFromTapTapPC()
         {
             return platformWrapper?.IsLaunchedFromTapTapPC();
         }
 
-        private static Type[] GetInitTypeList()
-        {
+        private static Type[] GetInitTypeList(){
             Type interfaceType = typeof(IInitTask);
-            Type[] initTaskTypes = AppDomain
-                .CurrentDomain.GetAssemblies()
+            Type[] initTaskTypes = AppDomain.CurrentDomain.GetAssemblies()
                 .Where(asssembly => asssembly.GetName().FullName.StartsWith("TapSDK"))
                 .SelectMany(assembly => assembly.GetTypes())
                 .Where(clazz => interfaceType.IsAssignableFrom(clazz) && clazz.IsClass)
@@ -160,8 +178,9 @@ namespace TapSDK.Core
             string action,
             Dictionary<string, string> properties = null
         )
-        {
-            platformWrapper.SendOpenLog(project, version, action, properties);
+            {
+                platformWrapper.SendOpenLog(project, version, action, properties);
         }
+
     }
 }

@@ -11,6 +11,11 @@ namespace TapSDK.Core.Standalone.Internal
 {
   public class DeviceInfo
   {
+    // 缓存网卡地址列表，避免多次调用
+    private static string cachedMacAddressList;
+
+    // 缓存网卡地址，避免多次调用
+    private static string cachedFristMacAddress;
 
 #if UNITY_EDITOR_OSX || UNITY_STANDALONE_OSX
     [DllImport("TapDBDeviceInfo", CallingConvention = CallingConvention.Cdecl)]
@@ -68,6 +73,15 @@ namespace TapSDK.Core.Standalone.Internal
 
     public static void GetMacAddress(out string macAddressList, out string firstMacAddress)
     {
+        if (
+            !string.IsNullOrEmpty(cachedMacAddressList)
+            && !string.IsNullOrEmpty(cachedFristMacAddress)
+        )
+        {
+            macAddressList = cachedMacAddressList;
+            firstMacAddress = cachedFristMacAddress;
+            return;
+        }
       List<string> mac_addrs = new List<string>();
 
       try
@@ -92,6 +106,9 @@ namespace TapSDK.Core.Standalone.Internal
       }
       macAddressList = $"[{string.Join(",", mac_addrs)}]";
       firstMacAddress = mac_addrs.Count > 0 ? mac_addrs[0].Replace("\"", "") : string.Empty;
+      
+      cachedMacAddressList = macAddressList;
+      cachedFristMacAddress = firstMacAddress;
     }
 
     private static string toMd5(string data)

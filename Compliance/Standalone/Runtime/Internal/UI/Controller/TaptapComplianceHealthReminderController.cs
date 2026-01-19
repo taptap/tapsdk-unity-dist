@@ -76,7 +76,7 @@ namespace TapSDK.Compliance.Internal {
                     content = substring1 + substring2;    
                 }
             }
-           
+            content = content.Replace("&nbsp;","\u00A0");
             contentText.text = content.Replace(" ", "\u00A0");
             if (IsTextOverflowing(contentText, out int lineCount, out float lineHeight)) {
                 scrollRect.enabled = true;

@@ -5,10 +5,11 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
 {
     internal class TapOpenlogWrapper
     {
-
 #if UNITY_STANDALONE_WIN || UNITY_EDITOR_WIN
         internal const string DllName = "tapsdkcore";
 #elif UNITY_STANDALONE_OSX || UNITY_EDITOR_OSX
+        internal const string DllName = "libtapsdkcorecpp";
+#elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
         internal const string DllName = "libtapsdkcorecpp";
 #endif
 
@@ -68,7 +69,8 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
          * 成功返回 0，失败返回 -1
          */
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
-        internal static extern int TdkOnAppStarted(string cfg, CommonVariablesGetter commonVariablesGetter, FreeStringCallback freeString);
+        internal static extern int TdkOnAppStarted(string cfg, CommonVariablesGetter commonVariablesGetter,
+            FreeStringCallback freeString);
 
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate IntPtr CommonVariablesGetter();

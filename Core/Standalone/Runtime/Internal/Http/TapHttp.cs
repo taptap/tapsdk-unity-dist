@@ -11,6 +11,7 @@ namespace TapSDK.Core.Standalone.Internal.Http
     using System.Threading.Tasks;
     using Newtonsoft.Json;
     using TapSDK.Core.Internal.Log;
+    using UnityEngine;
 
     public class TapHttp
     {
@@ -391,47 +392,9 @@ namespace TapSDK.Core.Standalone.Internal.Http
         }
 
         // 判断网络连接状态
-        private bool CheckNetworkConnection(){
-            try {
-                var networkInterfaces = NetworkInterface.GetAllNetworkInterfaces();
-
-                foreach (var netInterface in networkInterfaces)
-                {
-                    // 忽略虚拟网卡
-                    if (netInterface.NetworkInterfaceType == NetworkInterfaceType.Loopback || 
-                        netInterface.NetworkInterfaceType == NetworkInterfaceType.Tunnel)
-                    {
-                        continue;
-                    }
-
-                    // 检查是否有网络连接
-                    if (netInterface.OperationalStatus == OperationalStatus.Up)
-                    {
-                        // 检查是否有有效的 IPv4 地址
-                        var ipProperties = netInterface.GetIPProperties();
-                        var ipv4Address = ipProperties.UnicastAddresses.FirstOrDefault(ip => ip.Address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork);
-
-                        if (ipv4Address != null)
-                        {
-                            // 有有效的 IP 地址，则说明已连接到网络
-                            if (netInterface.NetworkInterfaceType == NetworkInterfaceType.Ethernet)
-                            {
-                                return true; // 有线连接
-                            }
-                            else if (netInterface.NetworkInterfaceType == NetworkInterfaceType.Wireless80211)
-                            {
-                                return true; // 无线连接
-                            }
-                        }
-                    }
-                }
-
-                return false; // 无连接
-            }catch(Exception e){
-                TapLog.Log("checkout network connected error = " + e);
-                // 发生异常时，当做有网处理
-                return true;
-            }
+        private bool CheckNetworkConnection()
+        {
+            return Application.internetReachability != NetworkReachability.NotReachable;
         }
     }
 }

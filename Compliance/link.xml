@@ -1,0 +1,5 @@
+<linker>
+  <assembly fullname="TapSDK.Compliance" preserve="all" />
+  <assembly fullname="TapSDK.Compliance.Runtime" preserve="all" />
+  <assembly fullname="TapSDK.Compliance.Mobile.Runtime" preserve="all" />
+</linker>

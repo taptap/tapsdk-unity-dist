@@ -74,6 +74,7 @@ namespace TapSDK.Core
         /// <summary>
         /// CAID，仅国内 iOS
         /// </summary>
+        [Obsolete("该属性已废弃，请在 TapTapEventOptions 设置对应属性")] 
         public string caid = null;
         /// <summary>
         /// 是否能够覆盖内置参数，默认为 false
@@ -83,6 +84,7 @@ namespace TapSDK.Core
         /// <summary>
         /// 是否开启广告商 ID 收集，默认为 false
         /// </summary>
+        [Obsolete("该属性已废弃，请在 TapTapEventOptions 设置对应属性")] 
         public bool enableAdvertiserIDCollection = false;
         /// <summary>
         /// 是否开启自动上报 IAP 事件
@@ -92,6 +94,7 @@ namespace TapSDK.Core
         /// <summary>
         /// OAID证书, 仅 Android，用于上报 OAID 仅 [TapTapRegion.CN] 生效
         /// </summary>
+        [Obsolete("该属性已废弃，请在 TapTapEventOptions 设置对应属性")]
         public string oaidCert = null;
         /// <summary>
         /// 是否开启日志，Release 版本请设置为 false
@@ -101,6 +104,7 @@ namespace TapSDK.Core
         /// <summary>
         /// 是否禁用 OAID 反射
         /// </summary>
+        [Obsolete("该属性已废弃，请在 TapTapEventOptions 设置对应属性")]
         public bool disableReflectionOAID = true;
 
         /// <summary>
@@ -155,6 +159,26 @@ namespace TapSDK.Core
         /// 是否即用禁用自动上报设备登录事件
         /// </summary>
         public bool disableAutoLogDeviceLogin = false;
+
+        /// <summary>
+        /// CAID，仅国内 iOS
+        /// </summary>
+        public string caid = null;
+
+        /// <summary>
+        /// 是否开启广告商 ID 收集，默认为 false
+        /// </summary>
+        public bool enableAdvertiserIDCollection = false;
+
+        /// <summary>
+        /// OAID证书, 仅 Android，用于上报 OAID 仅 [TapTapRegion.CN] 生效
+        /// </summary>
+        public string oaidCert = null;
+
+        /// <summary>
+        /// 是否禁用 OAID 反射
+        /// </summary>
+        public bool disableReflectionOAID = true;
 
         [JsonProperty("moduleName")]
         private string _moduleName = "TapTapEvent";
