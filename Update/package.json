@@ -2,10 +2,10 @@
   "name": "com.taptap.sdk.update",
   "displayName": "TapTapSDK Update",
   "description": "TapTapSDK Update",
-  "version": "4.9.4",
+  "version": "4.10.0-beta.3",
   "unity": "2019.4",
   "license": "MIT",
   "dependencies": {
-    "com.taptap.sdk.core": "4.9.4"
+    "com.taptap.sdk.core": "4.10.0-beta.3"
   }
 }
