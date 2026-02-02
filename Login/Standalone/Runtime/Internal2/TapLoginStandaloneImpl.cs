@@ -198,7 +198,7 @@ namespace TapSDK.Login.Internal
             string codeChallenge = CodeUtil.GetCodeChallenge(codeVerifier);
             string versionCode = TapTapSDK.Version;
             string codeChallengeMethod = "S256";
-            TapLoginClientBridge.TapLoginResponseByTapClient response = await TapLoginClientBridge.LoginWithScopesAsync(scopes,
+            TapLoginClientBridge.TapLoginResponseByTapClient response = await TapLoginClientBridge.StartLoginWithScopes(scopes,
             responseType, redirectUri, codeChallenge, state, codeChallengeMethod, versionCode, sdkUA, info);
             TapLog.Log("start handle login result");
             TapLog.Log("LoginWithScopes handle in thread = " + Thread.CurrentThread.ManagedThreadId);

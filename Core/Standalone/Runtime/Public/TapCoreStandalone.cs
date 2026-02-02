@@ -248,6 +248,18 @@ namespace TapSDK.Core.Standalone
         {
             TapOpenlogStandalone.LogBusiness(project, version, action, properties);
         }
+
+#if UNITY_STANDALONE_WIN
+        public void RegisterTapTapPCStateChangeListener(Action<int> action)
+        {
+            TapClientStandalone.RegisterTapTapPCStateChangeListener(action);
+        }
+
+        public void UnRegisterTapTapPCStateChangeListener(Action<int> action)
+        {
+            TapClientStandalone.UnRegisterTapTapPCStateChangeListener(action);
+        }
+#endif
  }
 
 

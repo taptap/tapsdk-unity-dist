@@ -56,7 +56,7 @@ namespace TapSDK.CloudSave.Standalone
                     Dictionary<string, object> initConfig = new Dictionary<string, object>()
                     {
                         { "region", region },
-                        { "log_to_console", 1 },
+                        { "log_to_console", options.enableLog ? 1 : 0 },
                         { "log_level", 3 },
                         { "data_dir", cacheDir },
                         { "client_id", options.clientId },
@@ -70,6 +70,8 @@ namespace TapSDK.CloudSave.Standalone
                         { "sdk_token", loginData },
                     };
                     Log(" start invoke TapSdkCloudSaveInitialize result ");
+                    // C++ 初始化前设置，避免初始化日志在日志关闭后也输出
+                    TapCloudSaveWrapper.TapSdkCloudSaveSetLogLevel(1, options.enableLog ? 1 : 0);
                     string config = JsonConvert.SerializeObject(initConfig);
                     int initResult = TapCloudSaveWrapper.TapSdkCloudSaveInitialize(config);
                     Log("TapSdkCloudSaveInitialize result = " + initResult);

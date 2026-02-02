@@ -39,18 +39,6 @@ namespace TapSDK.Compliance.Internal
         {
             titleText.text = payable.Title;
             contentText.text = ProcessContent(payable.Content);
-            if (IsTextOverflowing(contentText, out int lineCount, out float lineHeight)) {
-                scrollRect.enabled = true;
-                contentText.rectTransform.sizeDelta = new Vector2(contentText.rectTransform.sizeDelta.x,
-                    80 + lineCount * lineHeight);
-                    
-                var contentRect = scrollRect.transform.Find("Viewport/Content").GetComponent<RectTransform>();
-                contentRect.sizeDelta = new Vector2(contentRect.sizeDelta.x,
-                    80 + lineCount * lineHeight);
-            }
-            else {
-                scrollRect.enabled = false;
-            }
             // var buttonText = Config.GetHealthTip();
             // if (!string.IsNullOrEmpty(buttonText))
             //     this.buttonText.text = buttonText;
@@ -60,18 +48,6 @@ namespace TapSDK.Compliance.Internal
         {
             titleText.text = title;
             contentText.text = ProcessContent(content);
-            if (IsTextOverflowing(contentText, out int lineCount, out float lineHeight)) {
-                scrollRect.enabled = true;
-                contentText.rectTransform.sizeDelta = new Vector2(contentText.rectTransform.sizeDelta.x,
-                    80 + lineCount * lineHeight);
-                    
-                var contentRect = scrollRect.transform.Find("Viewport/Content").GetComponent<RectTransform>();
-                contentRect.sizeDelta = new Vector2(contentRect.sizeDelta.x,
-                    80 + lineCount * lineHeight);
-            }
-            else {
-                scrollRect.enabled = false;
-            }
             if (!string.IsNullOrEmpty(buttonText))
                 this.buttonText.text = buttonText;
             _onOk = onOk;
@@ -86,19 +62,6 @@ namespace TapSDK.Compliance.Internal
         {
             Close();
             _onOk?.Invoke();
-        }
-        
-        bool IsTextOverflowing(Text text, out int lineCount, out float lineHeight)
-        {
-            var textGenerator = text.cachedTextGenerator;
-            var settings = text.GetGenerationSettings(text.rectTransform.rect.size);
-            textGenerator.Populate(text.text, settings);
-            lineCount = textGenerator.lineCount;
-            if (TapTapComplianceManager.IsUseMobileUI()) {
-                lineCount += 3;
-            }
-            lineHeight = 25 + (text.lineSpacing - 1) * 25;
-            return lineCount > 4;
         }
     }
 }

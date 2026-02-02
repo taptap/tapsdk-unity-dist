@@ -78,18 +78,6 @@ namespace TapSDK.Compliance.Internal {
             }
             content = content.Replace("&nbsp;","\u00A0");
             contentText.text = content.Replace(" ", "\u00A0");
-            if (IsTextOverflowing(contentText, out int lineCount, out float lineHeight)) {
-                scrollRect.enabled = true;
-                contentText.rectTransform.sizeDelta = new Vector2(contentText.rectTransform.sizeDelta.x,
-                    lineCount * lineHeight);
-                    
-                var contentRect = scrollRect.transform.Find("Viewport/Content").GetComponent<RectTransform>();
-                contentRect.sizeDelta = new Vector2(contentRect.sizeDelta.x,
-                    lineCount * lineHeight);
-            }
-            else {
-                scrollRect.enabled = false;
-            }
             switchAccountButton.gameObject.SetActive(onSwitchAccount != null);
 
             var buttonText = okButton.transform.Find("Text").GetComponent<Text>();
@@ -112,19 +100,6 @@ namespace TapSDK.Compliance.Internal {
         {
             Close();
             OnSwitchAccount?.Invoke();
-        }
-        
-        bool IsTextOverflowing(Text text, out int lineCount, out float lineHeight)
-        {
-            var textGenerator = text.cachedTextGenerator;
-            var settings = text.GetGenerationSettings(text.rectTransform.rect.size);
-            textGenerator.Populate(text.text, settings);
-            lineCount = textGenerator.lineCount;
-            if (TapTapComplianceManager.IsUseMobileUI()) {
-                lineCount += 3;
-            }
-            lineHeight = 25 + (text.lineSpacing - 1) * 25;
-            return lineCount > 5;
         }
     }
 }

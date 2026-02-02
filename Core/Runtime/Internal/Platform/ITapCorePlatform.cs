@@ -20,5 +20,11 @@ namespace TapSDK.Core.Internal
             string action,
             Dictionary<string, string> properties
         );
+
+#if UNITY_STANDALONE_WIN
+        void RegisterTapTapPCStateChangeListener(Action<int> action);
+
+        void UnRegisterTapTapPCStateChangeListener(Action<int> action);
+#endif
     }
 }

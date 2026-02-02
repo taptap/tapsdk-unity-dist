@@ -162,6 +162,26 @@ namespace TapSDK.Core {
             return platformWrapper?.IsLaunchedFromTapTapPC();
         }
 
+#if UNITY_STANDALONE_WIN
+        /// <summary>
+        /// 注册 TapTap PC 客户端运行状态监听
+        /// </summary>
+        /// <param name="action">监听回调</param>
+        public static void RegisterTapTapPCStateChangeListener(Action<int> action)
+        {
+            platformWrapper?.RegisterTapTapPCStateChangeListener(action);
+        }
+
+        /// <summary>
+        /// 移除 TapTap PC 客户端运行状态监听
+        /// </summary>
+        /// <param name="action">监听回调</param>
+        public static void UnRegisterTapTapPCStateChangeListener(Action<int> action)
+        {
+            platformWrapper?.UnRegisterTapTapPCStateChangeListener(action);
+        }
+#endif
+
         private static Type[] GetInitTypeList(){
             Type interfaceType = typeof(IInitTask);
             Type[] initTaskTypes = AppDomain.CurrentDomain.GetAssemblies()

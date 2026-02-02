@@ -1,30 +1,27 @@
-using UnityEngine;
+using System;
+using System.Collections.Generic;
+using System.Runtime.InteropServices;
+using System.Threading;
 using System.Threading.Tasks;
+using TapSDK.Core.Internal.Log;
 using TapSDK.Core.Internal.Utils;
 using TapSDK.Core.Standalone.Internal;
-using TapSDK.UI;
-using System;
-using System.Runtime.InteropServices;
 using TapSDK.Core.Standalone.Internal.Openlog;
-using System.Threading;
-using TapSDK.Core.Internal.Log;
+using TapSDK.UI;
 using UnityEditor;
-
-
+using UnityEngine;
 
 namespace TapSDK.Core.Standalone
 {
 #if UNITY_STANDALONE_WIN
     public class TapClientStandalone
     {
-
         // 是否是渠道服游戏包
         private static bool isChannelPackage = false;
 
         // -1 未执行 0 失败  1 成功
         private static int lastIsLaunchedFromTapTapPCResult = -1;
         private static bool isRuningIsLaunchedFromTapTapPC = false;
-
 
         // 当为渠道游戏包时，与启动器的初始化校验结果
         private static TapInitResult tapInitResult;
@@ -37,14 +34,20 @@ namespace TapSDK.Core.Standalone
             // 正在执行中
             if (isRuningIsLaunchedFromTapTapPC)
             {
-                UIManager.Instance.OpenToast("IsLaunchedFromTapTapPC 正在执行，请勿重复调用", UIManager.GeneralToastLevel.Error);
+                UIManager.Instance.OpenToast(
+                    "IsLaunchedFromTapTapPC 正在执行，请勿重复调用",
+                    UIManager.GeneralToastLevel.Error
+                );
                 TapLog.Error("IsLaunchedFromTapTapPC 正在执行，请勿重复调用");
                 return false;
             }
             // 多次执行时返回上一次结果
             if (lastIsLaunchedFromTapTapPCResult != -1)
             {
-                TapLog.Log("IsLaunchedFromTapTapPC duplicate invoke return " + lastIsLaunchedFromTapTapPCResult);
+                TapLog.Log(
+                    "IsLaunchedFromTapTapPC duplicate invoke return "
+                        + lastIsLaunchedFromTapTapPCResult
+                );
                 return lastIsLaunchedFromTapTapPCResult > 0;
             }
 
@@ -52,7 +55,10 @@ namespace TapSDK.Core.Standalone
             TapTapSdkOptions coreOptions = TapCoreStandalone.coreOptions;
             if (coreOptions == null)
             {
-                UIManager.Instance.OpenToast("IsLaunchedFromTapTapPC 调用必须在初始化之后", UIManager.GeneralToastLevel.Error);
+                UIManager.Instance.OpenToast(
+                    "IsLaunchedFromTapTapPC 调用必须在初始化之后",
+                    UIManager.GeneralToastLevel.Error
+                );
                 TapLog.Error("IsLaunchedFromTapTapPC 调用必须在初始化之后");
                 return false;
             }
@@ -60,8 +66,16 @@ namespace TapSDK.Core.Standalone
             string pubKey = coreOptions.clientPublicKey;
             if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(pubKey))
             {
-                UIManager.Instance.OpenToast("clientId 及 TapPubKey 参数都不能为空, clientId =" + clientId + ", TapPubKey = " + pubKey, UIManager.GeneralToastLevel.Error);
-                TapLog.Error("clientId 或 TapPubKey 无效, clientId = " + clientId + ", TapPubKey = " + pubKey);
+                UIManager.Instance.OpenToast(
+                    "clientId 及 TapPubKey 参数都不能为空, clientId ="
+                        + clientId
+                        + ", TapPubKey = "
+                        + pubKey,
+                    UIManager.GeneralToastLevel.Error
+                );
+                TapLog.Error(
+                    "clientId 或 TapPubKey 无效, clientId = " + clientId + ", TapPubKey = " + pubKey
+                );
                 return false;
             }
             isRuningIsLaunchedFromTapTapPC = true;
@@ -71,12 +85,19 @@ namespace TapSDK.Core.Standalone
             try
             {
                 TapInitResult result = await RunClientBridgeMethod(clientId, pubKey);
-                TapLog.Log("check startupWithClientBridge finished thread = " + Thread.CurrentThread.ManagedThreadId);
+                TapLog.Log(
+                    "check startupWithClientBridge finished thread = "
+                        + Thread.CurrentThread.ManagedThreadId
+                );
                 isRuningIsLaunchedFromTapTapPC = false;
                 if (result.needQuitGame)
                 {
                     lastIsLaunchedFromTapTapPCResult = 0;
-                    TapCoreTracker.Instance.TrackSuccess(TapCoreTracker.METHOD_LAUNCHER, sessionId, TapCoreTracker.SUCCESS_TYPE_RESTART);
+                    TapCoreTracker.Instance.TrackSuccess(
+                        TapCoreTracker.METHOD_LAUNCHER,
+                        sessionId,
+                        TapCoreTracker.SUCCESS_TYPE_RESTART
+                    );
                     TapLog.Log("IsLaunchedFromTapTapPC Quit game");
 #if UNITY_EDITOR
                     TapLog.Log(
@@ -94,13 +115,41 @@ namespace TapSDK.Core.Standalone
                     if (result.result == (int)TapSDKInitResult.OK)
                     {
                         string currentClientId;
-                        bool isFetchClientIdSuccess = TapClientBridge.GetClientId(out currentClientId);
+                        bool isFetchClientIdSuccess = TapClientBridge.GetClientId(
+                            out currentClientId
+                        );
                         TapLog.Log("IsLaunchedFromTapTapPC get  clientId = " + currentClientId);
-                        if (isFetchClientIdSuccess && !string.IsNullOrEmpty(currentClientId) && currentClientId != clientId)
+                        if (
+                            isFetchClientIdSuccess
+                            && !string.IsNullOrEmpty(currentClientId)
+                            && currentClientId != clientId
+                        )
                         {
-                            UIManager.Instance.OpenToast("SDK 中配置的 clientId = " + clientId + "与 Tap 启动器中" + currentClientId + "不一致", UIManager.GeneralToastLevel.Error);
-                            TapLog.Error("SDK 中配置的 clientId = " + clientId + "与 Tap 启动器中" + currentClientId + "不一致");
-                            TapCoreTracker.Instance.TrackFailure(TapCoreTracker.METHOD_LAUNCHER, sessionId, -1, "SDK 中配置的 clientId = " + clientId + "与 Tap 启动器中" + currentClientId + "不一致");
+                            UIManager.Instance.OpenToast(
+                                "SDK 中配置的 clientId = "
+                                    + clientId
+                                    + "与 Tap 启动器中"
+                                    + currentClientId
+                                    + "不一致",
+                                UIManager.GeneralToastLevel.Error
+                            );
+                            TapLog.Error(
+                                "SDK 中配置的 clientId = "
+                                    + clientId
+                                    + "与 Tap 启动器中"
+                                    + currentClientId
+                                    + "不一致"
+                            );
+                            TapCoreTracker.Instance.TrackFailure(
+                                TapCoreTracker.METHOD_LAUNCHER,
+                                sessionId,
+                                -1,
+                                "SDK 中配置的 clientId = "
+                                    + clientId
+                                    + "与 Tap 启动器中"
+                                    + currentClientId
+                                    + "不一致"
+                            );
                             lastIsLaunchedFromTapTapPCResult = 0;
                             return false;
                         }
@@ -109,7 +158,10 @@ namespace TapSDK.Core.Standalone
                         if (fetchOpenIdSuccess)
                         {
                             TapLog.Log("IsLaunchedFromTapTapPC get  openId = " + openId);
-                            EventManager.TriggerEvent(EventManager.IsLaunchedFromTapTapPCFinished, openId);
+                            EventManager.TriggerEvent(
+                                EventManager.IsLaunchedFromTapTapPCFinished,
+                                openId
+                            );
                         }
                         else
                         {
@@ -117,20 +169,45 @@ namespace TapSDK.Core.Standalone
                         }
                         lastIsLaunchedFromTapTapPCResult = 1;
                         TapClientBridgePoll.StartUp();
-                        TapCoreTracker.Instance.TrackSuccess(TapCoreTracker.METHOD_LAUNCHER, sessionId, TapCoreTracker.SUCCESS_TYPE_INIT);
+                        TapCoreTracker.Instance.TrackSuccess(
+                            TapCoreTracker.METHOD_LAUNCHER,
+                            sessionId,
+                            TapCoreTracker.SUCCESS_TYPE_INIT
+                        );
                         TapLog.Log("IsLaunchedFromTapTapPC check success");
+                        // 如果开发者已经注册了监听客户端运行状态，此时添加对应回调
+                        if (
+                            taptapPCStateChangeListeners != null
+                            && taptapPCStateChangeListeners.Count > 0
+                            && !hasRegisterSystemListener
+                        )
+                        {
+                            TapClientBridge.RegisterSystemStateCallback(TapTapPCStateDelegate);
+                            hasRegisterSystemListener = true;
+                        }
                         return true;
                     }
                     else
                     {
-
-                        TapCoreTracker.Instance.TrackFailure(TapCoreTracker.METHOD_LAUNCHER, sessionId, (int)result.result, result.errorMsg ?? "");
+                        TapCoreTracker.Instance.TrackFailure(
+                            TapCoreTracker.METHOD_LAUNCHER,
+                            sessionId,
+                            (int)result.result,
+                            result.errorMsg ?? ""
+                        );
                         lastIsLaunchedFromTapTapPCResult = 0;
-                        TapLog.Log("IsLaunchedFromTapTapPC show TapClient tip Pannel " + result.result + " , error = " + result.errorMsg);
+                        TapLog.Log(
+                            "IsLaunchedFromTapTapPC show TapClient tip Pannel "
+                                + result.result
+                                + " , error = "
+                                + result.errorMsg
+                        );
                         string tipPannelPath = "Prefabs/TapClient/TapClientConnectTipPanel";
                         if (Resources.Load<GameObject>(tipPannelPath) != null)
                         {
-                            var pannel = UIManager.Instance.OpenUI<TapClientConnectTipController>(tipPannelPath);
+                            var pannel = UIManager.Instance.OpenUI<TapClientConnectTipController>(
+                                tipPannelPath
+                            );
                             pannel.Show(result.result);
                         }
                         return false;
@@ -140,30 +217,50 @@ namespace TapSDK.Core.Standalone
             catch (Exception e)
             {
                 lastIsLaunchedFromTapTapPCResult = 0;
-                TapCoreTracker.Instance.TrackFailure(TapCoreTracker.METHOD_LAUNCHER, sessionId, (int)TapSDKInitResult.Unknown, e.Message ?? "");
+                TapCoreTracker.Instance.TrackFailure(
+                    TapCoreTracker.METHOD_LAUNCHER,
+                    sessionId,
+                    (int)TapSDKInitResult.Unknown,
+                    e.Message ?? ""
+                );
 
-                TapLog.Log("IsLaunchedFromTapTapPC check exception = " + e.Message + " \n" + e.StackTrace);
+                TapLog.Log(
+                    "IsLaunchedFromTapTapPC check exception = " + e.Message + " \n" + e.StackTrace
+                );
                 string tipPannelPath = "Prefabs/TapClient/TapClientConnectTipPanel";
                 if (Resources.Load<GameObject>(tipPannelPath) != null)
                 {
-                    var pannel = UIManager.Instance.OpenUI<TapClientConnectTipController>(tipPannelPath);
+                    var pannel = UIManager.Instance.OpenUI<TapClientConnectTipController>(
+                        tipPannelPath
+                    );
                     pannel.Show((int)TapSDKInitResult.Unknown);
                 }
                 return false;
             }
         }
 
-        private static async Task<TapInitResult> RunClientBridgeMethod(string clientId, string pubKey)
+        private static async Task<TapInitResult> RunClientBridgeMethod(
+            string clientId,
+            string pubKey
+        )
         {
             TaskCompletionSource<TapInitResult> task = new TaskCompletionSource<TapInitResult>();
             try
             {
                 await Task.Run(() =>
                 {
-                    TapLog.Log( "check startupWithClientBridge start thread = " + Thread.CurrentThread.ManagedThreadId);
+                    TapLog.Log(
+                        "check startupWithClientBridge start thread = "
+                            + Thread.CurrentThread.ManagedThreadId
+                    );
                     bool needQuitGame = TapClientBridge.TapSDK_RestartAppIfNecessary(clientId);
-                    TapLog.Log("RunClientBridgeMethodWithTimeout invoke  TapSDK_RestartAppIfNecessary result = " + needQuitGame);
-                    TapLog.Log("RunClientBridgeMethodWithTimeout invoke  TapSDK_RestartAppIfNecessary finished " );
+                    TapLog.Log(
+                        "RunClientBridgeMethodWithTimeout invoke  TapSDK_RestartAppIfNecessary result = "
+                            + needQuitGame
+                    );
+                    TapLog.Log(
+                        "RunClientBridgeMethodWithTimeout invoke  TapSDK_RestartAppIfNecessary finished "
+                    );
                     if (needQuitGame)
                     {
                         tapInitResult = new TapInitResult(needQuitGame);
@@ -171,13 +268,20 @@ namespace TapSDK.Core.Standalone
                     else
                     {
                         string outputError;
-                        int tapSDKInitResult = TapClientBridge.CheckInitState(out outputError, pubKey);
-                        TapLog.Log("RunClientBridgeMethodWithTimeout invoke  CheckInitState result = " + tapSDKInitResult + ", error = " + outputError);
+                        int tapSDKInitResult = TapClientBridge.CheckInitState(
+                            out outputError,
+                            pubKey
+                        );
+                        TapLog.Log(
+                            "RunClientBridgeMethodWithTimeout invoke  CheckInitState result = "
+                                + tapSDKInitResult
+                                + ", error = "
+                                + outputError
+                        );
                         tapInitResult = new TapInitResult(tapSDKInitResult, outputError);
                     }
                     task.TrySetResult(tapInitResult);
                 });
-
             }
             catch (Exception ex)
             {
@@ -195,147 +299,60 @@ namespace TapSDK.Core.Standalone
             return isChannelPackage;
         }
 
-        public static bool isPassedInLaunchedFromTapTapPCCheck(){
+        public static bool isPassedInLaunchedFromTapTapPCCheck()
+        {
             return lastIsLaunchedFromTapTapPCResult > 0;
         }
 
-
-        private static Action<bool, string> currentLoginCallback;
-
+        private static HashSet<Action<int>> taptapPCStateChangeListeners;
+        private static volatile bool hasRegisterSystemListener = false;
         /// <summary>
-        /// 发起登录授权
+        /// 设置 TapPC 客户端状态监听
         /// </summary>
-        public static bool StartLoginWithScopes(string[] scopes, string responseType, string redirectUri,
-    string codeChallenge, string state, string codeChallengeMethod, string versonCode, string sdkUa, string info, Action<bool, string> callback)
+        internal static void RegisterTapTapPCStateChangeListener(Action<int> action)
         {
-            if (lastIsLaunchedFromTapTapPCResult == -1)
+            if (taptapPCStateChangeListeners == null)
             {
-                // UIManager.Instance.OpenToast("IsLaunchedFromTapTapPC 正在执行，请在完成后调用授权接口", UIManager.GeneralToastLevel.Error);
-                TapLog.Error(" login must be invoked after IsLaunchedFromTapTapPC success");
-                throw new Exception("login must be invoked after IsLaunchedFromTapTapPC success");
+                taptapPCStateChangeListeners = new HashSet<Action<int>>();
             }
-            TapLog.Log("LoginWithScopes start login by tapclient thread = " + Thread.CurrentThread.ManagedThreadId);
-            try
+            taptapPCStateChangeListeners.Add(action);
+            if (isPassedInLaunchedFromTapTapPCCheck() && !hasRegisterSystemListener)
             {
-                TapClientBridge.RegisterCallback(TapEventID.AuthorizeFinished_internal, loginCallbackDelegate);
-                AuthorizeResult authorizeResult = TapClientBridge.LoginWithScopesInternal(scopes, responseType, redirectUri,
-     codeChallenge, state, codeChallengeMethod, versonCode, sdkUa, info);
-                TapLog.Log("LoginWithScopes start result = " + authorizeResult);
-                if (authorizeResult != AuthorizeResult.OK)
-                {
-                    TapClientBridge.UnRegisterCallback(TapEventID.AuthorizeFinished_internal,loginCallbackDelegate);
-                    return false;
-                }
-                else
-                {
-                    currentLoginCallback = callback;
-                    return true;
-                }
-
+                TapClientBridge.RegisterSystemStateCallback(TapTapPCStateDelegate);
+                hasRegisterSystemListener = true;
             }
-            catch (Exception ex)
-            {
-                TapLog.Log("LoginWithScopes start login by tapclient error = " + ex.Message);
-                TapClientBridge.UnRegisterCallback(TapEventID.AuthorizeFinished_internal,loginCallbackDelegate);
-                return false;
-            }
-
         }
 
-
-        [AOT.MonoPInvokeCallback(typeof(TapClientBridge.CallbackDelegate))]
-        static void loginCallbackDelegate(int id, IntPtr userData)
+        internal static void UnRegisterTapTapPCStateChangeListener(Action<int> action)
         {
-            TapLog.Log("LoginWithScopes recevie callback " + id);
-            if (id == (int)TapEventID.AuthorizeFinished_internal)
+            if (taptapPCStateChangeListeners != null && taptapPCStateChangeListeners.Count > 0)
             {
-                TapLog.Log("LoginWithScopes callback thread = " + Thread.CurrentThread.ManagedThreadId);
-                TapClientBridge.AuthorizeFinishedResponse response = Marshal.PtrToStructure<TapClientBridge.AuthorizeFinishedResponse>(userData);
-                TapLog.Log("LoginWithScopes callback = " + response.is_cancel + " uri = " + response.callback_uri);
-                if (currentLoginCallback != null)
+                taptapPCStateChangeListeners.Remove(action);
+                if (taptapPCStateChangeListeners.Count == 0)
                 {
-                    currentLoginCallback(response.is_cancel != 0, response.callback_uri);
-                    TapClientBridge.UnRegisterCallback(TapEventID.AuthorizeFinished_internal,loginCallbackDelegate);
-                    currentLoginCallback = null;
+                    TapClientBridge.UnRegisterSystemStateCallback(TapTapPCStateDelegate);
+                    hasRegisterSystemListener = false;
                 }
             }
         }
-        
-         // DLC 相关功能
-        private static Action<string, bool> currentDlcDelegate;
-        private static Action<bool> currentLicenseDelegate;
 
-        /// 查询是否购买 DLC , 未调用 isLaunchFromPC 会抛异常
-        public static bool QueryDLC(string skuId)
-        {
-            if (lastIsLaunchedFromTapTapPCResult != 1)
-            {
-                throw new Exception("queryDLC must be invoked after IsLaunchedFromTapTapPC success");
-            }
-            bool success = TapClientBridge.QueryDLC(skuId);
-            return success;
-        }
-
-        /// 跳转到 TapTap 客户端 DLC 购买页面 , 未调用 isLaunchFromPC 会抛异常
-        public static bool ShowStore(string skuId)
-        {
-            if (lastIsLaunchedFromTapTapPCResult != 1)
-            {
-                throw new Exception("purchaseDLC must be invoked after IsLaunchedFromTapTapPC success");
-            }
-            TapLog.Log("purchaseDLC start = " + skuId);
-            return TapClientBridge.TapDLC_ShowStore(skuId);
-        }
-
-        /// 注册 DLC 购买状态变更回调，包括购买成功和退款
-        public static void RegisterDLCOwnedCallback(Action<string, bool> dlcDelegate)
-        {
-            currentDlcDelegate = dlcDelegate;
-            TapClientBridge.RegisterCallback(TapEventID.DLCPlayableStatusChanged, DLCCallbackDelegate);
-        }
-
-        /// DLC 回调
         [AOT.MonoPInvokeCallback(typeof(TapClientBridge.CallbackDelegate))]
-        static void DLCCallbackDelegate(int id, IntPtr userData)
+        static void TapTapPCStateDelegate(int id, IntPtr userData)
         {
-            TapLog.Log("queryDlC recevie callback " + id);
-            if (currentDlcDelegate != null)
+            if (id == (int)TapEventID.SystemStateChanged)
             {
-                TapClientBridge.DLCPlayableStatusChangedResponse response = Marshal.PtrToStructure<TapClientBridge.DLCPlayableStatusChangedResponse>(userData);
-                TapLog.Log("queryDlC callback =  " + response.dlc_id + " isOwn = " + response.is_playable);
-                currentDlcDelegate(response.dlc_id, response.is_playable != 0);
+                SystemStateResponse response = Marshal.PtrToStructure<SystemStateResponse>(
+                    userData
+                );
+                if (taptapPCStateChangeListeners != null)
+                {
+                    foreach (var listener in taptapPCStateChangeListeners)
+                    {
+                        listener(response.state);
+                    }
+                }
             }
         }
-
-         /// 注册 License 购买状态变更回调，包括购买成功和退款
-        public static void RegisterLicenseCallback(Action<bool> licensecDelegate)
-        {
-            currentLicenseDelegate = licensecDelegate;
-            TapClientBridge.RegisterCallback(TapEventID.GamePlayableStatusChanged, LicenseCallbackDelegate);
-        }
-
-        /// License 回调
-        [AOT.MonoPInvokeCallback(typeof(TapClientBridge.CallbackDelegate))]
-        static void LicenseCallbackDelegate(int id, IntPtr userData)
-        {
-            TapLog.Log("License recevie callback " + id);
-            if (currentLicenseDelegate != null)
-            {
-                TapClientBridge.GamePlayableStatusChangedResponse response = Marshal.PtrToStructure<TapClientBridge.GamePlayableStatusChangedResponse>(userData);
-                TapLog.Log("License callback  isOwn changed " + response.is_playable );
-                currentLicenseDelegate(response.is_playable != 0);
-            }
-        }
-
-        public static bool HasLicense()
-        {
-            if (lastIsLaunchedFromTapTapPCResult != 1)
-            {
-                throw new Exception("checkLicense must be invoked after IsLaunchedFromTapTapPC success");
-            }
-            return TapClientBridge.HasLicense();
-        }
-
 
         // 初始化校验结果
         private class TapInitResult

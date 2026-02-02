@@ -1,19 +1,14 @@
-﻿using TapSDK.License;
-using TapSDK.License.Internal;
-using TapSDK.Core;
-using TapSDK.Core.Standalone;
+﻿using System;
 using System.Collections.Generic;
-using System;
-using UnityEngine.Animations;
-using System.Linq;
-using TapSDK.Core.Internal.Log;
+using TapSDK.Core.Standalone;
+using TapSDK.License;
+using TapSDK.License.Internal;
 
-#if PLATFORM_STANDALONE_WIN 
-namespace TapSDK.License.Standalone {
-
+#if PLATFORM_STANDALONE_WIN
+namespace TapSDK.License.Standalone
+{
     public class TapLicenseStandalone : ITapLicenseBridge
     {
-
         private List<ITapDlcCallback> currentDLCCallbacks;
 
         private List<ITapLicenseCallback> currentLicenseCallbacks;
@@ -29,6 +24,7 @@ namespace TapSDK.License.Standalone {
         {
             TaplicenseTracker.Instance.TrackInit();
         }
+
         public void CheckLicense()
         {
             if (!CheckInit())
@@ -37,17 +33,26 @@ namespace TapSDK.License.Standalone {
             }
             currentSessionId = Guid.NewGuid().ToString();
             string method = "checkLicense";
-            Dictionary<string, string> props = new Dictionary<string, string> { { "license_type", "tap_license" } };
+            Dictionary<string, string> props = new Dictionary<string, string>
+            {
+                { "license_type", "tap_license" },
+            };
             TaplicenseTracker.Instance.TrackStart(method, currentSessionId, props);
             bool isOwned = false;
             try
             {
-                isOwned = TapClientStandalone.HasLicense();
+                isOwned = TapLicenseClientBridge.HasLicense();
             }
             catch (Exception e)
             {
-                TaplicenseTracker.Instance.TrackFailure(method, currentSessionId, props, -1, e.Message ?? "");
-                throw ;
+                TaplicenseTracker.Instance.TrackFailure(
+                    method,
+                    currentSessionId,
+                    props,
+                    -1,
+                    e.Message ?? ""
+                );
+                throw;
             }
 
             if (isOwned)
@@ -56,7 +61,13 @@ namespace TapSDK.License.Standalone {
             }
             else
             {
-                TaplicenseTracker.Instance.TrackFailure(method, currentSessionId, props, 0, "NOT_PURCHASED");
+                TaplicenseTracker.Instance.TrackFailure(
+                    method,
+                    currentSessionId,
+                    props,
+                    0,
+                    "NOT_PURCHASED"
+                );
             }
 
             if (currentLicenseCallbacks != null)
@@ -72,7 +83,6 @@ namespace TapSDK.License.Standalone {
                         callback?.OnLicenseFailed();
                     }
                 }
-
             }
         }
 
@@ -80,7 +90,6 @@ namespace TapSDK.License.Standalone {
         {
             CheckLicense();
         }
-
 
         public void QueryDLC(string[] skus)
         {
@@ -94,21 +103,30 @@ namespace TapSDK.License.Standalone {
             }
             currentSessionId = Guid.NewGuid().ToString();
             string method = "queryDLC";
-            Dictionary<string, string> props = new Dictionary<string, string> { { "sku_ids", string.Join(",", skus) } };
+            Dictionary<string, string> props = new Dictionary<string, string>
+            {
+                { "sku_ids", string.Join(",", skus) },
+            };
             TaplicenseTracker.Instance.TrackStart(method, currentSessionId, props);
             Dictionary<string, object> dlcResult = new Dictionary<string, object>();
             try
             {
                 foreach (string skuId in skus)
                 {
-                    bool isOwned = TapClientStandalone.QueryDLC(skuId);
+                    bool isOwned = TapLicenseClientBridge.QueryDLC(skuId);
                     dlcResult.Add(skuId, isOwned ? 1 : 0);
                 }
             }
             catch (Exception e)
             {
-                TaplicenseTracker.Instance.TrackFailure(method, currentSessionId, props, -1, e.Message ?? "");
-                throw ;
+                TaplicenseTracker.Instance.TrackFailure(
+                    method,
+                    currentSessionId,
+                    props,
+                    -1,
+                    e.Message ?? ""
+                );
+                throw;
             }
             TaplicenseTracker.Instance.TrackSuccess(method, currentSessionId, props);
             if (currentDLCCallbacks != null)
@@ -130,10 +148,9 @@ namespace TapSDK.License.Standalone {
             if (!HasRegisterNativeDLCCallback)
             {
                 HasRegisterNativeDLCCallback = true;
-                TapClientStandalone.RegisterDLCOwnedCallback(DLCCallbackDelegate);
+                TapLicenseClientBridge.RegisterDLCOwnedCallback(DLCCallbackDelegate);
             }
         }
-
 
         public void RegisterLicencesCallback(ITapLicenseCallback callback)
         {
@@ -145,7 +162,7 @@ namespace TapSDK.License.Standalone {
             if (!HasRegisterNativeLicenseCallback)
             {
                 HasRegisterNativeLicenseCallback = true;
-                TapClientStandalone.RegisterLicenseCallback(LicenseCallbackDelegate);
+                TapLicenseClientBridge.RegisterLicenseCallback(LicenseCallbackDelegate);
             }
         }
 
@@ -157,16 +174,25 @@ namespace TapSDK.License.Standalone {
             }
             currentSessionId = Guid.NewGuid().ToString();
             string method = "purchaseDLC";
-            Dictionary<string, string> props = new Dictionary<string, string> { { "sku_id", skuId } };
+            Dictionary<string, string> props = new Dictionary<string, string>
+            {
+                { "sku_id", skuId },
+            };
             TaplicenseTracker.Instance.TrackStart(method, currentSessionId, props);
             bool isSuccess = false;
             try
             {
-                isSuccess = TapClientStandalone.ShowStore(skuId);
+                isSuccess = TapLicenseClientBridge.ShowStore(skuId);
             }
             catch (Exception e)
             {
-                TaplicenseTracker.Instance.TrackFailure(method, currentSessionId, props, -1, e.Message ?? "");
+                TaplicenseTracker.Instance.TrackFailure(
+                    method,
+                    currentSessionId,
+                    props,
+                    -1,
+                    e.Message ?? ""
+                );
                 throw;
             }
             if (isSuccess)
@@ -175,7 +201,13 @@ namespace TapSDK.License.Standalone {
             }
             else
             {
-                TaplicenseTracker.Instance.TrackFailure(method, currentSessionId, props, -1, "ShowStoreFailed");
+                TaplicenseTracker.Instance.TrackFailure(
+                    method,
+                    currentSessionId,
+                    props,
+                    -1,
+                    "ShowStoreFailed"
+                );
             }
         }
 
@@ -185,11 +217,15 @@ namespace TapSDK.License.Standalone {
             {
                 foreach (ITapDlcCallback callback in currentDLCCallbacks)
                 {
-                    callback?.OnOrderCallBack(skuId, isOwned ? TapLicensePurchasedCode.DLC_PURCHASED : TapLicensePurchasedCode.DLC_NOT_PURCHASED);
+                    callback?.OnOrderCallBack(
+                        skuId,
+                        isOwned
+                            ? TapLicensePurchasedCode.DLC_PURCHASED
+                            : TapLicensePurchasedCode.DLC_NOT_PURCHASED
+                    );
                 }
             }
         }
-
 
         private void LicenseCallbackDelegate(bool isOwned)
         {
@@ -206,7 +242,6 @@ namespace TapSDK.License.Standalone {
                         callback?.OnLicenseFailed();
                     }
                 }
-
             }
         }
 
@@ -218,7 +253,6 @@ namespace TapSDK.License.Standalone {
             }
             return true;
         }
-
     }
 }
 #endif

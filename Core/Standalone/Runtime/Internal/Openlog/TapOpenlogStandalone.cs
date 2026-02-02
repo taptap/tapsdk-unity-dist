@@ -36,6 +36,8 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
 #if UNITY_STANDALONE
             InitGeneralParameter();
             InitOpenlogStartParameter();
+            // c++ 初始化前设置日志等级，避免初始化日志直接输出
+            TdkSetLogLevel(1, TapCoreStandalone.coreOptions.enableLog ? 1 : 0);
             string openlogStartStr = JsonConvert.SerializeObject(openlogStartParameter);
             int result = TdkOnAppStarted(openlogStartStr, commonVariablesGetter, freeString);
             BindWindowChange();
@@ -151,7 +153,8 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
                 openlogStartParameter[TapOpenlogStartParamConstants.PARAM_REGION] =
                     TapCoreStandalone.coreOptions.region;
             }
-            openlogStartParameter[TapOpenlogStartParamConstants.PARAM_LOG_TO_CONSOLE] = 1;
+            openlogStartParameter[TapOpenlogStartParamConstants.PARAM_LOG_TO_CONSOLE] =
+                TapCoreStandalone.coreOptions.enableLog ? 1 : 0;
             openlogStartParameter[TapOpenlogStartParamConstants.PARAM_LOG_LEVEL] = 1;
             string openLogDirPath = Path.Combine(Application.persistentDataPath, "OpenlogData");
             if (

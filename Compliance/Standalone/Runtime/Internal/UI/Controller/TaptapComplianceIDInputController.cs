@@ -82,20 +82,6 @@ namespace TapSDK.Compliance.Internal
             {
                 titleText.text = config.Title;
                 descriptionText.text = config.Content.Replace(" ", "\u00A0");
-                if (IsTextOverflowing(descriptionText, out int lineCount, out float lineHeight))
-                {
-                    scrollRect.enabled = true;
-                    descriptionText.rectTransform.sizeDelta = new Vector2(descriptionText.rectTransform.sizeDelta.x,
-                        40 + (lineCount - 3) * lineHeight);
-
-                    var contentRect = scrollRect.transform.Find("Viewport/Content").GetComponent<RectTransform>();
-                    contentRect.sizeDelta = new Vector2(contentRect.sizeDelta.x,
-                        40 + (lineCount - 3) * lineHeight);
-                }
-                else
-                {
-                    scrollRect.enabled = false;
-                }
                 buttonText.text = config.PositiveButtonText;
             }
 
@@ -235,16 +221,6 @@ namespace TapSDK.Compliance.Internal
             //             }
             //
             //             return true;
-        }
-
-        bool IsTextOverflowing(Text text, out int lineCount, out float lineHeight)
-        {
-            var textGenerator = text.cachedTextGenerator;
-            var settings = text.GetGenerationSettings(text.rectTransform.rect.size);
-            textGenerator.Populate(text.text, settings);
-            lineCount = textGenerator.lineCount + 3;
-            lineHeight = 15 + (text.lineSpacing - 1) * 15;
-            return lineCount > 3;
         }
 
     }
