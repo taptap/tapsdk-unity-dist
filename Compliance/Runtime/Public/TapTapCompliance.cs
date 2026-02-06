@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using TapSDK.Core;
 using TapSDK.Compliance.Model;
 using TapSDK.Compliance.Internal;
@@ -10,7 +10,7 @@ namespace TapSDK.Compliance
     public static class TapTapCompliance
     {
 
-        public static readonly string Version = "4.9.3";
+        public static readonly string Version = "4.10.0-beta.4";
 
         public static void RegisterComplianceCallback(Action<int, string> callback)
         {

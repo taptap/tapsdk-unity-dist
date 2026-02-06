@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using TapSDK.CloudSave.Internal;
@@ -7,7 +7,7 @@ namespace TapSDK.CloudSave
 {
     public class TapTapCloudSave
     {
-        public static readonly string Version = "4.9.3";
+        public static readonly string Version = "4.10.0-beta.4";
 
         public static void RegisterCloudSaveCallback(ITapCloudSaveCallback callback)
         {

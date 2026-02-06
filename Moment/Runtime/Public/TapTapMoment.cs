@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using TapSDK.Moment.Internal;
 using TapSDK.Core.Internal.Utils;
@@ -43,7 +43,7 @@ namespace TapSDK.Moment
     public class TapTapMoment
     {
 
-        public static readonly string Version = "4.9.3";
+        public static readonly string Version = "4.10.0-beta.4";
 
         // 显示动态页面
         public static void open()

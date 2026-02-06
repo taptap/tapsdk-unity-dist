@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using TapSDK.Relation.Internal;
 using TapSDK.Core;
@@ -71,7 +71,7 @@ namespace TapSDK.Relation
         }
 
 
-        public static readonly string Version = "4.9.3";
+        public static readonly string Version = "4.10.0-beta.4";
 
 
     }

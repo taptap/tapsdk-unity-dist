@@ -4,12 +4,12 @@
     <repositories>
       <repository>https://repo.maven.apache.org/maven2</repository>
     </repositories>
-    <androidPackage spec="com.taptap.sdk:tap-leaderboard-unity:4.9.6-beta.1" />
+    <androidPackage spec="com.taptap.sdk:tap-leaderboard-unity:4.10.0-beta.3" />
   </androidPackages>
   <iosPods>
     <sources>
       <source>https://github.com/CocoaPods/Specs.git</source>
     </sources>
-    <iosPod addToAllTargets="false" bitcodeEnabled="false" name="TapTapSDK/Leaderboard" version="4.9.6-beta.1" />
+    <iosPod addToAllTargets="false" bitcodeEnabled="false" name="TapTapSDK/Leaderboard" version="4.10.0-beta.3" />
   </iosPods>
 </dependencies>

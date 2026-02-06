@@ -1,4 +1,4 @@
-﻿using TapSDK.Update.Internal;
+using TapSDK.Update.Internal;
 using TapSDK.Core.Internal.Utils;
 using TapSDK.Core;
 using System;
@@ -6,7 +6,7 @@ using System;
 namespace TapSDK.Update {
     public class TapTapUpdate {
 
-        public static readonly string Version = "4.9.3";
+        public static readonly string Version = "4.10.0-beta.4";
         
         static readonly ITapUpdateBridge update;
 

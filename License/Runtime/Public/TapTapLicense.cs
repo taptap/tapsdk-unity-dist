@@ -1,4 +1,4 @@
-﻿using TapSDK.License.Internal;
+using TapSDK.License.Internal;
 using TapSDK.Core.Internal.Utils;
 using System;
 using UnityEngine.PlayerLoop;
@@ -7,7 +7,7 @@ using TapSDK.Core;
 namespace TapSDK.License {
     public class TapTapLicense {
 
-        public static readonly string Version = "4.9.3";
+        public static readonly string Version = "4.10.0-beta.4";
         
         static readonly ITapLicenseBridge license;
 

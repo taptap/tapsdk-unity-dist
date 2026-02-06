@@ -205,8 +205,14 @@ namespace TapSDK.Core.Standalone
             {
                 return;
             }
-            if (!checkKeyValueLength(key, value))
+            if (!checkLength(key))
             {
+                TapLog.Error(key + " Property key length should be less than or equal to 256 characters.");
+                return;
+            }
+            if (!checkLength(value))
+            {
+                TapLog.Error(value + " Property value length should be less than or equal to 256 characters.");
                 return;
             }
             Tracker.AddCommonProperty(key, value);
@@ -345,8 +351,9 @@ namespace TapSDK.Core.Standalone
             }
         }
 
-        private bool checkLength(string value, int maxLength = 256)
+        private bool checkLength(string value)
         {
+            var maxLength = 256;
             if (value.Length <= 0 || value.Length > maxLength)
             {
                 return false;
@@ -393,8 +400,14 @@ namespace TapSDK.Core.Standalone
             {
                 foreach (var property in properties)
                 {
-                    if (!checkKeyValueLength(property.Key, property.Value))
+                    if (property.Key.Length <= 0 || property.Key.Length > 256)
                     {
+                        TapLog.Log(property.Key + " Property key length should be more then 0 and less than or equal to 256 characters.");
+                        continue;
+                    }
+                    if (property.Value.ToString().Length > 256)
+                    {
+                        TapLog.Log(property.Value + " Property value length should be less than or equal to 256 characters.");
                         continue;
                     }
                     filteredProperties.Add(property.Key, property.Value);
@@ -402,30 +415,5 @@ namespace TapSDK.Core.Standalone
             }
             return filteredProperties;
         }
-
-        private bool checkKeyValueLength(string key, object value)
-        {
-
-            if (key == null || key.Length <= 0 || key.Length > 256)
-            {
-                TapLog.Log(key + " Property key length should be more then 0 and less than or equal to 256 characters.");
-                return false;
-            }
-            var maxLength = 4096;
-            if (key.Equals("device_id") || key.Equals("user_id"))
-            {
-                maxLength = 256;
-            }
-            if (value is string stringValue)
-            {
-                if (stringValue.Length > maxLength)
-                {
-                    TapLog.Log(key + " Property value length should be less than or equal to " + maxLength + " characters.");
-                    return false;
-                }
-            }
-            return true;
-        }
-
     }
 }

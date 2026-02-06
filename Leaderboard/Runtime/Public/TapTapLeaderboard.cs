@@ -1,4 +1,4 @@
-﻿using System.Collections.Generic;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using JetBrains.Annotations;
 using TapSDK.Leaderboard.Runtime.Internal;
@@ -13,7 +13,7 @@ namespace TapSDK.Leaderboard
         /// <summary>
         /// SDK版本号
         /// </summary>
-        public static readonly string Version = "4.9.3";
+        public static readonly string Version = "4.10.0-beta.4";
 
         /// <summary>
         /// 打开排行榜页面
