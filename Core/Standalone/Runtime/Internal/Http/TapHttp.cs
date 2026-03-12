@@ -27,10 +27,7 @@ namespace TapSDK.Core.Standalone.Internal.Http
         public static readonly string HOST_CN = "https://tapsdk.tapapis.cn";
         public static readonly string HOST_IO = "https://tapsdk.tapapis.com";
 
-        private static HttpClient client = new HttpClient{
-            // 默认超时 10 秒
-            Timeout = TimeSpan.FromMilliseconds(CONNECT_TIMEOUT_MILLIS)
-        };
+        private static HttpClient client = GetHttpClient();
 
         private readonly TapHttpConfig httpConfig;
 
@@ -46,6 +43,16 @@ namespace TapSDK.Core.Standalone.Internal.Http
         public static TapHttpBuilder NewBuilder(string moduleName, string moduleVersion)
         {
             return new TapHttpBuilder(moduleName, moduleVersion);
+        }
+
+        private static HttpClient GetHttpClient()
+        {
+            var handler = new HttpClientHandler { UseCookies = false };
+            HttpClient client = new HttpClient(handler){
+                // 默认超时 10 秒
+                Timeout = TimeSpan.FromMilliseconds(CONNECT_TIMEOUT_MILLIS)
+            };
+            return client;
         }
 
         public async void PostJson<T>(
