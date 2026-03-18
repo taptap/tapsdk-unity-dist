@@ -1,0 +1,3 @@
+<linker>
+  <assembly fullname="TapSDK.OnlineBattle.Runtime" preserve="all" />
+</linker>

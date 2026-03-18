@@ -1,0 +1,6 @@
+framework module onlinebattle_sdk {
+     header "export_api.h"
+     header "onlinebattle_common.h"
+     header "onlinebattle_sdk.h"
+     export *
+}
