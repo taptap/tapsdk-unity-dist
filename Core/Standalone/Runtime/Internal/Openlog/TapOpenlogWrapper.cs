@@ -1,5 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
+using AOT;
+using UnityEngine;
 
 namespace TapSDK.Core.Standalone.Internal.Openlog
 {
@@ -12,6 +14,46 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
 #elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
         internal const string DllName = "libtapsdkcorecpp";
 #endif
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate void TapSdkCppLogWriterDelegate(
+            int logLevel,
+            string codeLocation,
+            string logTag,
+            string logMessage
+        );
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void TapSdkCppInitLogger(int logLevel, TapSdkCppLogWriterDelegate logWriter);
+
+        private static readonly TapSdkCppLogWriterDelegate logWriterDelegate = LogWriterCallback;
+
+        [MonoPInvokeCallback(typeof(TapSdkCppLogWriterDelegate))]
+        private static void LogWriterCallback(int logLevel, string codeLocation, string logTag, string logMessage)
+        {
+            var msg = $"[TapSDK-{logTag}] [{codeLocation}] {logMessage}";
+            switch (logLevel)
+            {
+                case 1: // trace
+                case 2: // debug
+                    Debug.Log(msg);
+                    break;
+                case 3: // info
+                    Debug.Log(msg);
+                    break;
+                case 4: // warn
+                    Debug.LogWarning(msg);
+                    break;
+                default: // error
+                    Debug.LogError(msg);
+                    break;
+            }
+        }
+
+        internal static void InitLogger(int logLevel)
+        {
+            TapSdkCppInitLogger(logLevel, logWriterDelegate);
+        }
 
         /**
          * 初始化接口，只需要调用一次。

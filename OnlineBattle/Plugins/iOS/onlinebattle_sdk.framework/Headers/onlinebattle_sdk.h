@@ -9,6 +9,13 @@
 extern "C" {
 #endif
 
+#ifdef TAPSDK_SHARED_LIB
+/**
+ * 初始化日志模块
+ */
+TAPSDK_EXPORT_API void TapSdkOnlineBattleInitLogger(TapSdkCppLogWriter logWriter);
+#endif
+
 /**
  * 初始化接口，只需要调用一次。非线程安全，并发调用可能崩溃。
  *
@@ -17,8 +24,6 @@ extern "C" {
  *     TapSDK参数格式
  *     {
  *       "region": 2,
- *       "logToConsole": 1,
- *       "logLevel": 3,
  *       "dataDir": "/tmp/onlinebattle",
  *       "ua": "TapSDK-Android/3.28.0",
  *       "lang": "zh-CN",
@@ -31,8 +36,6 @@ extern "C" {
  *     Tap Miniapp参数格式
  *     {
  *       "region": 2,
- *       "logToConsole": 1,
- *       "logLevel": 3,
  *       "dataDir": "/tmp/onlinebattle",
  *       "ua": "TapSDK-Android/3.28.0",
  *       "lang": "zh-CN",
@@ -40,9 +43,7 @@ extern "C" {
  *     }
  *
  *     - region 取值：0 国内、1 海外、2 RND、3 海外RND
- *     - logToConsole 是否输出到控制台：0 不输出、1 输出。
- *     - logLevel 取值：1 Trace、2 Debug、3 Info、4 Warn、5 Error、6 完全不输出
- *     - dataDir 保存本地缓存和日志文件的目录，不允许为空
+ *     - dataDir 保存本地缓存的目录，不允许为空
  *     - ua user agent，不允许为空
  *     - lang 语言，允许为空
  *     - platform 不允许为空，TapSDK专用参数
@@ -136,6 +137,18 @@ TAPSDK_EXPORT_API int TapSdkOnlineBattleConnect(int64_t reqID, const char* jsonC
  *   - -2 未初始化。尚未调用TapSdkOnlineBattleInitialize()，或者初始化失败，或者已经调用了TapSdkOnlineBattleFinalize()
  */
 TAPSDK_EXPORT_API int TapSdkOnlineBattleDisconnect(int64_t reqID, const char* clientID);
+
+/**
+ * 【TapPC专用】异步断开所有和服务端的连接，完成后通过回调函数DisconnectNotificationCB通知，断开原因是登录态过期
+ */
+TAPSDK_EXPORT_API void TapSdkOnlineBattleDisconnectAll();
+
+/**
+ * 【TapPC专用】异步和服务端断开连接，不调用回调函数。
+ *
+ * @param clientID TapSDK填ClientID，Tap Miniapp填MiniappID
+ */
+TAPSDK_EXPORT_API void TapSdkOnlineBattleCloseConnection(const char* clientID);
 
 /**
  * 小游戏切到后台时调用。切后台后，1分钟内未切回前台，SDK会认为小游戏已退出，自动关闭连接、释放资源，同时回调DisconnectNotificationCB

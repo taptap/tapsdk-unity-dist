@@ -113,7 +113,7 @@ namespace TapSDK.Core.Editor
             //使用 cocospod 远程依赖
             if (Directory.Exists(podSpecPath))
             {
-                resourcePath = Path.Combine(path + "/Pods", "TapTapSDK/Frameworks");
+                resourcePath = Path.Combine(path + "/Pods", "TapTapSDK/iOS/Frameworks");
                 UnityEngine.Debug.Log($"Find {moduleName} use pods resourcePath:{resourcePath}");
             }
             else

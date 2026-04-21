@@ -1,6 +1,12 @@
 using System;
 using System.Runtime.InteropServices;
+#if !UNITY_IOS
+using AOT;
+#endif
 using TapSDK.Core.Internal.Log;
+#if !UNITY_IOS
+using UnityEngine;
+#endif
 #if UNITY_EDITOR
 using UnityEditor;
 #endif
@@ -19,6 +25,46 @@ namespace TapSDK.OnlineBattle
         internal const string DllName = "__Internal";
 #else
         internal const string DllName = "onlinebattle_sdk";
+#endif
+
+#if !UNITY_IOS
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        public delegate void TapSdkCppLogWriterDelegate(
+            int logLevel,
+            string codeLocation,
+            string logTag,
+            string logMessage
+        );
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void TapSdkOnlineBattleInitLogger(TapSdkCppLogWriterDelegate logWriter);
+
+        private static readonly TapSdkCppLogWriterDelegate logWriterDelegate = LogWriterCallback;
+
+        [MonoPInvokeCallback(typeof(TapSdkCppLogWriterDelegate))]
+        private static void LogWriterCallback(int logLevel, string codeLocation, string logTag, string logMessage)
+        {
+            var msg = $"[TapSDK-{logTag}] [{codeLocation}] {logMessage}";
+            switch (logLevel)
+            {
+                case 1:
+                case 2:
+                case 3:
+                    Debug.Log(msg);
+                    break;
+                case 4:
+                    Debug.LogWarning(msg);
+                    break;
+                default:
+                    Debug.LogError(msg);
+                    break;
+            }
+        }
+
+        internal static void InitLogger()
+        {
+            TapSdkOnlineBattleInitLogger(logWriterDelegate);
+        }
 #endif
 
         // 登录、创建房间、匹配房间等请求的回调
@@ -467,6 +513,10 @@ namespace TapSDK.OnlineBattle
             // 编辑器模式下关闭时主动释放 Native 资源
 #if UNITY_EDITOR
             EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+#endif
+#if !UNITY_IOS
+            // iOS 走静态库，不导出 TapSdkOnlineBattleInitLogger。
+            InitLogger();
 #endif
             callbacksRef = callbacks;
             return TapSdkOnlineBattleInitialize(config, ref callbacksRef);

@@ -10,7 +10,7 @@ namespace TapSDK.Compliance
     public static class TapTapCompliance
     {
 
-        public static readonly string Version = "4.10.0";
+        public static readonly string Version = "4.10.1-beta.1";
 
         public static void RegisterComplianceCallback(Action<int, string> callback)
         {

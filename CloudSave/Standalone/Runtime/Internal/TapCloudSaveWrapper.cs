@@ -1,6 +1,8 @@
 using System;
 using System.Runtime.InteropServices;
 using System.Text;
+using AOT;
+using UnityEngine;
 
 namespace TapSDK.CloudSave.Standalone
 {
@@ -13,6 +15,44 @@ namespace TapSDK.CloudSave.Standalone
 #elif UNITY_STANDALONE_LINUX || UNITY_EDITOR_LINUX
         internal const string DllName = "libcloudsave_sdk";
 #endif
+
+        [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
+        internal delegate void TapSdkCppLogWriterDelegate(
+            int logLevel,
+            string codeLocation,
+            string logTag,
+            string logMessage
+        );
+
+        [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
+        internal static extern void TapSdkCloudSaveInitLogger(TapSdkCppLogWriterDelegate logWriter);
+
+        private static readonly TapSdkCppLogWriterDelegate logWriterDelegate = LogWriterCallback;
+
+        [MonoPInvokeCallback(typeof(TapSdkCppLogWriterDelegate))]
+        private static void LogWriterCallback(int logLevel, string codeLocation, string logTag, string logMessage)
+        {
+            var msg = $"[TapSDK-{logTag}] [{codeLocation}] {logMessage}";
+            switch (logLevel)
+            {
+                case 1:
+                case 2:
+                case 3:
+                    Debug.Log(msg);
+                    break;
+                case 4:
+                    Debug.LogWarning(msg);
+                    break;
+                default:
+                    Debug.LogError(msg);
+                    break;
+            }
+        }
+
+        internal static void InitLogger()
+        {
+            TapSdkCloudSaveInitLogger(logWriterDelegate);
+        }
 
         /**
         * 初始化接口，只需要调用一次。非线程安全，并发调用可能崩溃。

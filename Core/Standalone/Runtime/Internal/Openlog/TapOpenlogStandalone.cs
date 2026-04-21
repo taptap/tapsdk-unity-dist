@@ -36,8 +36,8 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
 #if UNITY_STANDALONE
             InitGeneralParameter();
             InitOpenlogStartParameter();
-            // c++ 初始化前设置日志等级，避免初始化日志直接输出
-            TdkSetLogLevel(1, TapCoreStandalone.coreOptions.enableLog ? 1 : 0);
+            // 初始化 C++ SDK 日志回调，将日志桥接到 Unity Debug.Log
+            InitLogger(TapCoreStandalone.coreOptions.enableLog ? 1 : 6);
             string openlogStartStr = JsonConvert.SerializeObject(openlogStartParameter);
             int result = TdkOnAppStarted(openlogStartStr, commonVariablesGetter, freeString);
             BindWindowChange();

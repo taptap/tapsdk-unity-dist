@@ -70,7 +70,8 @@ namespace TapSDK.CloudSave.Standalone
                         { "sdk_token", loginData },
                     };
                     Log(" start invoke TapSdkCloudSaveInitialize result ");
-                    // C++ 初始化前设置，避免初始化日志在日志关闭后也输出
+                    // 初始化 C++ SDK 日志回调，将日志桥接到 Unity Debug.Log
+                    TapCloudSaveWrapper.InitLogger();
                     TapCloudSaveWrapper.TapSdkCloudSaveSetLogLevel(1, options.enableLog ? 1 : 0);
                     string config = JsonConvert.SerializeObject(initConfig);
                     int initResult = TapCloudSaveWrapper.TapSdkCloudSaveInitialize(config);
