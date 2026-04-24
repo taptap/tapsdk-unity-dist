@@ -17,14 +17,15 @@ namespace TapSDK.Core.Standalone.Internal {
         private EventSender sender;
         private IDynamicProperties dynamicPropsDelegate;
 
+        private TapTapEventOptions eventOptions;
+
         private static string session_uuid = generateUUID();
 
-        public void Init() {
+        public void Init(TapTapEventOptions eventOptions) {
             basicProps = new Dictionary<string, object>();
             commonProps = new Dictionary<string, object>();
-
-            var coreOptions = TapCoreStandalone.coreOptions;
-            customProps = Json.Deserialize(coreOptions.propertiesJson) as Dictionary<string, object>;
+            this.eventOptions = eventOptions;
+            customProps = Json.Deserialize(eventOptions.propertiesJson) as Dictionary<string, object>;
             sender = new EventSender();
             
             InitBasicProps();
@@ -219,7 +220,7 @@ namespace TapSDK.Core.Standalone.Internal {
                 { "app_version", TapCoreStandalone.coreOptions.gameVersion ?? Application.version },
                 { "sdk_version", TapTapSDK.Version },
                 { "network_type", Network },
-                { "channel", TapCoreStandalone.coreOptions.channel },
+                { "channel", eventOptions.channel },
                 { "mac_list", macList },
                 { "first_mac", firstMac },
                 { "device_id5", DeviceInfo.GetLaunchUniqueID() }

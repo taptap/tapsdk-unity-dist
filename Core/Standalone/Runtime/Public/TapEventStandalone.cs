@@ -27,7 +27,7 @@ namespace TapSDK.Core.Standalone
                 return;
             }
             Tracker = new Tracker();
-            Tracker.Init();
+            Tracker.Init(eventOptions);
         }
 
         /// <summary>

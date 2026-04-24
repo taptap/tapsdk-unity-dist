@@ -12,7 +12,7 @@ using System.ComponentModel;
 
 namespace TapSDK.Core {
     public class TapTapSDK {
-        public static readonly string Version = "4.10.1-beta.1";
+        public static readonly string Version = "4.10.1";
         
         public static string SDKPlatform = "TapSDK-Unity";
 
@@ -58,7 +58,7 @@ namespace TapSDK.Core {
                     task.Init(coreOption);
                 }
             }
-            TapTapEvent.Init(HandleEventOptions(coreOption));
+            TapTapEvent.Init(HandleEventOptions(null));
 
         }
 
@@ -87,7 +87,7 @@ namespace TapSDK.Core {
                     task.Init(coreOption, otherOptions);
                 }
             }
-            TapTapEvent.Init(HandleEventOptions(coreOption, otherOptions));
+            TapTapEvent.Init(HandleEventOptions(otherOptions));
         }
 
         /// <summary>
@@ -96,7 +96,9 @@ namespace TapSDK.Core {
         /// <param name="coreOption"></param>
         /// <param name="otherOptions"></param>
         /// <returns>TapEvent 属性</returns>
-        private static TapTapEventOptions HandleEventOptions(TapTapSdkOptions coreOption, TapTapSdkBaseOptions[] otherOptions = null)
+        private static TapTapEventOptions HandleEventOptions(
+            TapTapSdkBaseOptions[] otherOptions = null
+        )
         {
             TapTapEventOptions tapEventOptions = null;
             if (otherOptions != null && otherOptions.Length > 0)
@@ -112,40 +114,6 @@ namespace TapSDK.Core {
             if (tapEventOptions == null)
             {
                 tapEventOptions = new TapTapEventOptions();
-                if (coreOption != null)
-                {
-                    tapEventOptions.channel = coreOption.channel;
-                    tapEventOptions.disableAutoLogDeviceLogin = coreOption.disableAutoLogDeviceLogin;
-                    tapEventOptions.enableAutoIAPEvent = coreOption.enableAutoIAPEvent;
-                    tapEventOptions.overrideBuiltInParameters = coreOption.overrideBuiltInParameters;
-                    tapEventOptions.propertiesJson = coreOption.propertiesJson;
-                    tapEventOptions.caid = coreOption.caid;
-                    tapEventOptions.enableAdvertiserIDCollection = coreOption.enableAdvertiserIDCollection;
-                    tapEventOptions.oaidCert = coreOption.oaidCert;
-                    tapEventOptions.disableReflectionOAID = coreOption.disableReflectionOAID;
-                }
-            }
-            else
-            {
-                if (
-                    string.IsNullOrEmpty(tapEventOptions.caid)
-                    && !string.IsNullOrEmpty(coreOption.caid)
-                )
-                {
-                    tapEventOptions.caid = coreOption.caid;
-                }
-                tapEventOptions.enableAdvertiserIDCollection =
-                    tapEventOptions.enableAdvertiserIDCollection || coreOption.enableAdvertiserIDCollection;
-
-                if (
-                    string.IsNullOrEmpty(tapEventOptions.oaidCert)
-                    && !string.IsNullOrEmpty(coreOption.oaidCert)
-                )
-                {
-                    tapEventOptions.oaidCert = coreOption.oaidCert;
-                }
-                tapEventOptions.disableReflectionOAID =
-                    tapEventOptions.disableReflectionOAID && coreOption.disableReflectionOAID;
             }
             return tapEventOptions;
         }
