@@ -19,9 +19,9 @@ namespace TapSDK.CloudSave.Standalone
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         internal delegate void TapSdkCppLogWriterDelegate(
             int logLevel,
-            string codeLocation,
-            string logTag,
-            string logMessage
+            IntPtr codeLocation,
+            IntPtr logTag,
+            IntPtr logMessage
         );
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -30,23 +30,45 @@ namespace TapSDK.CloudSave.Standalone
         private static readonly TapSdkCppLogWriterDelegate logWriterDelegate = LogWriterCallback;
 
         [MonoPInvokeCallback(typeof(TapSdkCppLogWriterDelegate))]
-        private static void LogWriterCallback(int logLevel, string codeLocation, string logTag, string logMessage)
+        private static void LogWriterCallback(int logLevel, IntPtr codeLocation, IntPtr logTag, IntPtr logMessage)
         {
-            var msg = $"[TapSDK-{logTag}] [{codeLocation}] {logMessage}";
-            switch (logLevel)
+            try
             {
-                case 1:
-                case 2:
-                case 3:
-                    Debug.Log(msg);
-                    break;
-                case 4:
-                    Debug.LogWarning(msg);
-                    break;
-                default:
-                    Debug.LogError(msg);
-                    break;
+                string codeLocationStr = PtrToUtf8StringSafe(codeLocation);
+                string logTagStr = PtrToUtf8StringSafe(logTag);
+                string logMessageStr = PtrToUtf8StringSafe(logMessage);
+                var msg = $"[TapSDK-{logTagStr}] [{codeLocationStr}] {logMessageStr}";
+                switch (logLevel)
+                {
+                    case 1:
+                    case 2:
+                    case 3:
+                        Debug.Log(msg);
+                        break;
+                    case 4:
+                        Debug.LogWarning(msg);
+                        break;
+                    default:
+                        Debug.LogError(msg);
+                        break;
+                }
             }
+            catch (Exception e)
+            {
+                // 回调由 native 调用，绝不能向上抛异常
+                Debug.LogError($"[TapSDK-CloudSave] LogWriterCallback exception: {e}");
+            }
+        }
+
+        private static string PtrToUtf8StringSafe(IntPtr ptr)
+        {
+            if (ptr == IntPtr.Zero)
+            {
+                return string.Empty;
+            }
+            byte[] buffer = GetUTF8Byte(ptr);
+            // Encoding.UTF8 默认使用 replacement fallback，非法字节会被替换为 U+FFFD，不会抛异常
+            return Encoding.UTF8.GetString(buffer);
         }
 
         internal static void InitLogger()

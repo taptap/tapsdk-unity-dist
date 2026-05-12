@@ -113,7 +113,19 @@ namespace TapSDK.Core.Editor
             //使用 cocospod 远程依赖
             if (Directory.Exists(podSpecPath))
             {
-                resourcePath = Path.Combine(path + "/Pods", "TapTapSDK/iOS/Frameworks");
+                var fwRoot = Path.Combine(path + "/Pods", "TapTapSDK/iOS/Frameworks");
+                resourcePath = fwRoot;
+                // 兼容新发版结构：bundle 已按版本子目录存放（podspec 形如 'iOS/Frameworks/<version>/Xxx.bundle'）。
+                // 优先识别 fwRoot 下"包含全部目标 bundle"的子目录；找不到则 fallback 到平层（老 podspec）。
+                if (Directory.Exists(fwRoot))
+                {
+                    var versioned = Directory.GetDirectories(fwRoot)
+                        .FirstOrDefault(d => bundleNames.All(b => Directory.Exists(Path.Combine(d, b))));
+                    if (versioned != null)
+                    {
+                        resourcePath = versioned;
+                    }
+                }
                 UnityEngine.Debug.Log($"Find {moduleName} use pods resourcePath:{resourcePath}");
             }
             else
