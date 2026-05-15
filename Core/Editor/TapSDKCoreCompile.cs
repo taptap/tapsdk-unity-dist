@@ -40,6 +40,20 @@ namespace TapSDK.Core.Editor
 #if UNITY_2019_3_OR_NEWER
             UnityEngine.Debug.Log("SDX , GetUnityFrameworkTarget UNITY_2019_3_OR_NEWER");
             string target = proj.GetUnityFrameworkTargetGuid();
+            if (!string.IsNullOrEmpty(target)) return target;
+            // 团结引擎（Tuanjie Engine）的 framework target 名称不同，尝试按名称查找
+            target = proj.TargetGuidByName("TuanjieFramework");
+            if (!string.IsNullOrEmpty(target))
+            {
+                UnityEngine.Debug.Log("SDX , GetUnityFrameworkTarget fallback to TuanjieFramework");
+                return target;
+            }
+            target = proj.TargetGuidByName("UnityFramework");
+            if (!string.IsNullOrEmpty(target))
+            {
+                UnityEngine.Debug.Log("SDX , GetUnityFrameworkTarget fallback to UnityFramework by name");
+                return target;
+            }
             return target;
 #endif
             UnityEngine.Debug.Log("SDX , GetUnityFrameworkTarget");
@@ -52,6 +66,20 @@ namespace TapSDK.Core.Editor
 #if UNITY_2019_3_OR_NEWER
             UnityEngine.Debug.Log("SDX , GetUnityTarget UNITY_2019_3_OR_NEWER");
             string target = proj.GetUnityMainTargetGuid();
+            if (!string.IsNullOrEmpty(target)) return target;
+            // 团结引擎（Tuanjie Engine）主 target 名称为 Tuanjie-iPhone，按名称 fallback
+            target = proj.TargetGuidByName("Tuanjie-iPhone");
+            if (!string.IsNullOrEmpty(target))
+            {
+                UnityEngine.Debug.Log("SDX , GetUnityTarget fallback to Tuanjie-iPhone");
+                return target;
+            }
+            target = proj.TargetGuidByName("Unity-iPhone");
+            if (!string.IsNullOrEmpty(target))
+            {
+                UnityEngine.Debug.Log("SDX , GetUnityTarget fallback to Unity-iPhone by name");
+                return target;
+            }
             return target;
 #endif
             UnityEngine.Debug.Log("SDX , GetUnityTarget");

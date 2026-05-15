@@ -33,31 +33,69 @@ namespace TapSDK.Core.Editor
             // proj.AddBuildProperty(target, "OTHER_LDFLAGS", "-ObjC");
             // proj.AddBuildProperty(unityFrameworkTarget, "OTHER_LDFLAGS", "-ObjC");
 
+            // ── 主 app target（Unity-iPhone / Tuanjie-iPhone）──────────────────
             proj.SetBuildProperty(target, "ENABLE_BITCODE", "NO");
             proj.SetBuildProperty(target, "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES", "YES");
+            // 告知 Xcode 嵌入内容含 Swift，触发 Swift 链接路径自动配置
+            // 团结引擎 1.8+ 默认 EMBEDDED_CONTENT_CONTAINS_SWIFT=NO，与 Xcode 15 Swift shim 机制冲突
+            proj.SetBuildProperty(target, "EMBEDDED_CONTENT_CONTAINS_SWIFT", "YES");
             proj.SetBuildProperty(target, "SWIFT_VERSION", "5.0");
             proj.SetBuildProperty(target, "CLANG_ENABLE_MODULES", "YES");
 
-            proj.SetBuildProperty(unityFrameworkTarget, "ENABLE_BITCODE", "NO");
-            proj.SetBuildProperty(unityFrameworkTarget, "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES", "YES");
-            proj.SetBuildProperty(unityFrameworkTarget, "BUILD_LIBRARY_FOR_DISTRIBUTION", "YES");
+            // ── Framework target（UnityFramework / TuanjieFramework）───────────
+            if (TapSDKCoreCompile.CheckTarget(unityFrameworkTarget))
+            {
+                throw new UnityEditor.Build.BuildFailedException(
+                    "[TapSDK] UnityFramework/TuanjieFramework target not found. " +
+                    "iOS Swift linking fix cannot be applied and build will fail with " +
+                    "__swift_FORCE_LOAD_$_* undefined symbol errors. " +
+                    "Please check your Xcode project structure.");
+            }
 
-            proj.SetBuildProperty(unityFrameworkTarget, "SWIFT_VERSION", "5.0");
-            proj.SetBuildProperty(unityFrameworkTarget, "CLANG_ENABLE_MODULES", "YES");
+            {
+                proj.SetBuildProperty(unityFrameworkTarget, "ENABLE_BITCODE", "NO");
+                // Framework target 不能设 ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES=YES，
+                // 否则与主 app 重复嵌入 Swift stdlib，导致 Undefined symbol: __swift_FORCE_LOAD_$_swift_Builtin_float
+                proj.SetBuildProperty(unityFrameworkTarget, "ALWAYS_EMBED_SWIFT_STANDARD_LIBRARIES", "NO");
+                proj.SetBuildProperty(unityFrameworkTarget, "BUILD_LIBRARY_FOR_DISTRIBUTION", "YES");
+                proj.SetBuildProperty(unityFrameworkTarget, "SWIFT_VERSION", "5.0");
+                proj.SetBuildProperty(unityFrameworkTarget, "CLANG_ENABLE_MODULES", "YES");
+                // Swift shim 库（swift_BuiltIn_float 等）路径，辅助链接器定位
+                proj.AddBuildProperty(unityFrameworkTarget, "LIBRARY_SEARCH_PATHS", "$(SDKROOT)/usr/lib/swift");
+                proj.AddBuildProperty(unityFrameworkTarget, "LIBRARY_SEARCH_PATHS", "$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)");
 
-            proj.AddFrameworkToProject(unityFrameworkTarget, "MobileCoreServices.framework", false);
-            proj.AddFrameworkToProject(unityFrameworkTarget, "WebKit.framework", false);
-            proj.AddFrameworkToProject(unityFrameworkTarget, "Security.framework", false);
-            proj.AddFrameworkToProject(unityFrameworkTarget, "SystemConfiguration.framework", false);
-            proj.AddFrameworkToProject(unityFrameworkTarget, "CoreTelephony.framework", false);
+                proj.AddFrameworkToProject(unityFrameworkTarget, "MobileCoreServices.framework", false);
+                proj.AddFrameworkToProject(unityFrameworkTarget, "WebKit.framework", false);
+                proj.AddFrameworkToProject(unityFrameworkTarget, "Security.framework", false);
+                proj.AddFrameworkToProject(unityFrameworkTarget, "SystemConfiguration.framework", false);
+                proj.AddFrameworkToProject(unityFrameworkTarget, "CoreTelephony.framework", false);
 
-            proj.AddFileToBuild(unityFrameworkTarget,
-                proj.AddFile("usr/lib/libc++.tbd", "libc++.tbd", PBXSourceTree.Sdk));
+                proj.AddFileToBuild(unityFrameworkTarget,
+                    proj.AddFile("usr/lib/libc++.tbd", "libc++.tbd", PBXSourceTree.Sdk));
+                proj.AddFileToBuild(unityFrameworkTarget,
+                    proj.AddFile("usr/lib/libsqlite3.tbd", "libsqlite3.tbd", PBXSourceTree.Sdk));
 
-            proj.AddFileToBuild(unityFrameworkTarget,
-                proj.AddFile("usr/lib/libsqlite3.tbd", "libsqlite3.tbd", PBXSourceTree.Sdk));
+                // 注入空 Swift 文件，强制 Xcode 初始化 Swift runtime。
+                // TapSDK 含 Swift xcframework，其链接产物有 __swift_FORCE_LOAD_$_* 符号；
+                // framework target 若无 Swift 源码，Xcode 不初始化 Swift runtime，符号无提供者导致链接失败。
+                // 这是 Google / Meta 等 SDK 在 Unity 项目中处理同类问题的标准做法。
+                const string swiftFileName = "TapSDKSwiftSupport.swift";
+                string swiftFilePath = Path.Combine(path, swiftFileName);
+                if (!File.Exists(swiftFilePath))
+                {
+                    File.WriteAllText(swiftFilePath, "// Auto-generated by TapSDK – do not edit.\nimport Foundation\n");
+                }
+                // 找到已有 file reference 或新建 GUID，然后确保它在 framework target 的 Sources build phase。
+                // 仅检查 project 是否含引用不够——同名文件可能已被其他 target 引用但未加入 framework 的 Sources phase。
+                // Unity 2019.3+ 的 AddFileToBuild 对同一 GUID 重复调用安全，不产生重复 build phase entry。
+                string fileGuid = proj.FindFileGuidByRealPath(swiftFileName);
+                if (string.IsNullOrEmpty(fileGuid))
+                    fileGuid = proj.AddFile(swiftFileName, swiftFileName, PBXSourceTree.Source);
+                proj.AddFileToBuild(unityFrameworkTarget, fileGuid);
+            }
 
             proj.WriteToFile(projPath);
+
             string podfilePath = Path.Combine(path, "Podfile");
             if (!File.Exists(podfilePath))
             {
@@ -67,7 +105,6 @@ namespace TapSDK.Core.Editor
 
             string podfileContent = File.ReadAllText(podfilePath);
             podfileContent += "\ninstall! 'cocoapods', :warn_for_unused_master_specs_repo => false";
-
             File.WriteAllText(podfilePath, podfileContent);
         }
     }

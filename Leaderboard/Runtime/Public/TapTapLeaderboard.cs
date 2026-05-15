@@ -13,7 +13,7 @@ namespace TapSDK.Leaderboard
         /// <summary>
         /// SDK版本号
         /// </summary>
-        public static readonly string Version = "4.10.2";
+        public static readonly string Version = "4.10.3-beta.1";
 
         /// <summary>
         /// 打开排行榜页面
