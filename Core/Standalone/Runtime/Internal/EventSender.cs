@@ -1,6 +1,7 @@
 ﻿
 using System;
 using System.Collections;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -21,7 +22,7 @@ namespace TapSDK.Core.Standalone.Internal
         private readonly TapLog log = new TapLog("TapEvent");
         private string persistentDataPath = Application.persistentDataPath;
 
-        private Queue<Dictionary<string, object>> eventQueue = new Queue<Dictionary<string, object>>();
+        private ConcurrentQueue<Dictionary<string, object>> eventQueue = new ConcurrentQueue<Dictionary<string, object>>();
         private TapHttp tapHttp = TapHttp
             .NewBuilder("TapSDKCore", TapTapSDK.Version)
             .Sign(TapHttpSign.CreateNoneSign())
@@ -33,6 +34,11 @@ namespace TapSDK.Core.Standalone.Internal
         private const float SendInterval = 15f;
         private Timer timer;
         private DateTime lastSendTime;
+
+        // 串行化发送：0=空闲，1=发送中；防止并发批次导致 in-flight 追踪混乱
+        private int _isSending = 0;
+        // 当前正在发送的批次；SaveEvents 落盘时需合并，避免进程崩溃丢失 in-flight 事件
+        private volatile List<Dictionary<string, object>> _inFlightBatch = null;
 
         private string domain = Constants.SERVER_URL_CN;
 
@@ -67,38 +73,68 @@ namespace TapSDK.Core.Standalone.Internal
 
         public async void SendEventsAsync(Action onSendComplete)
         {
-            if (eventQueue.Count == 0)
+            if (eventQueue.IsEmpty)
+            {
+                onSendComplete?.Invoke();
+                return;
+            }
+
+            // 已有批次在发送中，跳过本次（事件留在队列，下次 tick 继续）
+            if (Interlocked.CompareExchange(ref _isSending, 1, 0) != 0)
             {
                 onSendComplete?.Invoke();
                 return;
             }
 
             var eventsToSend = new List<Dictionary<string, object>>();
-            for (int i = 0; i < MaxBatchSize && eventQueue.Count > 0; i++)
+            while (eventsToSend.Count < MaxBatchSize && eventQueue.TryDequeue(out var item))
             {
-                eventsToSend.Add(eventQueue.Dequeue());
+                eventsToSend.Add(item);
             }
 
-            var body = new Dictionary<string, object> {
-                { "data", eventsToSend }
-            };
-
-            var resonse = await tapHttp.PostJsonAsync<Boolean>(path: $"{domain}/v2/batch", json: body);
-            if (resonse.IsSuccess)
+            // 并发 TryDequeue 可能导致本次实际取到 0 条
+            if (eventsToSend.Count == 0)
             {
-                // log.Log("Events sent successfully");
+                Interlocked.Exchange(ref _isSending, 0);
+                onSendComplete?.Invoke();
+                return;
             }
-            else
+
+            // 登记 in-flight 批次，SaveEvents 落盘时合并，防止崩溃丢失
+            _inFlightBatch = eventsToSend;
+            try
             {
-                log.Warning("Failed to send events");
-                // 将事件重新添加到队列
+                var body = new Dictionary<string, object> {
+                    { "data", eventsToSend }
+                };
+
+                var response = await tapHttp.PostJsonAsync<Boolean>(path: $"{domain}/v2/batch", json: body);
+                if (!response.IsSuccess)
+                {
+                    log.Warning("Failed to send events");
+                    foreach (var eventParams in eventsToSend)
+                    {
+                        eventQueue.Enqueue(eventParams);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                log.Warning($"SendEventsAsync exception: {ex.ToString()}");
                 foreach (var eventParams in eventsToSend)
                 {
                     eventQueue.Enqueue(eventParams);
                 }
             }
-            onSendComplete?.Invoke();
-            SaveEvents();
+            finally
+            {
+                // 先清 in-flight 再落盘：此时事件已回队（失败）或确认完成（成功）
+                _inFlightBatch = null;
+                Interlocked.Exchange(ref _isSending, 0);
+                SaveEvents();
+                // 回调放在持久化之后，隔离外部异常不影响落盘
+                try { onSendComplete?.Invoke(); } catch (Exception ex) { log.Warning($"onSendComplete exception: {ex.Message}"); }
+            }
         }
 
         public void Send(Dictionary<string, object> eventParams)
@@ -178,7 +214,10 @@ namespace TapSDK.Core.Standalone.Internal
                     return;
                 }
 
-                var eventList = eventQueue.ToList();
+                // 合并 in-flight 批次：若进程在 HTTP 确认前崩溃，重启后可从磁盘恢复这批事件
+                var eventList = new List<Dictionary<string, object>>(eventQueue.ToArray());
+                var inFlight = _inFlightBatch;
+                if (inFlight != null) eventList.AddRange(inFlight);
                 string jsonData = Json.Serialize(eventList);
 
                 if (string.IsNullOrEmpty(GetEventCacheFileName()))

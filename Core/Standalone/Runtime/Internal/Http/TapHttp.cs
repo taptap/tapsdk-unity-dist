@@ -399,9 +399,18 @@ namespace TapSDK.Core.Standalone.Internal.Http
         }
 
         // 判断网络连接状态
+        // Application.internetReachability 只能在主线程调用；非主线程（如 Timer 回调）调用会抛 UnityException。
+        // 捕获异常时 fallback 为"已连接"，让后续 HTTP 请求自然失败并走正常错误处理路径。
         private bool CheckNetworkConnection()
         {
-            return Application.internetReachability != NetworkReachability.NotReachable;
+            try
+            {
+                return Application.internetReachability != NetworkReachability.NotReachable;
+            }
+            catch (UnityException)
+            {
+                return true;
+            }
         }
     }
 }

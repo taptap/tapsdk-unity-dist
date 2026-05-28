@@ -7,7 +7,7 @@ namespace TapSDK.CloudSave
 {
     public class TapTapCloudSave
     {
-        public static readonly string Version = "4.10.3-beta.1";
+        public static readonly string Version = "4.10.3-beta.3";
 
         public static void RegisterCloudSaveCallback(ITapCloudSaveCallback callback)
         {

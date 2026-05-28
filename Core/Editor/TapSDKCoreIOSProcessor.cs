@@ -60,9 +60,16 @@ namespace TapSDK.Core.Editor
                 proj.SetBuildProperty(unityFrameworkTarget, "BUILD_LIBRARY_FOR_DISTRIBUTION", "YES");
                 proj.SetBuildProperty(unityFrameworkTarget, "SWIFT_VERSION", "5.0");
                 proj.SetBuildProperty(unityFrameworkTarget, "CLANG_ENABLE_MODULES", "YES");
-                // Swift shim 库（swift_BuiltIn_float 等）路径，辅助链接器定位
+                // Swift shim 库路径（$(SDKROOT)/usr/lib/swift/ 下有 .tbd 文件）
                 proj.AddBuildProperty(unityFrameworkTarget, "LIBRARY_SEARCH_PATHS", "$(SDKROOT)/usr/lib/swift");
                 proj.AddBuildProperty(unityFrameworkTarget, "LIBRARY_SEARCH_PATHS", "$(TOOLCHAIN_DIR)/usr/lib/swift/$(PLATFORM_NAME)");
+                // 显式链接 Swift shim 库。
+                // TapSDK Swift xcframework（如 TapTapSDKBridgeCore）编译时依赖这些 shim，
+                // auto-link 在 -ld_classic 链接器下不生效，必须显式 -l 指定。
+                // 这些 .tbd 文件在 $(SDKROOT)/usr/lib/swift/ 下，需配合 LIBRARY_SEARCH_PATHS 一起使用。
+                proj.AddBuildProperty(unityFrameworkTarget, "OTHER_LDFLAGS",
+                    "-lswift_Builtin_float -lswift_errno -lswift_math -lswift_signal " +
+                    "-lswift_stdio -lswift_time -lswiftsys_time -lswiftunistd");
 
                 proj.AddFrameworkToProject(unityFrameworkTarget, "MobileCoreServices.framework", false);
                 proj.AddFrameworkToProject(unityFrameworkTarget, "WebKit.framework", false);

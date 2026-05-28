@@ -422,18 +422,12 @@ namespace TapSDK.Compliance
                     var tToken = await getToken();
                     tcs.TrySetResult(tToken);
                 }
-                catch (TapException te) {
-                    if (te.Code == (int)TapErrorCode.ERROR_CODE_LOGIN_CANCEL && te.Message.Contains("Login Cancel")) {
-                        UIManager.Instance.OpenToast("授权取消", UIManager.GeneralToastLevel.Warning);
-                        return await InternalGetAccessToken(isTapUser, haveCompliance, accessToken);
-                    }
-                }
                 catch (Exception e) {
                     TapLog.Error(e.ToString());
                     throw;
                 }
             }
-            
+
             return tcs.Task.Result;
         }
         

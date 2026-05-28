@@ -15,11 +15,6 @@ namespace TapSDK.Relation
     public class TapTapRelation
     {
 
-        public static void Init(string clientId, TapTapRegionType regionType, int screenOrientation)
-        {
-            TapTapRelationManager.Instance.Init(clientId, regionType, screenOrientation);
-        }
-
         public static void StartMessenger()
         {
             TapTapRelationManager.Instance.StartMessenger();
@@ -71,7 +66,7 @@ namespace TapSDK.Relation
         }
 
 
-        public static readonly string Version = "4.10.3-beta.1";
+        public static readonly string Version = "4.10.3-beta.3";
 
 
     }

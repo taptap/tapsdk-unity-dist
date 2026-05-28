@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Newtonsoft.Json;
 using TapSDK.Achievement.Internal.Model;
 using TapSDK.Achievement.Internal.Util;
+using TapSDK.Core.Internal.Utils;
 using TapSDK.UI;
 using TapTap.Achievement.Standalone;
 
@@ -37,10 +38,14 @@ namespace TapSDK.Achievement.Standalone.Internal
         {
             if (toastingAchievements.Count > 0)
             {
-                var openParams = new TapAchievementToast.OpenParams() { data = toastingAchievements[0] };
+                var data = toastingAchievements[0];
                 toastingAchievements.RemoveAt(0);
-                UIManager.Instance.OpenUI<TapAchievementToast>("Prefabs/TapAchievementToast", openParams);
+                TapLoom.QueueOnMainThread(() => {
+                    var openParams = new TapAchievementToast.OpenParams() { data = data };
+                    UIManager.Instance.OpenUI<TapAchievementToast>("Prefabs/TapAchievementToast", openParams);
+                });
             }
+
             else
             {
                 isShowingToast = false;

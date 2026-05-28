@@ -1,6 +1,7 @@
 using System;
 using System.Runtime.InteropServices;
 #if !UNITY_IOS
+using System.Text;
 using AOT;
 #endif
 using TapSDK.Core.Internal.Log;
@@ -31,9 +32,9 @@ namespace TapSDK.OnlineBattle
         [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
         public delegate void TapSdkCppLogWriterDelegate(
             int logLevel,
-            string codeLocation,
-            string logTag,
-            string logMessage
+            IntPtr codeLocation,
+            IntPtr logTag,
+            IntPtr logMessage
         );
 
         [DllImport(DllName, CallingConvention = CallingConvention.Cdecl)]
@@ -42,23 +43,60 @@ namespace TapSDK.OnlineBattle
         private static readonly TapSdkCppLogWriterDelegate logWriterDelegate = LogWriterCallback;
 
         [MonoPInvokeCallback(typeof(TapSdkCppLogWriterDelegate))]
-        private static void LogWriterCallback(int logLevel, string codeLocation, string logTag, string logMessage)
+        private static void LogWriterCallback(int logLevel, IntPtr codeLocation, IntPtr logTag, IntPtr logMessage)
         {
-            var msg = $"[TapSDK-{logTag}] [{codeLocation}] {logMessage}";
-            switch (logLevel)
+            try
             {
-                case 1:
-                case 2:
-                case 3:
-                    Debug.Log(msg);
-                    break;
-                case 4:
-                    Debug.LogWarning(msg);
-                    break;
-                default:
-                    Debug.LogError(msg);
-                    break;
+                string codeLocationStr = PtrToUtf8StringSafe(codeLocation);
+                string logTagStr = PtrToUtf8StringSafe(logTag);
+                string logMessageStr = PtrToUtf8StringSafe(logMessage);
+                var msg = $"[TapSDK-{logTagStr}] [{codeLocationStr}] {logMessageStr}";
+                switch (logLevel)
+                {
+                    case 1:
+                    case 2:
+                    case 3:
+                        Debug.Log(msg);
+                        break;
+                    case 4:
+                        Debug.LogWarning(msg);
+                        break;
+                    default:
+                        Debug.LogError(msg);
+                        break;
+                }
             }
+            catch (Exception e)
+            {
+                // 回调由 native 调用，绝不能向上抛异常
+                Debug.LogError($"[TapSDK-OnlineBattle] LogWriterCallback exception: {e}");
+            }
+        }
+
+        private static string PtrToUtf8StringSafe(IntPtr ptr)
+        {
+            if (ptr == IntPtr.Zero)
+            {
+                return string.Empty;
+            }
+            byte[] buffer = GetUTF8Byte(ptr);
+            // Encoding.UTF8 默认使用 replacement fallback，非法字节会被替换为 U+FFFD，不会抛异常
+            return Encoding.UTF8.GetString(buffer);
+        }
+
+        private static byte[] GetUTF8Byte(IntPtr ptr)
+        {
+            // 1. 获取字符串长度（假设以 null 结尾）
+            int len = 0;
+            while (Marshal.ReadByte(ptr, len) != 0)
+            {
+                len++;
+            }
+
+            // 2. 复制字节到托管数组
+            byte[] buffer = new byte[len];
+            Marshal.Copy(ptr, buffer, 0, len);
+            return buffer;
         }
 
         internal static void InitLogger()

@@ -18,11 +18,6 @@ namespace TapSDK.RelationLite
 
     public class TapTapRelationLite
     {
-        public static void Init(string clientId, TapTapRegionType regionType)
-        {
-            TapTapRelationLiteManager.Instance.Init(clientId, regionType);
-        }
-
         public static void InviteGame()
         {
             TapTapRelationLiteManager.Instance.InviteGame();
@@ -73,6 +68,6 @@ namespace TapSDK.RelationLite
             TapTapRelationLiteManager.Instance.UnregisterRelationLiteCallback(callback);
         }
 
-        public static readonly string Version = "4.10.3-beta.1";
+        public static readonly string Version = "4.10.3-beta.3";
     }
 } 

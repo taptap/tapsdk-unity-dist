@@ -32,7 +32,7 @@ namespace TapSDK.RelationLite.Internal
             }
         }
 
-        public void Init(string clientId, TapTapRegionType regionType)
+        internal void Init(string clientId, TapTapRegionType regionType)
         {
             _impl?.Init(clientId, regionType);
         }

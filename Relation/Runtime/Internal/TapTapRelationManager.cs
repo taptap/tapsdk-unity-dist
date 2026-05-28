@@ -27,7 +27,7 @@ namespace TapSDK.Relation.Internal
             }
         }
 
-        public void Init(string clientId, TapTapRegionType regionType, int screenOrientation)
+        internal void Init(string clientId, TapTapRegionType regionType, int screenOrientation)
         {
             platformWrapper?.Init(clientId, regionType, screenOrientation);
         }

@@ -205,7 +205,7 @@ namespace TapSDK.Login.Internal
 
             if (response.isCancel)
             {
-                taskCompletionSource.TrySetException(new TaskCanceledException());
+                taskCompletionSource.TrySetCanceled();
             }
             else if (response.isFail || string.IsNullOrEmpty(response.redirectUri))
             {
@@ -263,7 +263,14 @@ namespace TapSDK.Login.Internal
                     else
                     {
                         TapLog.Log("login success prepare get token but get  error " + error);
-                        throw new TapException((int)TapErrorCode.ERROR_CODE_UNDEFINED, error ?? "数据解析异常");
+                        if (error == TapHttpErrorConstants.ERROR_ACCESS_DENIED)
+                        {
+                            taskCompletionSource.TrySetCanceled();
+                        }
+                        else
+                        {
+                            throw new TapException((int)TapErrorCode.ERROR_CODE_UNDEFINED, error ?? "数据解析异常");
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -325,8 +332,7 @@ namespace TapSDK.Login.Internal
                 },
                 OnClose = () =>
                 {
-                    tcs.TrySetException(
-                        new TapException((int)TapErrorCode.ERROR_CODE_LOGIN_CANCEL, "Login Cancel"));
+                    tcs.TrySetCanceled();
                 }
             };
             TapSDK.UI.UIManager.Instance.OpenUI<LoginPanelController>("Prefabs/TapLogin/LoginPanel", openParams);
