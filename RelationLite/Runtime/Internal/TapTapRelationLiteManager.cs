@@ -49,17 +49,17 @@ namespace TapSDK.RelationLite.Internal
 
         public Task<RelationLiteUserResult> GetFriendsList(string nextPageToken)
         {
-           return _impl?.GetFriendsList(nextPageToken);
+           return _impl?.GetFriendsList(nextPageToken ?? "");
         }
 
         public Task<RelationLiteUserResult> GetFollowingList(string nextPageToken)
         {
-            return _impl?.GetFollowingList(nextPageToken);
+            return _impl?.GetFollowingList(nextPageToken ?? "");
         }
 
         public Task<RelationLiteUserResult> GetFansList(string nextPageToken)
         {
-            return _impl?.GetFansList(nextPageToken);
+            return _impl?.GetFansList(nextPageToken ?? "");
         }
 
         public Task SyncRelationshipWithOpenId(int action, string nickname, string friendNickname, string friendOpenId)
@@ -74,7 +74,7 @@ namespace TapSDK.RelationLite.Internal
 
         public void ShowTapUserProfile(string openId, string unionId)
         {
-            _impl?.ShowTapUserProfile(openId, unionId);
+            _impl?.ShowTapUserProfile(openId ?? "", unionId ?? "");
         }
 
 

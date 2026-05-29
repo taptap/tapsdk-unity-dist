@@ -258,7 +258,7 @@ namespace TapSDK.Core.Standalone.Internal.Http
             if(!CheckNetworkConnection()){
                 return TapHttpResult<T>.NetworkError(new TapHttpNetworkErrorException("network error"));
             }else{
-                TapLog.Log("current network is connected");
+                TapLog.Log("network interface is available");
             }
             // 处理查询参数 
             Dictionary<string, string> allQueryParams = new Dictionary<string, string>();
@@ -405,10 +405,13 @@ namespace TapSDK.Core.Standalone.Internal.Http
         {
             try
             {
-                return Application.internetReachability != NetworkReachability.NotReachable;
+                // 判断当前设备是否存在可用的网络接口，不保证目标服务或公网可达
+                return NetworkInterface.GetIsNetworkAvailable();
             }
-            catch (UnityException)
+            catch (Exception ex)
             {
+                // 检查能力不可用时，不让预检查阻断真实请求
+                log.Log($"Check network connection failed, continue request. {ex.Message}");
                 return true;
             }
         }

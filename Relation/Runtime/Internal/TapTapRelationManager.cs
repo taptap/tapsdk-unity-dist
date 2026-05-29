@@ -54,7 +54,7 @@ namespace TapSDK.Relation.Internal
 
         public void ShowTapUserProfile(string openId, string unionId)
         {
-            platformWrapper?.ShowTapUserProfile(openId, unionId);
+            platformWrapper?.ShowTapUserProfile(openId ?? "", unionId ?? "");
         }
 
         public void GetNewFansCount(Action<int> callback)
