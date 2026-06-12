@@ -17,9 +17,16 @@ namespace TapSDK.RelationLite
 {
     public class TapTapRelationLiteImpl : ITapTapRelationLite
     {
+#if UNITY_IOS
+        [DllImport("__Internal")]
+        private static extern void RegisterTapTapSDKRelationLiteAppDelegateListener();
+#endif
+
         private const string SERVICE_NAME = "BridgeRelationLiteService";
         private static List<ITapTapRelationLiteCallback> callbacks = new List<ITapTapRelationLiteCallback>();
+        private static List<ITapTapRelationLiteInviteCallback> inviteCallbacks = new List<ITapTapRelationLiteInviteCallback>();
         private static bool hasRegisterCallBack = false;
+        private static bool hasRegisterInviteCallBack = false;
         private string _clientId;
         private TapTapRegionType _regionType;
 
@@ -34,6 +41,9 @@ namespace TapSDK.RelationLite
         {
             _clientId = clientId;
             _regionType = regionType;
+#if UNITY_IOS
+            RegisterTapTapSDKRelationLiteAppDelegateListener();
+#endif
             TapLog.Log($"TapTapRelationLite Init with clientId: {clientId}, regionType: {regionType}");
         }
 
@@ -332,7 +342,7 @@ namespace TapSDK.RelationLite
             {
                 callbacks.Remove(callback);
                 // 当引擎中清除所有回调时，移除原生 callback
-                if (callbacks.Count == 0)
+                if (callbacks.Count == 0 && hasRegisterCallBack)
                 {
                     var command = new Command.Builder()
                         .Service(SERVICE_NAME)
@@ -340,7 +350,39 @@ namespace TapSDK.RelationLite
                         .Callback(false)
                         .OnceTime(false);
                     EngineBridge.GetInstance().CallHandler(command.CommandBuilder());
+                    hasRegisterCallBack = false;
                     TapLog.Log("TapTapRelationLite UnregisterRelationLiteCallback");
+                }
+            }
+        }
+
+        public void RegisterRelationLiteInviteCallback(ITapTapRelationLiteInviteCallback callback)
+        {
+            if (callback == null) return;
+            InitRegisterInviteCallBack();
+            if (!inviteCallbacks.Contains(callback))
+            {
+                inviteCallbacks.Add(callback);
+                TapLog.Log("TapTapRelationLite RegisterRelationLiteInviteCallback");
+            }
+        }
+
+        public void UnregisterRelationLiteInviteCallback(ITapTapRelationLiteInviteCallback callback)
+        {
+            if (callback != null)
+            {
+                inviteCallbacks.Remove(callback);
+                // 当引擎中清除所有回调时，移除原生 invite callback
+                if (inviteCallbacks.Count == 0 && hasRegisterInviteCallBack)
+                {
+                    var command = new Command.Builder()
+                        .Service(SERVICE_NAME)
+                        .Method("unregisterRelationLiteInviteCallback")
+                        .Callback(false)
+                        .OnceTime(false);
+                    EngineBridge.GetInstance().CallHandler(command.CommandBuilder());
+                    hasRegisterInviteCallBack = false;
+                    TapLog.Log("TapTapRelationLite UnregisterRelationLiteInviteCallback");
                 }
             }
         }
@@ -381,6 +423,51 @@ namespace TapSDK.RelationLite
             });
 
             TapLog.Log("TapTapRelationLite InitRegisterCallBack");
+        }
+
+        private void InitRegisterInviteCallBack()
+        {
+            if (hasRegisterInviteCallBack)
+            {
+                return;
+            }
+            hasRegisterInviteCallBack = true;
+
+            var command = new Command.Builder();
+            command.Service(SERVICE_NAME);
+            command.Method("registerRelationLiteInviteCallback")
+                .Callback(true)
+                .OnceTime(false);
+            EngineBridge.GetInstance().CallHandler(command.CommandBuilder(), (result) =>
+            {
+                if (result.code != Result.RESULT_SUCCESS || string.IsNullOrEmpty(result.content))
+                {
+                    return;
+                }
+
+                try
+                {
+                    TapLog.Log("TapTapRelationLite Invite -->> Bridge Callback == " + JsonConvert.SerializeObject(result));
+                    var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
+                    var inviteType = SafeDictionary.GetValue<string>(dic, "invite_type");
+                    var openId = SafeDictionary.GetValue<string>(dic, "open_id");
+                    var unionId = SafeDictionary.GetValue<string>(dic, "union_id");
+                    var teamId = SafeDictionary.GetValue<string>(dic, "team_id");
+
+                    if (inviteType == "invite_team")
+                    {
+                        inviteCallbacks.ForEach(x => x.OnTeamInviteReceived(openId, unionId, teamId));
+                    }
+                    else if (inviteType == "invite_game")
+                    {
+                        inviteCallbacks.ForEach(x => x.OnGameInviteReceived(openId, unionId));
+                    }
+                }
+                catch (Exception e)
+                {
+                    TapLog.Error($"TapTapRelationLite invite callback parse result error: {e.Message}");
+                }
+            });
         }
     }
 }

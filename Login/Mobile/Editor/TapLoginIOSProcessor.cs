@@ -21,12 +21,6 @@ namespace TapSDK.Login.Editor
     {
         #region Constants
 
-        /// <summary>TapSDK 配置文件名</summary>
-        private const string TDS_INFO_PLIST_NAME = "TDS-Info.plist";
-
-        /// <summary>TapSDK 配置文件搜索路径（相对于项目根目录）</summary>
-        private const string TDS_INFO_SEARCH_PATH = "/Assets/Plugins/";
-
         /// <summary>TapTap Login 资源包名称</summary>
         private const string LOGIN_RESOURCE_BUNDLE_NAME = "TapTapLoginResource";
 
@@ -62,23 +56,18 @@ namespace TapSDK.Login.Editor
                 return;
             }
 
-            // 查找 TDS-Info.plist 配置文件
-            var parentFolder = Directory.GetParent(Application.dataPath)?.FullName;
-            var plistSearchPath = parentFolder + TDS_INFO_SEARCH_PATH;
-            var plistFile = TapFileHelper.RecursionFilterFile(plistSearchPath, TDS_INFO_PLIST_NAME);
-
-            if (plistFile == null || !plistFile.Exists)
+            var infoPlistPath = TapSDKCoreCompile.FindTDSInfoPlistPath(Application.dataPath);
+            if (string.IsNullOrEmpty(infoPlistPath))
             {
-                Debug.LogError($"TapSDK Can't find {TDS_INFO_PLIST_NAME} in {plistSearchPath}!");
-                return;
+                Debug.LogWarning("TapSDK TDS-Info.plist not found, skip platform plist merge and use TDS-Info.json for app info.");
             }
 
             // 处理 iOS 平台
             if (buildTarget == BuildTarget.iOS)
             {
 #if UNITY_IOS
-                // 合并 TDS-Info.plist 到 iOS 应用的 Info.plist
-                TapSDKCoreCompile.HandlerPlist(Path.GetFullPath(path), plistFile.FullName);
+                // 合并可选的 TDS-Info.plist，并根据应用信息添加 URL scheme
+                TapSDKCoreCompile.HandlerPlist(Path.GetFullPath(path), infoPlistPath);
 
                 // 添加 TapTapLoginResource.bundle 到 Xcode 项目
                 AddLoginResourceBundle(path);
@@ -88,8 +77,8 @@ namespace TapSDK.Login.Editor
             else if (buildTarget == BuildTarget.StandaloneOSX)
             {
 #if UNITY_IOS
-                // 合并 TDS-Info.plist 到 macOS 应用的 Info.plist
-                TapSDKCoreCompile.HandlerPlist(Path.GetFullPath(path), plistFile.FullName, true);
+                // 合并可选的 TDS-Info.plist，并根据应用信息添加 URL scheme
+                TapSDKCoreCompile.HandlerPlist(Path.GetFullPath(path), infoPlistPath, true);
 #endif
             }
         }

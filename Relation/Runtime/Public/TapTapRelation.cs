@@ -60,13 +60,23 @@ namespace TapSDK.Relation
             TapTapRelationManager.Instance.UnregisterRelationCallback(callback);
         }
 
+        public static void RegisterRelationInviteCallback(ITapTapRelationInviteCallback callback)
+        {
+            TapTapRelationManager.Instance.RegisterRelationInviteCallback(callback);
+        }
+
+        public static void UnregisterRelationInviteCallback(ITapTapRelationInviteCallback callback)
+        {
+            TapTapRelationManager.Instance.UnregisterRelationInviteCallback(callback);
+        }
+
         public static void Destroy()
         {
             TapTapRelationManager.Instance.Destroy();
         }
 
 
-        public static readonly string Version = "4.10.4-beta.2";
+        public static readonly string Version = "4.10.4";
 
 
     }

@@ -77,7 +77,6 @@ namespace TapSDK.RelationLite.Internal
             _impl?.ShowTapUserProfile(openId ?? "", unionId ?? "");
         }
 
-
         public void RegisterRelationLiteCallback(ITapTapRelationLiteCallback callback)
         {
             if (callback != null && !_relationCallbacks.Contains(callback))
@@ -95,5 +94,15 @@ namespace TapSDK.RelationLite.Internal
                 _impl?.UnregisterRelationLiteCallback(callback);
             }
         }
+
+        public void RegisterRelationLiteInviteCallback(ITapTapRelationLiteInviteCallback callback)
+        {
+            _impl?.RegisterRelationLiteInviteCallback(callback);
+        }
+
+        public void UnregisterRelationLiteInviteCallback(ITapTapRelationLiteInviteCallback callback)
+        {
+            _impl?.UnregisterRelationLiteInviteCallback(callback);
+        }
     }
-} 
+}

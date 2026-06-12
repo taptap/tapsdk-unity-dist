@@ -16,7 +16,7 @@ namespace TapSDK.Relation
         void InviteTeam(string teamId);
 
         void ShowTapUserProfile(string openId, string unionId);
-        
+
         void GetNewFansCount(Action<int> callback);
 
         void GetUnreadMessageCount(Action<int> callback);
@@ -24,6 +24,10 @@ namespace TapSDK.Relation
         void RegisterRelationCallback(ITapTapRelationCallback callback);
 
         void UnregisterRelationCallback(ITapTapRelationCallback callback);
+
+        void RegisterRelationInviteCallback(ITapTapRelationInviteCallback callback);
+
+        void UnregisterRelationInviteCallback(ITapTapRelationInviteCallback callback);
 
         void Destroy();
     }

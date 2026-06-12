@@ -77,6 +77,16 @@ namespace TapSDK.Relation.Internal
             platformWrapper?.UnregisterRelationCallback(callback);
         }
 
+        public void RegisterRelationInviteCallback(ITapTapRelationInviteCallback callback)
+        {
+            platformWrapper?.RegisterRelationInviteCallback(callback);
+        }
+
+        public void UnregisterRelationInviteCallback(ITapTapRelationInviteCallback callback)
+        {
+            platformWrapper?.UnregisterRelationInviteCallback(callback);
+        }
+
         public void Destroy()
         {
             platformWrapper?.Destroy();

@@ -20,6 +20,132 @@ namespace TapSDK.Core.Editor
 {
     public static class TapSDKCoreCompile
     {
+        private const string TDSInfoJsonName = "TDS-Info.json";
+        private const string TDSInfoPlistName = "TDS-Info.plist";
+        private static string cachedAppClientId;
+
+        public static string FindTDSInfoJsonPath(string appDataPath)
+        {
+            if (string.IsNullOrEmpty(appDataPath))
+            {
+                return string.Empty;
+            }
+
+            var parentFolder = Directory.GetParent(appDataPath)?.FullName;
+            if (string.IsNullOrEmpty(parentFolder))
+            {
+                return string.Empty;
+            }
+
+            var jsonPath = Path.Combine(parentFolder, "Assets", "Plugins", TDSInfoJsonName);
+            return File.Exists(jsonPath) ? jsonPath : string.Empty;
+        }
+
+        public static string FindTDSInfoPlistPath(string appDataPath)
+        {
+            if (string.IsNullOrEmpty(appDataPath))
+            {
+                return string.Empty;
+            }
+
+            var parentFolder = Directory.GetParent(appDataPath)?.FullName;
+            if (string.IsNullOrEmpty(parentFolder))
+            {
+                return string.Empty;
+            }
+
+            var plistSearchPath = Path.Combine(parentFolder, "Assets", "Plugins");
+            if (!Directory.Exists(plistSearchPath))
+            {
+                return string.Empty;
+            }
+
+            var plistFile = TapFileHelper.RecursionFilterFile(plistSearchPath, TDSInfoPlistName);
+            return plistFile != null && plistFile.Exists ? plistFile.FullName : string.Empty;
+        }
+
+        public static string GetAppClientIdFromTDSInfo(string appDataPath, string fallbackInfoPlistPath = null)
+        {
+            if (!string.IsNullOrEmpty(cachedAppClientId))
+            {
+                return cachedAppClientId;
+            }
+
+            var jsonPath = FindTDSInfoJsonPath(appDataPath);
+            if (!string.IsNullOrEmpty(jsonPath))
+            {
+                return CacheAppClientId(GetAppClientIdFromTDSInfoJson(jsonPath));
+            }
+
+            var plistPath = !string.IsNullOrEmpty(fallbackInfoPlistPath)
+                ? fallbackInfoPlistPath
+                : FindTDSInfoPlistPath(appDataPath);
+            return CacheAppClientId(GetTapTapClientIdFromInfoPlist(plistPath));
+        }
+
+        private static string CacheAppClientId(string clientId)
+        {
+            if (!string.IsNullOrEmpty(clientId))
+            {
+                cachedAppClientId = clientId;
+            }
+
+            return clientId;
+        }
+
+        public static string GetAppClientIdFromTDSInfoJson(string jsonPath)
+        {
+            if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath))
+            {
+                return string.Empty;
+            }
+
+            try
+            {
+                var info = JsonUtility.FromJson<TDSInfoJson>(File.ReadAllText(jsonPath));
+                return info?.app?.client_id ?? string.Empty;
+            }
+            catch (System.Exception e)
+            {
+                UnityEngine.Debug.LogWarning($"TapSDK Failed to parse {jsonPath}: {e.Message}");
+                return string.Empty;
+            }
+        }
+
+        public static string GetTapTapClientIdFromInfoPlist(string infoPlistPath)
+        {
+            if (string.IsNullOrEmpty(infoPlistPath) || !File.Exists(infoPlistPath))
+            {
+                return string.Empty;
+            }
+
+            var dic = (Dictionary<string, object>)Plist.readPlist(infoPlistPath);
+            if (!dic.TryGetValue("taptap", out var taptapValue))
+            {
+                return string.Empty;
+            }
+
+            var taptapDic = taptapValue as Dictionary<string, object>;
+            if (taptapDic == null || !taptapDic.TryGetValue("client_id", out var clientIdValue))
+            {
+                return string.Empty;
+            }
+
+            return clientIdValue as string ?? string.Empty;
+        }
+
+        [System.Serializable]
+        private class TDSInfoJson
+        {
+            public TDSInfoAppJson app;
+        }
+
+        [System.Serializable]
+        private class TDSInfoAppJson
+        {
+            public string client_id;
+        }
+
 #if UNITY_IOS
         public static string GetProjPath(string path)
         {
@@ -226,34 +352,7 @@ namespace TapSDK.Core.Editor
 
         public static bool HandlerPlist(string pathToBuildProject, string infoPlistPath, bool macos = false)
         {
-            // #if UNITY_2020_1_OR_NEWER
-            //             var macosXCodePlistPath =
-            //                 $"{pathToBuildProject}/{PlayerSettings.productName}/Info.plist";
-            // #elif UNITY_2019_1_OR_NEWER
-            //             var macosXCodePlistPath =
-            //                 $"{Path.GetDirectoryName(pathToBuildProject)}/{PlayerSettings.productName}/Info.plist";
-            // #endif
-
-            string plistPath;
-
-            if (pathToBuildProject.EndsWith(".app"))
-            {
-                plistPath = $"{pathToBuildProject}/Contents/Info.plist";
-            }
-            else
-            {
-                var macosXCodePlistPath =
-                    $"{Path.GetDirectoryName(pathToBuildProject)}/{PlayerSettings.productName}/Info.plist";
-                if (!File.Exists(macosXCodePlistPath))
-                {
-                    macosXCodePlistPath = $"{pathToBuildProject}/{PlayerSettings.productName}/Info.plist";
-                }
-
-                plistPath = !macos
-                    ? pathToBuildProject + "/Info.plist"
-                    : macosXCodePlistPath;
-            }
-
+            var plistPath = GetInfoPlistPath(pathToBuildProject, macos);
             UnityEngine.Debug.Log($"plist path:{plistPath}");
 
             var plist = new PlistDocument();
@@ -288,51 +387,135 @@ namespace TapSDK.Core.Editor
                 }
             }
 
-            if (string.IsNullOrEmpty(infoPlistPath)) return false;
-            var dic = (Dictionary<string, object>)Plist.readPlist(infoPlistPath);
-            var taptapId = "";
-
-            foreach (var item in dic)
+            var hasInfoPlist = !string.IsNullOrEmpty(infoPlistPath) && File.Exists(infoPlistPath);
+            var dic = hasInfoPlist ? (Dictionary<string, object>)Plist.readPlist(infoPlistPath) : null;
+            var taptapId = GetAppClientIdFromTDSInfo(Application.dataPath, hasInfoPlist ? infoPlistPath : null);
+            if (string.IsNullOrEmpty(taptapId))
             {
-                if (item.Key.Equals("taptap"))
+                UnityEngine.Debug.LogError("TapSDK Can't find app.client_id in TDS-Info.json or taptap.client_id in TDS-Info.plist");
+                return false;
+            }
+
+            if (dic != null)
+            {
+                foreach (var item in dic)
                 {
-                    var taptapDic = (Dictionary<string, object>)item.Value;
-                    foreach (var taptapItem in taptapDic.Where(taptapItem => taptapItem.Key.Equals("client_id")))
+                    if (!item.Key.Equals("taptap"))
                     {
-                        taptapId = (string)taptapItem.Value;
+                        rootDic.SetString(item.Key, item.Value.ToString());
                     }
-                }
-                else
-                {
-                    rootDic.SetString(item.Key, item.Value.ToString());
                 }
             }
 
-            //添加url
+            AddURLSchemeToPlist(
+                rootDic,
+                macos ? "TapWeb" : "TapTap",
+                macos ? $"open-taptap-{taptapId}" : $"tt{taptapId}"
+            );
+
+            File.WriteAllText(plistPath, plist.WriteToString());
+            UnityEngine.Debug.Log("TapSDK change plist Success");
+            return true;
+        }
+
+        public static bool AddURLSchemeToPlist(string pathToBuildProject, string urlSchemeName, string urlScheme, bool macos = false)
+        {
+            if (string.IsNullOrEmpty(urlScheme))
+            {
+                return false;
+            }
+
+            var plistPath = GetInfoPlistPath(pathToBuildProject, macos);
+            if (!File.Exists(plistPath))
+            {
+                UnityEngine.Debug.LogError($"TapSDK Can't find Info.plist at {plistPath}");
+                return false;
+            }
+
+            var plist = new PlistDocument();
+            plist.ReadFromString(File.ReadAllText(plistPath));
             var dict = plist.root.AsDict();
+            if (!AddURLSchemeToPlist(dict, urlSchemeName, urlScheme))
+            {
+                return false;
+            }
+
+            File.WriteAllText(plistPath, plist.WriteToString());
+            UnityEngine.Debug.Log($"TapSDK added URL scheme: {urlScheme}");
+            return true;
+        }
+
+        private static bool AddURLSchemeToPlist(PlistElementDict dict, string urlSchemeName, string urlScheme)
+        {
+            if (dict == null || string.IsNullOrEmpty(urlScheme))
+            {
+                return false;
+            }
+
             if (!(dict["CFBundleURLTypes"] is PlistElementArray array))
             {
                 array = dict.CreateArray("CFBundleURLTypes");
             }
 
-            if (!macos)
+            if (ContainsURLScheme(array, urlScheme))
             {
-                var dict2 = array.AddDict();
-                dict2.SetString("CFBundleURLName", "TapTap");
-                var array2 = dict2.CreateArray("CFBundleURLSchemes");
-                array2.AddString($"tt{taptapId}");
-            }
-            else
-            {
-                var dict2 = array.AddDict();
-                dict2.SetString("CFBundleURLName", "TapWeb");
-                var array2 = dict2.CreateArray("CFBundleURLSchemes");
-                array2.AddString($"open-taptap-{taptapId}");
+                UnityEngine.Debug.Log($"TapSDK URL scheme already exists: {urlScheme}");
+                return false;
             }
 
-            UnityEngine.Debug.Log("TapSDK change plist Success");
-            File.WriteAllText(plistPath, plist.WriteToString());
+            var urlDict = array.AddDict();
+            urlDict.SetString("CFBundleURLName", urlSchemeName);
+            var schemes = urlDict.CreateArray("CFBundleURLSchemes");
+            schemes.AddString(urlScheme);
+
             return true;
+        }
+
+        private static string GetInfoPlistPath(string pathToBuildProject, bool macos)
+        {
+            if (pathToBuildProject.EndsWith(".app"))
+            {
+                return $"{pathToBuildProject}/Contents/Info.plist";
+            }
+
+            var macosXCodePlistPath =
+                $"{Path.GetDirectoryName(pathToBuildProject)}/{PlayerSettings.productName}/Info.plist";
+            if (!File.Exists(macosXCodePlistPath))
+            {
+                macosXCodePlistPath = $"{pathToBuildProject}/{PlayerSettings.productName}/Info.plist";
+            }
+
+            return !macos
+                ? pathToBuildProject + "/Info.plist"
+                : macosXCodePlistPath;
+        }
+
+        private static bool ContainsURLScheme(PlistElementArray urlTypesArray, string urlScheme)
+        {
+            foreach (var urlType in urlTypesArray.values)
+            {
+                var urlTypeDict = urlType as PlistElementDict;
+                if (urlTypeDict == null)
+                {
+                    continue;
+                }
+
+                if (!(urlTypeDict["CFBundleURLSchemes"] is PlistElementArray schemesArray))
+                {
+                    continue;
+                }
+
+                foreach (var scheme in schemesArray.values)
+                {
+                    var schemeString = scheme as PlistElementString;
+                    if (schemeString != null && schemeString.AsString() == urlScheme)
+                    {
+                        return true;
+                    }
+                }
+            }
+
+            return false;
         }
 
         public static string GetValueFromPlist(string infoPlistPath, string key)
@@ -463,7 +646,7 @@ namespace TapSDK.Core.Editor
             UnityEngine.Debug.LogWarning("[PodFinder] pod executable not found.");
             return null;
         }
-    
+
         private static string RunBashCommand(string arguments)
         {
             try

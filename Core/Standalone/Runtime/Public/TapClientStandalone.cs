@@ -67,14 +67,14 @@ namespace TapSDK.Core.Standalone
             if (string.IsNullOrEmpty(clientId) || string.IsNullOrEmpty(pubKey))
             {
                 UIManager.Instance.OpenToast(
-                    "clientId 及 TapPubKey 参数都不能为空, clientId ="
+                    "clientId 及 client Public Key 参数都不能为空, clientId ="
                         + clientId
-                        + ", TapPubKey = "
+                        + ", client Public Key = "
                         + pubKey,
                     UIManager.GeneralToastLevel.Error
                 );
                 TapLog.Error(
-                    "clientId 或 TapPubKey 无效, clientId = " + clientId + ", TapPubKey = " + pubKey
+                    "clientId 或 client Public Key 无效, clientId = " + clientId + ", client Public Key = " + pubKey
                 );
                 return false;
             }

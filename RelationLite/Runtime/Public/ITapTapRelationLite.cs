@@ -23,9 +23,13 @@ namespace TapSDK.RelationLite
         Task SyncRelationshipWithUnionId(int action, string nickname,string friendNickname, string friendUnionId);
 
         void ShowTapUserProfile(string openId, string unionId);
-        
+
         void RegisterRelationLiteCallback(ITapTapRelationLiteCallback callback);
 
         void UnregisterRelationLiteCallback(ITapTapRelationLiteCallback callback);
+
+        void RegisterRelationLiteInviteCallback(ITapTapRelationLiteInviteCallback callback);
+
+        void UnregisterRelationLiteInviteCallback(ITapTapRelationLiteInviteCallback callback);
     }
-} 
+}
