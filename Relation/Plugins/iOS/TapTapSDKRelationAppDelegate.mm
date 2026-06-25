@@ -3,6 +3,21 @@
 #import <TapTapRelationSDK/TapTapRelationSDK-Swift.h>
 #import "UnityAppController.h"
 #import "AppDelegateListener.h"
+#import <dlfcn.h>
+
+typedef void (*TapSDKSceneOpenURLReplayFunc)(id listener);
+
+static void TapSDKReplayPendingSceneOpenURLIfAvailable(id listener) {
+    static TapSDKSceneOpenURLReplayFunc replayFunc = NULL;
+    if (!replayFunc) {
+        replayFunc = reinterpret_cast<TapSDKSceneOpenURLReplayFunc>(
+            dlsym(RTLD_DEFAULT, "TapSDKUnitySceneOpenURLReplayPendingURLsToListener")
+        );
+    }
+    if (replayFunc) {
+        replayFunc(listener);
+    }
+}
 
 @interface TapTapSDKRelationAppDelegateListener : NSObject<AppDelegateListener>
 
@@ -34,4 +49,5 @@
 extern "C" void RegisterTapTapSDKRelationAppDelegateListener() {
     TapTapSDKRelationAppDelegateListener *listener = TapTapSDKRelationAppDelegateListener.sharedInstance;
     UnityRegisterAppDelegateListener(listener);
+    TapSDKReplayPendingSceneOpenURLIfAvailable(listener);
 }

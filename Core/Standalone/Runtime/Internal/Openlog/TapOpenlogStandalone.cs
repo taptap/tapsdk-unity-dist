@@ -175,6 +175,14 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
                     }
                 }
             }
+            try
+            {
+                Directory.CreateDirectory(openLogDirPath);
+            }
+            catch (Exception e)
+            {
+                log.Warning("Create openlog data dir failed: " + e.Message);
+            }
             openlogStartParameter[TapOpenlogStartParamConstants.PARAM_DATA_DIR] = openLogDirPath;
             openlogStartParameter[TapOpenlogStartParamConstants.PARAM_ENV] = "local";
             openlogStartParameter[TapOpenlogStartParamConstants.PARAM_PLATFORM] = "PC";

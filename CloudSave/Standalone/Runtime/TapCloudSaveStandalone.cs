@@ -53,6 +53,17 @@ namespace TapSDK.CloudSave.Standalone
                 int region = isRND ? 2 : 0;
                 try
                 {
+                    Directory.CreateDirectory(cacheDir);
+                }
+                catch (Exception e)
+                {
+                    Log($"TapCloudSave create cache directory failed, path = {cacheDir}, error = {e.Message}", true);
+                    NotifyInitFail();
+                    return;
+                }
+
+                try
+                {
                     Dictionary<string, object> initConfig = new Dictionary<string, object>()
                     {
                         { "region", region },
@@ -78,16 +89,7 @@ namespace TapSDK.CloudSave.Standalone
                     Log("TapSdkCloudSaveInitialize result = " + initResult);
                     if (initResult < 0)
                     {
-                        RunOnMainThread(() =>
-                        {
-                            if (currentSaveCallback != null && currentSaveCallback.Count > 0)
-                            {
-                                foreach (var callback in currentSaveCallback)
-                                {
-                                    callback?.OnResult(TapCloudSaveResultCode.INIT_FAIL);
-                                }
-                            }
-                        });
+                        NotifyInitFail();
                     }
                     else
                     {
@@ -99,7 +101,8 @@ namespace TapSDK.CloudSave.Standalone
                 }
                 catch (Exception e)
                 {
-                    Log("TapSdkCloudSaveInitialize error " + e.Message);
+                    Log("TapSdkCloudSaveInitialize error " + e.Message, true);
+                    NotifyInitFail();
                 }
             });
 
@@ -469,24 +472,27 @@ namespace TapSDK.CloudSave.Standalone
             string seesionId = Guid.NewGuid().ToString();
             const string method = "registerCloudSaveCallback";
             TapCloudSaveTracker.Instance.TrackStart(method, seesionId);
-            if (currentSaveCallback == null)
+            lock (_lockObj)
             {
-                currentSaveCallback = new List<ITapCloudSaveCallback>();
-            }
-            if (!currentSaveCallback.Contains(callback))
-            {
-                TapCloudSaveTracker.Instance.TrackSuccess(method, seesionId);
-                currentSaveCallback.Add(callback);
-                Log($"RegisterCloudSaveCallback: Added callback. Total callbacks: {currentSaveCallback.Count}");
-            }
-            else
-            {
-                TapCloudSaveTracker.Instance.TrackFailure(
-                    method,
-                    seesionId,
-                    errorMessage: "callback has already registered"
-                );
-                Log("RegisterCloudSaveCallback: Callback already registered");
+                if (currentSaveCallback == null)
+                {
+                    currentSaveCallback = new List<ITapCloudSaveCallback>();
+                }
+                if (!currentSaveCallback.Contains(callback))
+                {
+                    TapCloudSaveTracker.Instance.TrackSuccess(method, seesionId);
+                    currentSaveCallback.Add(callback);
+                    Log($"RegisterCloudSaveCallback: Added callback. Total callbacks: {currentSaveCallback.Count}");
+                }
+                else
+                {
+                    TapCloudSaveTracker.Instance.TrackFailure(
+                        method,
+                        seesionId,
+                        errorMessage: "callback has already registered"
+                    );
+                    Log("RegisterCloudSaveCallback: Callback already registered");
+                }
             }
         }
 
@@ -495,7 +501,8 @@ namespace TapSDK.CloudSave.Standalone
             string seesionId = Guid.NewGuid().ToString();
             const string method = "unregisterCloudSaveCallback";
             TapCloudSaveTracker.Instance.TrackStart(method, seesionId);
-            
+            lock (_lockObj)
+            {
             if (currentSaveCallback != null && callback != null)
             {
                 if (currentSaveCallback.Contains(callback))
@@ -523,6 +530,7 @@ namespace TapSDK.CloudSave.Standalone
                 );
                 Log("UnregisterCloudSaveCallback: Callback or callback list is null");
             }
+            } // end lock
         }
 
         public Task<ArchiveData> UpdateArchive(
@@ -629,10 +637,7 @@ namespace TapSDK.CloudSave.Standalone
                 {
                     if (currentSaveCallback != null && currentSaveCallback.Count > 0)
                     {
-                        foreach (var callback in currentSaveCallback)
-                        {
-                            callback?.OnResult(TapCloudSaveResultCode.NEED_LOGIN);
-                        }
+                        RunOnMainThread(() => NotifyCloudSaveResult(TapCloudSaveResultCode.NEED_LOGIN));
                     }
                     TapCloudSaveTracker.Instance.TrackFailure(method, sessionId, -1, "not login");
                     return false;
@@ -688,6 +693,25 @@ namespace TapSDK.CloudSave.Standalone
         private void RunOnMainThread(Action action)
         {
             TapLoom.QueueOnMainThread(action);
+        }
+
+        private void NotifyInitFail()
+        {
+            RunOnMainThread(() => NotifyCloudSaveResult(TapCloudSaveResultCode.INIT_FAIL));
+        }
+
+        private void NotifyCloudSaveResult(int resultCode)
+        {
+            ITapCloudSaveCallback[] snapshot;
+            lock (_lockObj)
+            {
+                if (currentSaveCallback == null || currentSaveCallback.Count == 0) return;
+                snapshot = currentSaveCallback.ToArray();
+            }
+            foreach (var callback in snapshot)
+            {
+                callback?.OnResult(resultCode);
+            }
         }
 
         private void Log(string msg, bool isError = false)

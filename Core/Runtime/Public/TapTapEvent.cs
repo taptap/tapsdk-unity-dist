@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 using TapSDK.Core.Internal;
 using UnityEngine;
 using System.Reflection;
@@ -7,16 +9,21 @@ using TapSDK.Core.Internal.Log;
 
 namespace TapSDK.Core {
     public class TapTapEvent {
-       
+
         private static ITapEventPlatform platformWrapper;
 
-       
+
         static TapTapEvent() {
             platformWrapper = PlatformTypeUtils.CreatePlatformImplementationObject(typeof(ITapEventPlatform),
                 "TapSDK.Core") as ITapEventPlatform;
             if(platformWrapper == null) {
                 TapLog.Error("PlatformWrapper is null");
             }
+        }
+
+        private static string SerializeProperties(Dictionary<string, object> properties)
+        {
+            return properties == null ? null : JsonConvert.SerializeObject(properties);
         }
 
         internal static void Init(TapTapEventOptions eventOptions)
@@ -32,6 +39,11 @@ namespace TapSDK.Core {
         public static void SetUserID(string userID, string properties){
             platformWrapper?.SetUserID(userID,properties);
         }
+
+        public static void SetUserID(string userID, Dictionary<string, object> properties){
+            platformWrapper?.SetUserID(userID, SerializeProperties(properties));
+        }
+
         public static void ClearUser(){
             platformWrapper?.ClearUser();
         }
@@ -47,27 +59,56 @@ namespace TapSDK.Core {
             platformWrapper?.LogEvent(name, properties);
         }
 
+        public static void LogEvent(string name, Dictionary<string, object> properties){
+            platformWrapper?.LogEvent(name, SerializeProperties(properties));
+        }
+
         public static void DeviceInitialize(string properties){
             platformWrapper?.DeviceInitialize(properties);
+        }
+
+        public static void DeviceInitialize(Dictionary<string, object> properties){
+            platformWrapper?.DeviceInitialize(SerializeProperties(properties));
         }
 
         public static void DeviceUpdate(string properties){
             platformWrapper?.DeviceUpdate(properties);
         }
+
+        public static void DeviceUpdate(Dictionary<string, object> properties){
+            platformWrapper?.DeviceUpdate(SerializeProperties(properties));
+        }
+
         public static void DeviceAdd(string properties){
             platformWrapper?.DeviceAdd(properties);
+        }
+
+        public static void DeviceAdd(Dictionary<string, object> properties){
+            platformWrapper?.DeviceAdd(SerializeProperties(properties));
         }
 
         public static void UserInitialize(string properties){
             platformWrapper?.UserInitialize(properties);
         }
 
+        public static void UserInitialize(Dictionary<string, object> properties){
+            platformWrapper?.UserInitialize(SerializeProperties(properties));
+        }
+
         public static void UserUpdate(string properties){
             platformWrapper?.UserUpdate(properties);
         }
 
+        public static void UserUpdate(Dictionary<string, object> properties){
+            platformWrapper?.UserUpdate(SerializeProperties(properties));
+        }
+
         public static void UserAdd(string properties){
             platformWrapper?.UserAdd(properties);
+        }
+
+        public static void UserAdd(Dictionary<string, object> properties){
+            platformWrapper?.UserAdd(SerializeProperties(properties));
         }
 
         public static void AddCommonProperty(string key, string value){
@@ -76,6 +117,10 @@ namespace TapSDK.Core {
 
         public static void AddCommon(string properties){
             platformWrapper?.AddCommon(properties);
+        }
+
+        public static void AddCommon(Dictionary<string, object> properties){
+            platformWrapper?.AddCommon(SerializeProperties(properties));
         }
 
         public static void ClearCommonProperty(string key){
@@ -91,9 +136,21 @@ namespace TapSDK.Core {
         public static void LogPurchasedEvent(string orderID, string productName, long amount, string currencyType, string paymentMethod, string properties){
             platformWrapper?.LogChargeEvent(orderID, productName, amount, currencyType,  paymentMethod, properties);
         }
-    
+
+        public static void LogPurchasedEvent(string orderID, string productName, long amount, string currencyType, string paymentMethod, Dictionary<string, object> properties){
+            platformWrapper?.LogChargeEvent(orderID, productName, amount, currencyType, paymentMethod, SerializeProperties(properties));
+        }
+
         public static void RegisterDynamicProperties(Func<string> callback){
             platformWrapper?.RegisterDynamicProperties(callback);
+        }
+
+        public static void RegisterDynamicProperties(Func<Dictionary<string, object>> callback){
+            if (callback == null) {
+                platformWrapper?.RegisterDynamicProperties((Func<string>)null);
+                return;
+            }
+            platformWrapper?.RegisterDynamicProperties(() => SerializeProperties(callback()));
         }
 
         public static void SetOAID(string value){

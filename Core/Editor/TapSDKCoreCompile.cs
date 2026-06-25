@@ -6,12 +6,15 @@ using UnityEditor.PackageManager;
 using UnityEngine;
 using System.Diagnostics;
 using System.Text.RegularExpressions;
+using Newtonsoft.Json.Linq;
 
 
 
 #if UNITY_IOS
 using System;
 using Google;
+using UnityEditor.Build;
+using UnityEditor.Build.Reporting;
 using UnityEditor.iOS.Xcode;
 
 #endif
@@ -23,6 +26,20 @@ namespace TapSDK.Core.Editor
         private const string TDSInfoJsonName = "TDS-Info.json";
         private const string TDSInfoPlistName = "TDS-Info.plist";
         private static string cachedAppClientId;
+        private static readonly HashSet<string> iosURLSchemesAddedByTapSDK =
+            new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
+
+        public struct TDSInfoIOSSettings
+        {
+            public bool autoConfigureOpenURL;
+            public bool disableSceneManifest;
+
+            public static TDSInfoIOSSettings Default => new TDSInfoIOSSettings
+            {
+                autoConfigureOpenURL = true,
+                disableSceneManifest = false
+            };
+        }
 
         public static string FindTDSInfoJsonPath(string appDataPath)
         {
@@ -102,14 +119,64 @@ namespace TapSDK.Core.Editor
 
             try
             {
-                var info = JsonUtility.FromJson<TDSInfoJson>(File.ReadAllText(jsonPath));
-                return info?.app?.client_id ?? string.Empty;
+                var json = JObject.Parse(File.ReadAllText(jsonPath));
+                var app = json["app"] as JObject;
+                return app?["client_id"]?.Value<string>() ?? string.Empty;
             }
             catch (System.Exception e)
             {
                 UnityEngine.Debug.LogWarning($"TapSDK Failed to parse {jsonPath}: {e.Message}");
                 return string.Empty;
             }
+        }
+
+        public static TDSInfoIOSSettings GetIOSSettingsFromTDSInfo(string appDataPath)
+        {
+            var jsonPath = FindTDSInfoJsonPath(appDataPath);
+            return GetIOSSettingsFromTDSInfoJson(jsonPath);
+        }
+
+        public static TDSInfoIOSSettings GetIOSSettingsFromTDSInfoJson(string jsonPath)
+        {
+            var settings = TDSInfoIOSSettings.Default;
+            if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath))
+            {
+                return settings;
+            }
+
+            try
+            {
+                var json = JObject.Parse(File.ReadAllText(jsonPath));
+                var ios = json["ios"] as JObject;
+                settings.autoConfigureOpenURL = ReadOptionalBool(ios, "auto_configure_open_url", settings.autoConfigureOpenURL);
+                settings.disableSceneManifest = ReadOptionalBool(ios, "disable_scene_manifest", settings.disableSceneManifest);
+            }
+            catch (System.Exception e)
+            {
+                UnityEngine.Debug.LogWarning($"TapSDK Failed to parse iOS settings from {jsonPath}: {e.Message}");
+            }
+
+            return settings;
+        }
+
+        private static bool ReadOptionalBool(JObject json, string key, bool defaultValue)
+        {
+            if (json == null || string.IsNullOrEmpty(key) || !json.TryGetValue(key, out var value) || value == null)
+            {
+                return defaultValue;
+            }
+
+            if (value.Type == JTokenType.Boolean)
+            {
+                return value.Value<bool>();
+            }
+
+            if (value.Type == JTokenType.String && bool.TryParse(value.Value<string>(), out var result))
+            {
+                return result;
+            }
+
+            return defaultValue;
         }
 
         public static string GetTapTapClientIdFromInfoPlist(string infoPlistPath)
@@ -134,16 +201,24 @@ namespace TapSDK.Core.Editor
             return clientIdValue as string ?? string.Empty;
         }
 
-        [System.Serializable]
-        private class TDSInfoJson
+        public static List<string> GetIOSURLSchemesAddedByTapSDK()
         {
-            public TDSInfoAppJson app;
+            return iosURLSchemesAddedByTapSDK
+                .OrderBy(scheme => scheme, System.StringComparer.OrdinalIgnoreCase)
+                .ToList();
         }
 
-        [System.Serializable]
-        private class TDSInfoAppJson
+        internal static void ClearIOSURLSchemesAddedByTapSDK()
         {
-            public string client_id;
+            iosURLSchemesAddedByTapSDK.Clear();
+        }
+
+        private static void RecordIOSURLSchemeAddedByTapSDK(string urlScheme)
+        {
+            if (!string.IsNullOrEmpty(urlScheme))
+            {
+                iosURLSchemesAddedByTapSDK.Add(urlScheme.Trim().ToLowerInvariant());
+            }
         }
 
 #if UNITY_IOS
@@ -452,6 +527,8 @@ namespace TapSDK.Core.Editor
                 return false;
             }
 
+            RecordIOSURLSchemeAddedByTapSDK(urlScheme);
+
             if (!(dict["CFBundleURLTypes"] is PlistElementArray array))
             {
                 array = dict.CreateArray("CFBundleURLTypes");
@@ -713,4 +790,21 @@ namespace TapSDK.Core.Editor
         }
 #endif
     }
+
+#if UNITY_IOS
+    public sealed class TapSDKIOSURLSchemeBuildPreprocessor : IPreprocessBuildWithReport
+    {
+        public int callbackOrder => int.MinValue;
+
+        public void OnPreprocessBuild(BuildReport report)
+        {
+            if (report.summary.platform != BuildTarget.iOS)
+            {
+                return;
+            }
+
+            TapSDKCoreCompile.ClearIOSURLSchemesAddedByTapSDK();
+        }
+    }
+#endif
 }

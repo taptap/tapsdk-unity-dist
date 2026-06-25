@@ -5,6 +5,21 @@
 #import "UnityAppController.h"
 #import <UIKit/UIKit.h>
 #import "AppDelegateListener.h"
+#import <dlfcn.h>
+
+typedef void (*TapSDKSceneOpenURLReplayFunc)(id listener);
+
+static void TapSDKReplayPendingSceneOpenURLIfAvailable(id listener) {
+    static TapSDKSceneOpenURLReplayFunc replayFunc = NULL;
+    if (!replayFunc) {
+        replayFunc = reinterpret_cast<TapSDKSceneOpenURLReplayFunc>(
+            dlsym(RTLD_DEFAULT, "TapSDKUnitySceneOpenURLReplayPendingURLsToListener")
+        );
+    }
+    if (replayFunc) {
+        replayFunc(listener);
+    }
+}
 
 @interface TapTapSDKLoginAppDelegateListener : NSObject<AppDelegateListener>
 
@@ -36,5 +51,5 @@
 extern "C" void RegisterTapTapSDKLoginAppDelegateListener() {
     TapTapSDKLoginAppDelegateListener *listener = TapTapSDKLoginAppDelegateListener.sharedInstance;
     UnityRegisterAppDelegateListener(listener);
+    TapSDKReplayPendingSceneOpenURLIfAvailable(listener);
 }
-

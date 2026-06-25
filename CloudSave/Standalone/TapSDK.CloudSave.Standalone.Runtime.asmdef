@@ -9,7 +9,8 @@
     ],
     "includePlatforms": [
         "Editor",
-        "WindowsStandalone64"
+        "WindowsStandalone64",
+        "macOSStandalone"
     ],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
