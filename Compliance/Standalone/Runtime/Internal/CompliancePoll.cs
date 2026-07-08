@@ -108,7 +108,7 @@ namespace TapSDK.Compliance
                 if (_elpased == null)
                     _elpased = 0;
                 
-                yield return new WaitForSeconds(pollInterval);
+                yield return new WaitForSecondsRealtime(pollInterval);
             }
         }
 

@@ -7,6 +7,7 @@ namespace TapSDK.Compliance.Model
         public const int EXITED             = 1000;   // 用户登出
         public const int SWITCH_ACCOUNT     = 1001;   // 切换账号
         public const int PERIOD_RESTRICT    = 1030;   // 当前用户达到宵禁时长
+        [System.Obsolete("已废弃，时长限制统一使用 PERIOD_RESTRICT(1030)。")]
         public const int DURATION_LIMIT     = 1050;   // 时长限制
 
         public const int AGE_LIMIT     = 1100;   // 适龄限制
@@ -18,7 +19,6 @@ namespace TapSDK.Compliance.Model
             if (val == EXITED) return true;
             if (val == SWITCH_ACCOUNT) return true;
             if (val == PERIOD_RESTRICT) return true;
-            if (val == DURATION_LIMIT) return true;
             if (val == REAL_NAME_STOP) return true;
             if (val == AGE_LIMIT) return true;
             if (val == INVALID_CLIENT_OR_NETWORK_ERROR) return true;

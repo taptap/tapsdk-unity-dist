@@ -1,9 +1,9 @@
 {
     "name": "TapSDK.RelationLite.Mobile.Editor",
+    "rootNamespace": "",
     "references": [
         "GUID:56f3da7a178484843974054bafe77e73",
-        "GUID:8880fb2a8006d444dbd9edc4ab2647af",
-        "GUID:d276369ee184b4cb69a14a9fe493e761"
+        "GUID:8880fb2a8006d444dbd9edc4ab2647af"
     ],
     "includePlatforms": [
         "Editor"

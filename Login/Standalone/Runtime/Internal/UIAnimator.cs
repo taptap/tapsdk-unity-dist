@@ -67,7 +67,7 @@ namespace TapSDK.Login.Internal
 
         private IEnumerator BlockCoroutine(float blockDuration, Action onBlockEnd = null)
         {
-            yield return new WaitForSeconds(blockDuration);
+            yield return new WaitForSecondsRealtime(blockDuration);
             if (onBlockEnd != null)
             {
                 onBlockEnd();

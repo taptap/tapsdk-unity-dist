@@ -12,7 +12,6 @@ using Newtonsoft.Json.Linq;
 
 #if UNITY_IOS
 using System;
-using Google;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.iOS.Xcode;
@@ -25,6 +24,7 @@ namespace TapSDK.Core.Editor
     {
         private const string TDSInfoJsonName = "TDS-Info.json";
         private const string TDSInfoPlistName = "TDS-Info.plist";
+        private const string EnableEdm4uCheckKey = "enable_edm4u_check";
         private static string cachedAppClientId;
         private static readonly HashSet<string> iosURLSchemesAddedByTapSDK =
             new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
@@ -157,6 +157,32 @@ namespace TapSDK.Core.Editor
             }
 
             return settings;
+        }
+
+        public static bool IsEdm4uCheckEnabledFromTDSInfo(string appDataPath)
+        {
+            var jsonPath = FindTDSInfoJsonPath(appDataPath);
+            return IsEdm4uCheckEnabledFromTDSInfoJson(jsonPath);
+        }
+
+        public static bool IsEdm4uCheckEnabledFromTDSInfoJson(string jsonPath)
+        {
+            const bool defaultValue = true;
+            if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath))
+            {
+                return defaultValue;
+            }
+
+            try
+            {
+                var json = JObject.Parse(File.ReadAllText(jsonPath));
+                return ReadOptionalBool(json, EnableEdm4uCheckKey, defaultValue);
+            }
+            catch (System.Exception e)
+            {
+                UnityEngine.Debug.LogWarning($"TapSDK Failed to parse EDM4U check settings from {jsonPath}: {e.Message}");
+                return defaultValue;
+            }
         }
 
         private static bool ReadOptionalBool(JObject json, string key, bool defaultValue)
@@ -789,6 +815,256 @@ namespace TapSDK.Core.Editor
             return paths.ToArray();
         }
 #endif
+    }
+
+    public sealed class TapSDKExternalDependencyBuildPreprocessor : UnityEditor.Build.IPreprocessBuildWithReport
+    {
+        public int callbackOrder => int.MinValue + 10;
+
+        public void OnPreprocessBuild(UnityEditor.Build.Reporting.BuildReport report)
+        {
+            var platform = report.summary.platform;
+            if (platform != BuildTarget.Android && platform != BuildTarget.iOS)
+            {
+                return;
+            }
+
+            if (!TapSDKCoreCompile.IsEdm4uCheckEnabledFromTDSInfo(Application.dataPath))
+            {
+                UnityEngine.Debug.Log("[TapSDK] EDM4U integration check disabled by TDS-Info.json.");
+                return;
+            }
+
+            var errorMessage = TapSDKExternalDependencyChecker.GetBuildErrorMessage(platform, Application.dataPath);
+            if (!string.IsNullOrEmpty(errorMessage))
+            {
+                throw new UnityEditor.Build.BuildFailedException(errorMessage);
+            }
+        }
+    }
+
+    internal static class TapSDKExternalDependencyChecker
+    {
+        private const string Edm4uPackageName = "com.google.external-dependency-manager";
+        private const string Edm4uAssetFolderName = "ExternalDependencyManager";
+        private const string AndroidResolverTypeName = "GooglePlayServices.PlayServicesResolver";
+        private const string IOSResolverTypeName = "Google.IOSResolver";
+        private const string UnityPackagesFolderName = "Packages";
+        private const string UnityPackageManifestFileName = "manifest.json";
+        private const string UnityPackageJsonFileName = "package.json";
+        private const string UnityPackageDependenciesKey = "dependencies";
+        private const string UnityPackageNameKey = "name";
+        private static readonly string[] AssetSearchFolders = { "Assets" };
+
+        private const string MissingEdm4uMessage =
+            "[TapSDK] 构建已停止：未检测到 com.google.external-dependency-manager（EDM4U）。\n\n" +
+            "TapSDK Android/iOS 原生依赖需要通过 EDM4U 来集成，请参考 TapTap 开发者中心的 Unity 接入文档添加该依赖，否则生成对应 APK 或 iOS 产物会出现类丢失或 SDK 功能不可用的问题。";
+
+        private const string MissingAndroidResolverMessage =
+            "[TapSDK] 构建已停止：已检测到 com.google.external-dependency-manager（EDM4U），但未发现 Android Resolver。\n\n" +
+            "TapSDK Android 原生依赖需要通过 EDM4U 来解析，请参考 TapTap 开发者中心的 Unity 接入文档正确添加该依赖，否则生成对应 APK 产物会出现类丢失或 SDK 功能不可用的问题。";
+
+        private const string MissingIOSResolverMessage =
+            "[TapSDK] 构建已停止：已检测到 com.google.external-dependency-manager（EDM4U），但未发现 iOS Resolver。\n\n" +
+            "TapSDK iOS 原生依赖需要通过 EDM4U 来解析，请参考 TapTap 开发者中心的 Unity 接入文档正确添加该依赖，否则生成对应 iOS 产物会出现类丢失或 SDK 功能不可用的问题。";
+
+        public static string GetBuildErrorMessage(BuildTarget platform, string appDataPath)
+        {
+            if (!IsEdm4uInstalled(appDataPath))
+            {
+                return MissingEdm4uMessage;
+            }
+
+            if (platform == BuildTarget.Android && !HasEditorType(AndroidResolverTypeName))
+            {
+                return MissingAndroidResolverMessage;
+            }
+
+            if (platform == BuildTarget.iOS && !HasEditorType(IOSResolverTypeName))
+            {
+                return MissingIOSResolverMessage;
+            }
+
+            return string.Empty;
+        }
+
+        private static bool IsEdm4uInstalled(string appDataPath)
+        {
+            return IsEdm4uPackageInstalled(appDataPath)
+                   || HasResolverTypeAsset(AndroidResolverTypeName, appDataPath)
+                   || HasResolverTypeAsset(IOSResolverTypeName, appDataPath)
+                   || HasAssetFolderNamed(Edm4uAssetFolderName);
+        }
+
+        private static bool IsEdm4uPackageInstalled(string appDataPath)
+        {
+            var projectRoot = GetProjectRoot(appDataPath);
+            if (string.IsNullOrEmpty(projectRoot))
+            {
+                return false;
+            }
+
+            var packagesPath = Path.Combine(projectRoot, UnityPackagesFolderName);
+            return HasDependencyInJsonFile(Path.Combine(packagesPath, UnityPackageManifestFileName), Edm4uPackageName)
+                   || HasEmbeddedPackageFolder(packagesPath, Edm4uPackageName);
+        }
+
+        private static bool HasDependencyInJsonFile(string jsonPath, string packageName)
+        {
+            if (string.IsNullOrEmpty(jsonPath) || !File.Exists(jsonPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                var json = JObject.Parse(File.ReadAllText(jsonPath));
+                var dependencies = json[UnityPackageDependenciesKey] as JObject;
+                return dependencies != null && dependencies.TryGetValue(packageName, out _);
+            }
+            catch (System.Exception)
+            {
+                // Dependency probing is best-effort; the build preprocessor reports the actionable TapSDK error.
+                return false;
+            }
+        }
+
+        private static bool HasEmbeddedPackageFolder(string packagesPath, string packageName)
+        {
+            if (string.IsNullOrEmpty(packagesPath))
+            {
+                return false;
+            }
+
+            var packageJsonPath = Path.Combine(packagesPath, packageName, UnityPackageJsonFileName);
+            if (!File.Exists(packageJsonPath))
+            {
+                return false;
+            }
+
+            try
+            {
+                var packageJson = JObject.Parse(File.ReadAllText(packageJsonPath));
+                return string.Equals(packageJson[UnityPackageNameKey]?.Value<string>(), packageName, System.StringComparison.Ordinal);
+            }
+            catch (System.Exception)
+            {
+                // Dependency probing is best-effort; the build preprocessor reports the actionable TapSDK error.
+                return false;
+            }
+        }
+
+        private static bool HasAssetFolderNamed(string folderName)
+        {
+            var assetGuids = AssetDatabase.FindAssets(folderName, AssetSearchFolders);
+            foreach (var assetGuid in assetGuids)
+            {
+                var assetPath = AssetDatabase.GUIDToAssetPath(assetGuid);
+                if (IsAssetFolderNamed(assetPath, folderName))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool IsAssetFolderNamed(string assetPath, string folderName)
+        {
+            if (string.IsNullOrEmpty(assetPath) || !AssetDatabase.IsValidFolder(assetPath))
+            {
+                return false;
+            }
+
+            var assetFolderName = Path.GetFileName(assetPath.TrimEnd('/', '\\'));
+            return string.Equals(assetFolderName, folderName, System.StringComparison.Ordinal);
+        }
+
+        private static string GetProjectRoot(string appDataPath)
+        {
+            if (string.IsNullOrEmpty(appDataPath))
+            {
+                return string.Empty;
+            }
+
+            return Directory.GetParent(appDataPath)?.FullName ?? string.Empty;
+        }
+
+        private static bool HasResolverTypeAsset(string typeName, string appDataPath)
+        {
+            foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var type = assembly.GetType(typeName, false);
+                if (type != null && IsExistingFileUnderAssets(assembly.Location, appDataPath))
+                {
+                    return true;
+                }
+            }
+
+            return false;
+        }
+
+        private static bool HasEditorType(string typeName)
+        {
+            return GetEditorType(typeName) != null;
+        }
+
+        private static System.Type GetEditorType(string typeName)
+        {
+            foreach (var assembly in System.AppDomain.CurrentDomain.GetAssemblies())
+            {
+                var type = assembly.GetType(typeName, false);
+                if (type != null)
+                {
+                    return type;
+                }
+            }
+
+            return null;
+        }
+
+        private static bool IsExistingFileUnderAssets(string filePath, string appDataPath)
+        {
+            if (string.IsNullOrEmpty(filePath) || string.IsNullOrEmpty(appDataPath))
+            {
+                return false;
+            }
+
+            var projectRoot = GetProjectRoot(appDataPath);
+            var fullFilePath = GetFullPath(filePath, projectRoot);
+            if (!File.Exists(fullFilePath))
+            {
+                return false;
+            }
+
+            var fullAssetsPath = GetFullPath(appDataPath, projectRoot);
+            return IsSameOrChildPath(fullFilePath, fullAssetsPath);
+        }
+
+        private static string GetFullPath(string path, string projectRoot)
+        {
+            var rootedPath = Path.IsPathRooted(path) || string.IsNullOrEmpty(projectRoot)
+                ? path
+                : Path.Combine(projectRoot, path);
+            return NormalizePathSeparators(Path.GetFullPath(rootedPath))
+                .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        }
+
+        private static string NormalizePathSeparators(string path)
+        {
+            return path.Replace(Path.AltDirectorySeparatorChar, Path.DirectorySeparatorChar);
+        }
+
+        private static bool IsSameOrChildPath(string path, string parentPath)
+        {
+            if (string.IsNullOrEmpty(path) || string.IsNullOrEmpty(parentPath))
+            {
+                return false;
+            }
+
+            return string.Equals(path, parentPath, System.StringComparison.OrdinalIgnoreCase)
+                   || path.StartsWith(parentPath + Path.DirectorySeparatorChar, System.StringComparison.OrdinalIgnoreCase);
+        }
     }
 
 #if UNITY_IOS

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 public class TapMessage : MonoBehaviour {
@@ -53,17 +54,39 @@ public class TapMessage : MonoBehaviour {
 
     private static void RemoveClone ( GameObject clone, Time time )
     {
+        if (clone == null)
+        {
+            return;
+        }
+
+        float delay;
         if (time == Time.oneSecond)
         {
-            Destroy ( clone.gameObject, 1f );
+            delay = 1f;
         }
         else if (time == Time.twoSecond)
         {
-            Destroy ( clone.gameObject, 2f );
+            delay = 2f;
         }
         else
         {
-            Destroy ( clone.gameObject, 3f );
+            delay = 3f;
+        }
+
+        TapMessage runner = clone.GetComponent<TapMessage>();
+        if (runner == null)
+        {
+            runner = clone.AddComponent<TapMessage>();
+        }
+        runner.StartCoroutine(runner.DestroyCloneRealtime(clone.gameObject, delay));
+    }
+
+    private IEnumerator DestroyCloneRealtime(GameObject clone, float delay)
+    {
+        yield return new WaitForSecondsRealtime(delay);
+        if (clone != null)
+        {
+            Destroy(clone);
         }
     }
 }

@@ -69,7 +69,7 @@ namespace TapSDK.Compliance.Internal {
             {
                 remainTime = Mathf.CeilToInt(_closeTime - _elapse);
                 closeTipText.text = $"即将关闭当前页面({remainTime}s)";
-                yield return new WaitForSeconds(1);
+                yield return new WaitForSecondsRealtime(1);
                 _elapse++;
 
             } while (remainTime > 0);

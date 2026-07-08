@@ -137,7 +137,6 @@ namespace TapSDK.Compliance
             switch(code){ 
                 case StartUpResult.LOGIN_SUCCESS:
                 case StartUpResult.PERIOD_RESTRICT:
-                case StartUpResult.DURATION_LIMIT:
                 case StartUpResult.AGE_LIMIT:
                     TapComplianceTracker.Instance.TrackSuccess("startup", sessionId);
                     break;
@@ -228,7 +227,6 @@ namespace TapSDK.Compliance
                     break;
                 case StartUpResult.AGE_LIMIT:
                 case StartUpResult.PERIOD_RESTRICT:
-                case StartUpResult.DURATION_LIMIT:
                 case StartUpResult.EXITED:
                 case StartUpResult.INVALID_CLIENT_OR_NETWORK_ERROR:
                 case StartUpResult.SWITCH_ACCOUNT:
