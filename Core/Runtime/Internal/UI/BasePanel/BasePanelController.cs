@@ -231,7 +231,7 @@ namespace TapSDK.UI
             while (_animationElapse < time)
             {
                 yield return null;
-                _animationElapse += Time.unscaledDeltaTime;
+                _animationElapse += Time.deltaTime;
                 float value = Mathf.Clamp01(_animationElapse / time);
 
                 if ((panelConfig.animationType & EAnimationMode.Alpha) == EAnimationMode.Alpha)
@@ -288,7 +288,7 @@ namespace TapSDK.UI
             while (_animationElapse < time)
             {
                 yield return null;
-                _animationElapse += Time.unscaledDeltaTime;
+                _animationElapse += Time.deltaTime;
                 float value = 1 - Mathf.Clamp01(_animationElapse / time);
 
                 if ((panelConfig.animationType & EAnimationMode.Alpha) == EAnimationMode.Alpha)

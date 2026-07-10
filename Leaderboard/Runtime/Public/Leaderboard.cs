@@ -15,6 +15,12 @@ namespace TapSDK.Leaderboard
         public List<Period> availablePeriods { get; set; }
 
         /// <summary>
+        /// 排行榜背景
+        /// </summary>
+        [JsonProperty("background")]
+        public Image background { get; set; }
+
+        /// <summary>
         /// 排行榜ID
         /// </summary>
         [JsonProperty("id")]

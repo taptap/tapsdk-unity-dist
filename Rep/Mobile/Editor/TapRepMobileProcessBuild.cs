@@ -9,7 +9,6 @@ namespace TapSDK.Rep.Mobile.Editor {
         public override string LinkPath => "TapSDK/Rep/link.xml";
 
         public override LinkedAssembly[] LinkedAssemblies => new LinkedAssembly[] {
-                    new LinkedAssembly { Fullname = "TapSDK.Rep.Runtime" },
                     new LinkedAssembly { Fullname = "TapSDK.Rep.Mobile.Runtime" }
                 };
 

@@ -51,10 +51,10 @@ namespace TapSDK.Leaderboard
         public class User
         {
             /// <summary>
-            /// 用户头像 URL
+            /// 用户头像
             /// </summary>
             [JsonProperty("avatar")]
-            public string avatar { get; set; }
+            public Image avatar { get; set; }
 
             /// <summary>
             /// 用户名称

@@ -27,14 +27,14 @@ namespace TapSDK.Login.Internal
             if (!animationLaunched)
             {
                 animationLaunched = true;
-                float startTime = Time.unscaledTime;
+                float startTime = Time.time;
                 float endTime = startTime + transitionDurationTime;
                 CanvasGroup canvasGroup = UIOperation.GetComponent<CanvasGroup>(gameObject);
                 canvasGroup.alpha = 1f;
-                while (Time.unscaledTime < endTime)
+                while (Time.time < endTime)
                 {
                     yield return new WaitForEndOfFrame();
-                    float delta = (Time.unscaledTime - startTime) / transitionDurationTime;
+                    float delta = (Time.time - startTime) / transitionDurationTime;
                     canvasGroup.alpha = 1 - delta;
                 }
             }
@@ -47,14 +47,14 @@ namespace TapSDK.Login.Internal
             if (!animationLaunched)
             {
                 animationLaunched = true;
-                float startTime = Time.unscaledTime;
+                float startTime = Time.time;
                 float endTime = startTime + transitionDurationTime;
                 CanvasGroup canvasGroup = UIOperation.GetComponent<CanvasGroup>(gameObject);
                 canvasGroup.alpha = 0f;
-                while (Time.unscaledTime < endTime)
+                while (Time.time < endTime)
                 {
                     yield return new WaitForEndOfFrame();
-                    float delta = (Time.unscaledTime - startTime) / transitionDurationTime;
+                    float delta = (Time.time - startTime) / transitionDurationTime;
                     canvasGroup.alpha = delta;
                 }
             }

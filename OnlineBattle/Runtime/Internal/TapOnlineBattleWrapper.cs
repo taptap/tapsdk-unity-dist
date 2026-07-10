@@ -4,10 +4,12 @@ using System.Runtime.InteropServices;
 using System.Text;
 using AOT;
 #endif
-using TapSDK.Core.Internal.Utils;
 using TapSDK.Core.Internal.Log;
 #if !UNITY_IOS
 using UnityEngine;
+#endif
+#if UNITY_EDITOR
+using UnityEditor;
 #endif
 
 namespace TapSDK.OnlineBattle
@@ -543,39 +545,35 @@ namespace TapSDK.OnlineBattle
 
         // 保持回调引用，防止 GC
         private static OnlineBattleCallbacks callbacksRef;
-        private static bool hasFinalizedNative;
 
         internal static int Init(string config, OnlineBattleCallbacks callbacks)
         {
+            // 编辑器模式下关闭时主动释放 Native 资源
+#if UNITY_EDITOR
+            EditorApplication.playModeStateChanged += OnPlayModeStateChanged;
+#endif
 #if !UNITY_IOS
             // iOS 走静态库，不导出 TapSdkOnlineBattleInitLogger。
             InitLogger();
 #endif
             callbacksRef = callbacks;
-            int result = TapSdkOnlineBattleInitialize(config, ref callbacksRef);
-            if (result == 0)
-            {
-                hasFinalizedNative = false;
-                BindApplicationQuitEvents();
-            }
-            return result;
+            return TapSdkOnlineBattleInitialize(config, ref callbacksRef);
         }
 
-        private static void BindApplicationQuitEvents()
+#if UNITY_EDITOR
+        private static void OnPlayModeStateChanged(PlayModeStateChange state)
         {
-            EventManager.RemoveListener(EventManager.OnApplicationQuit, OnApplicationQuit);
-            EventManager.AddListener(EventManager.OnApplicationQuit, OnApplicationQuit);
-        }
-
-        private static void OnApplicationQuit(object quit)
-        {
-            if (hasFinalizedNative)
+            if (state == PlayModeStateChange.ExitingPlayMode)
             {
-                return;
+                TapLog.Log("Play Mode 即将结束（从 Play 返回 Edit）");
+                TapSdkOnlineBattleFinalize();
             }
-            hasFinalizedNative = true;
-            TapLog.Log("TapOnlineBattle OnApplicationQuit");
-            TapSdkOnlineBattleFinalize();
+
+            if (state == PlayModeStateChange.EnteredEditMode)
+            {
+                TapLog.Log("已经回到 Edit Mode");
+            }
         }
+#endif
     }
 }

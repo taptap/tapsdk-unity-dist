@@ -4,9 +4,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using UnityEngine;
-#if UNITY_EDITOR
-using UnityEditor;
-#endif
 
 namespace TapSDK.Core.Internal.Utils
 {
@@ -22,11 +19,6 @@ namespace TapSDK.Core.Internal.Utils
 
         // 记录主线程 ID
         private static int _mainThreadId = -1;
-#if UNITY_EDITOR
-        private static bool editorPlayModeStateChangedRegistered;
-        private static bool editorPauseStateChangedRegistered;
-        private static bool applicationQuitTriggered;
-#endif
 
         public static TapLoom Current
         {
@@ -42,41 +34,20 @@ namespace TapSDK.Core.Internal.Utils
             _current = this;
             initialized = true;
             _mainThreadId = Thread.CurrentThread.ManagedThreadId;
-#if UNITY_EDITOR
-            BindEditorLifecycleEvents();
-#endif
         }
 
         static bool initialized;
 
         public static void Initialize()
         {
-#if UNITY_EDITOR
-            if (IsApplicationPlaying())
-            {
-                BindEditorLifecycleEvents();
-            }
-#endif
             if (!initialized)
             {
-                if (!IsApplicationPlaying())
+                if (!Application.isPlaying)
                     return;
                 initialized = true;
                 var g = new GameObject("TapLoom");
                 DontDestroyOnLoad(g);
                 _current = g.AddComponent<TapLoom>();
-            }
-        }
-
-        private static bool IsApplicationPlaying()
-        {
-            try
-            {
-                return Application.isPlaying;
-            }
-            catch (UnityException)
-            {
-                return false;
             }
         }
 
@@ -217,59 +188,6 @@ namespace TapSDK.Core.Internal.Utils
             }
         }
 
-#if UNITY_EDITOR
-        private static void BindEditorLifecycleEvents()
-        {
-            BindEditorPlayModeStateChanged();
-            BindEditorPauseStateChanged();
-        }
-
-        private static void BindEditorPlayModeStateChanged()
-        {
-            if (editorPlayModeStateChangedRegistered)
-            {
-                return;
-            }
-            EditorApplication.playModeStateChanged += OnEditorPlayModeStateChanged;
-            editorPlayModeStateChangedRegistered = true;
-        }
-
-        private static void OnEditorPlayModeStateChanged(PlayModeStateChange state)
-        {
-            if (state == PlayModeStateChange.ExitingPlayMode)
-            {
-                TriggerApplicationQuit();
-            }
-            if (state == PlayModeStateChange.EnteredEditMode)
-            {
-                applicationQuitTriggered = false;
-                EditorApplication.playModeStateChanged -= OnEditorPlayModeStateChanged;
-                editorPlayModeStateChangedRegistered = false;
-                EditorApplication.pauseStateChanged -= OnEditorPauseStateChanged;
-                editorPauseStateChangedRegistered = false;
-            }
-        }
-
-        private static void BindEditorPauseStateChanged()
-        {
-            if (editorPauseStateChangedRegistered)
-            {
-                return;
-            }
-            EditorApplication.pauseStateChanged += OnEditorPauseStateChanged;
-            editorPauseStateChangedRegistered = true;
-        }
-
-        private static void OnEditorPauseStateChanged(PauseState state)
-        {
-            EventManager.TriggerEvent(
-                EventManager.OnApplicationPause,
-                state == PauseState.Paused
-            );
-        }
-
-#endif
-
         // Use this for initialization
         void Start() { }
 
@@ -317,18 +235,6 @@ namespace TapSDK.Core.Internal.Utils
 
         private void OnApplicationQuit()
         {
-            TriggerApplicationQuit();
-        }
-
-        private static void TriggerApplicationQuit()
-        {
-#if UNITY_EDITOR
-            if (applicationQuitTriggered)
-            {
-                return;
-            }
-            applicationQuitTriggered = true;
-#endif
             EventManager.TriggerEvent(EventManager.OnApplicationQuit, true);
         }
     }

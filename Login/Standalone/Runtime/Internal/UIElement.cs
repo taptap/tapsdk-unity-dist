@@ -79,14 +79,14 @@ namespace TapSDK.Login.Internal
                 if (!animationLaunched)
                 {
                     animationLaunched = true;
-                    float startTime = Time.unscaledTime;
+                    float startTime = Time.time;
                     float endTime = startTime + transitionDurationTime;
                     CanvasGroup canvasGroup = UIOperation.GetComponent<CanvasGroup>(gameObject);
                     canvasGroup.alpha = 1f;
-                    while (Time.unscaledTime < endTime)
+                    while (Time.time < endTime)
                     {
                         yield return new WaitForEndOfFrame();
-                        float delta = (Time.unscaledTime - startTime) / transitionDurationTime;
+                        float delta = (Time.time - startTime) / transitionDurationTime;
                         canvasGroup.alpha = 1 - delta;
                     }
                 }
@@ -98,7 +98,7 @@ namespace TapSDK.Login.Internal
                 if (!animationLaunched)
                 {
                     animationLaunched = true;
-                    float startTime = Time.unscaledTime;
+                    float startTime = Time.time;
                     float endTime = startTime + transitionDurationTime;
                     RectTransform rectTransform = transform.GetComponent<RectTransform>();
                     float targetX = rectTransform.position.x + Screen.width / 2 + rectTransform.rect.width / 2 + 200;
@@ -108,10 +108,10 @@ namespace TapSDK.Login.Internal
                         rectTransform.position.z
                     );
                     rectTransform.position = startV3;
-                    while (Time.unscaledTime < endTime)
+                    while (Time.time < endTime)
                     {
                         yield return new WaitForEndOfFrame();
-                        float delta = (Time.unscaledTime - startTime) / transitionDurationTime;
+                        float delta = (Time.time - startTime) / transitionDurationTime;
                         Vector3 currentV3 = new Vector3(
                             rectTransform.position.x + (targetX - rectTransform.position.x) * delta,
                             rectTransform.position.y,
@@ -133,14 +133,14 @@ namespace TapSDK.Login.Internal
                 if (!animationLaunched)
                 {
                     animationLaunched = true;
-                    float startTime = Time.unscaledTime;
+                    float startTime = Time.time;
                     float endTime = startTime + transitionDurationTime;
                     CanvasGroup canvasGroup = UIOperation.GetComponent<CanvasGroup>(gameObject);
                     canvasGroup.alpha = 0f;
-                    while (Time.unscaledTime < endTime)
+                    while (Time.time < endTime)
                     {
                         yield return new WaitForEndOfFrame();
-                        float delta = (Time.unscaledTime - startTime) / transitionDurationTime;
+                        float delta = (Time.time - startTime) / transitionDurationTime;
                         canvasGroup.alpha = delta;
                     }
                 }
@@ -152,7 +152,7 @@ namespace TapSDK.Login.Internal
                 if (!animationLaunched)
                 {
                     animationLaunched = true;
-                    float startTime = Time.unscaledTime;
+                    float startTime = Time.time;
                     float endTime = startTime + transitionDurationTime;
                     RectTransform rectTransform = transform.GetComponent<RectTransform>();
                     float targetX = rectTransform.position.x;
@@ -162,10 +162,10 @@ namespace TapSDK.Login.Internal
                         rectTransform.position.z
                     );
                     rectTransform.position = startV3;
-                    while (Time.unscaledTime < endTime)
+                    while (Time.time < endTime)
                     {
                         yield return new WaitForEndOfFrame();
-                        float delta = (Time.unscaledTime - startTime) / transitionDurationTime;
+                        float delta = (Time.time - startTime) / transitionDurationTime;
                         Vector3 currentV3 = new Vector3(
                             rectTransform.position.x + (targetX - rectTransform.position.x) * delta,
                             rectTransform.position.y,
@@ -182,3 +182,4 @@ namespace TapSDK.Login.Internal
 
     }
 }
+

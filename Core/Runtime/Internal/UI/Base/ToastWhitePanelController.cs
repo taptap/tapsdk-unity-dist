@@ -1,4 +1,3 @@
-using System.Collections;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -20,9 +19,6 @@ namespace TapSDK.UI {
         public float animationTime;
 
         public ToastPanelOpenParam toastParam;
-
-        private Coroutine _closeCoroutine;
-        private bool _isClosing;
 
         protected override void BindComponents() {
             base.BindComponents();
@@ -63,7 +59,7 @@ namespace TapSDK.UI {
                     textRect.anchorMax = Vector2.one;
                     textRect.sizeDelta = Vector2.zero;
                 }
-                ScheduleClose(param.popupTime);
+                this.Invoke("Close", param.popupTime);
             }
         }
 
@@ -76,45 +72,8 @@ namespace TapSDK.UI {
         }
 
         public void Refresh(float refreshTime) {
-            ScheduleClose(refreshTime);
-        }
-
-        private void ScheduleClose(float popupTime) {
-            if (_isClosing) {
-                return;
-            }
-
-            if (_closeCoroutine != null) {
-                StopCoroutine(_closeCoroutine);
-                _closeCoroutine = null;
-            }
-
-            if (popupTime <= 0) {
-                Close();
-                return;
-            }
-
-            _closeCoroutine = StartCoroutine(CloseAfterDelay(popupTime));
-        }
-
-        private IEnumerator CloseAfterDelay(float delay) {
-            yield return new WaitForSecondsRealtime(delay);
-            _closeCoroutine = null;
-            Close();
-        }
-
-        public override void Close() {
-            if (_isClosing) {
-                return;
-            }
-
-            _isClosing = true;
-            if (_closeCoroutine != null) {
-                StopCoroutine(_closeCoroutine);
-                _closeCoroutine = null;
-            }
-
-            base.Close();
+            this.CancelInvoke("Close");
+            this.Invoke("Close", refreshTime);
         }
     }
 }
