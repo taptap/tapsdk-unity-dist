@@ -10,7 +10,6 @@ namespace TapSDK.Compliance.Mobile.Editor {
 
         public override LinkedAssembly[] LinkedAssemblies => new LinkedAssembly[] {
             new LinkedAssembly { Fullname = "TapSDK.Compliance" },
-            new LinkedAssembly { Fullname = "TapSDK.Compliance.Runtime" },
             new LinkedAssembly { Fullname = "TapSDK.Compliance.Mobile.Runtime" }
         };
         

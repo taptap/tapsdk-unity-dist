@@ -9,7 +9,6 @@ using TapSDK.Core;
 using TapSDK.Login;
 using TapSDK.Login.Internal;
 using TapSDK.Login.Standalone;
-using UnityEditor;
 using TapSDK.Compliance.Internal;
 using TapSDK.Compliance.Model;
 using TapSDK.Core.Internal;

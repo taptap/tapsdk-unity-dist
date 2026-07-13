@@ -21,7 +21,7 @@ namespace TapSDK.UI
             {
                 var localEuler = rotater.localEulerAngles;
                 var z = rotater.localEulerAngles.z;
-                z += Time.deltaTime * speed;
+                z += Time.unscaledDeltaTime * speed;
                 rotater.localEulerAngles = new Vector3(localEuler.x, localEuler.y, z);
             }
         }

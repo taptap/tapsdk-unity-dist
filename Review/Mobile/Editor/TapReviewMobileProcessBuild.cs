@@ -9,6 +9,7 @@ namespace TapSDK.Review.Mobile.Editor {
         public override string LinkPath => "TapSDK/Review/link.xml";
 
         public override LinkedAssembly[] LinkedAssemblies => new LinkedAssembly[] {
+                    new LinkedAssembly { Fullname = "TapSDK.Review.Runtime" },
                     new LinkedAssembly { Fullname = "TapSDK.Review.Mobile.Runtime" }
                 };
 

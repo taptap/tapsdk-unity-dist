@@ -72,10 +72,12 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
                     if (isPauseBool)
                     {
                         TdkOnBackground();
+                        log.Log("tapsdk", "openlog OnApplicationPause background");
                     }
                     else
                     {
                         TdkOnForeground();
+                        log.Log("tapsdk", "openlog OnApplicationPause foreground");
                     }
                 }
             );
@@ -85,6 +87,7 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
                 (quit) =>
                 {
                     TdkOnAppStopped();
+                    log.Log("tapsdk", "openlog OnApplicationQuit");
                 }
             );
             EventManager.AddListener(
