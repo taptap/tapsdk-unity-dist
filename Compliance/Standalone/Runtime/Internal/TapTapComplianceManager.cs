@@ -104,9 +104,9 @@ namespace TapSDK.Compliance
         public static void SetTestEnvironment(bool enable) {
             Network.SetTestEnvironment(enable);
             if (enable)
-                UIManager.Instance.OpenTip("当前处于防沉迷调试模式", Color.red, TextAnchor.UpperRight);
+                ComplianceMainThread.Run(() => UIManager.Instance.OpenTip("当前处于防沉迷调试模式", Color.red, TextAnchor.UpperRight));
             else {
-                UIManager.Instance.CloseTip();
+                ComplianceMainThread.Run(() => UIManager.Instance.CloseTip());
             }
         }
         /// <summary>
@@ -121,13 +121,13 @@ namespace TapSDK.Compliance
             }
             
             UserId = userId;
-            UIManager.Instance.OpenLoading();
+            ComplianceMainThread.Run(() => UIManager.Instance.OpenLoading());
             InitWorker();
             bool isSuccess = await UpdateConfig(userId);
             if(isSuccess){
                 return await Worker.StartUp(UserId);
             }else{
-                UIManager.Instance.CloseLoading();
+                ComplianceMainThread.Run(() => UIManager.Instance.CloseLoading());
                 return StartUpResult.INVALID_CLIENT_OR_NETWORK_ERROR;
             }
         }
@@ -224,12 +224,20 @@ namespace TapSDK.Compliance
                 return;
             }
             var userIdEncode = "compliance_tip_" + Tool.EncryptString(UserId);
-            var hasShowTip = !string.IsNullOrEmpty(DataStorage.LoadString(userIdEncode));
-            if (!hasShowTip)
+            // 这个方法就在崩溃链上（OnCheckedPlayableWithMinorAsync 里先调它、再弹面板），
+            // 而 TapMessage.ShowMessage 碰 UI、DataStorage 底层是 PlayerPrefs，两者都只能
+            // 主线程调。之前没炸只是因为同一账号跑过多次、hasShowTip 已为 true 而跳过了整个
+            // 分支——首次通过校验的账号会直接踩中。判定和读写一起进主线程，避免 Load/Save
+            // 跨线程读到不一致的状态。
+            ComplianceMainThread.Run(() =>
             {
-                TapMessage.ShowMessage("已通过防沉迷校验，祝您游戏愉快！", position:TapMessage.Position.bottom, time:TapMessage.Time.threeSecond);
-                DataStorage.SaveString(userIdEncode, "1");
-            }
+                var hasShowTip = !string.IsNullOrEmpty(DataStorage.LoadString(userIdEncode));
+                if (!hasShowTip)
+                {
+                    TapMessage.ShowMessage("已通过防沉迷校验，祝您游戏愉快！", position:TapMessage.Position.bottom, time:TapMessage.Time.threeSecond);
+                    DataStorage.SaveString(userIdEncode, "1");
+                }
+            });
         }
         
         public static bool? useMobileUI;

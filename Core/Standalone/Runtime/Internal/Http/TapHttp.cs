@@ -24,8 +24,22 @@ namespace TapSDK.Core.Standalone.Internal.Http
         internal static readonly long READ_TIMEOUT_MILLIS = 5 * 1000L;
         internal static readonly long WRITE_TIMEOUT_MILLIS = 5 * 1000L;
 
-        public static readonly string HOST_CN = "https://tapsdk.tapapis.cn";
-        public static readonly string HOST_IO = "https://tapsdk.tapapis.com";
+        /// <summary>
+        /// 当前 region 生效的通用 API 域名。跨程序集的调用方（如 Achievement 的连通性探测）
+        /// 应该用这个，而不是自己在 HOST_CN / HOST_IO 之间挑一个——真正解析 region 的
+        /// TapSDKHost 是 internal，别的程序集看不到它。
+        /// </summary>
+        public static string ApiHost => TapSDKHost.GetApiHost();
+
+        // 保持 public static 字段原样，不改成属性：本 PR 面向补丁分支，把字段改成属性会破坏
+        // 公开 CLR 成员——已编译的 dll 抛 MissingFieldException，反射读写也一并失效。
+        //
+        // 它们的语义是"CN / IO 区的默认域名常量"，是类型初始化时的快照，<b>不反映</b>当前
+        // region，也不保证反映 RND 覆写（覆写发生在本类型静态初始化之前才会被带上）。
+        // 需要"当前实际生效的域名"请一律用上面的 ApiHost —— 本次修复前成就模块的连通性探测
+        // 读的就是这里，结果在海外包里去解析了 CN 域名。
+        public static readonly string HOST_CN = TapSDKHost.HOST_CN;
+        public static readonly string HOST_IO = TapSDKHost.HOST_IO;
 
         private static HttpClient client = GetHttpClient();
 
@@ -277,22 +291,7 @@ namespace TapSDK.Core.Standalone.Internal.Http
                     allQueryParams[param.Key] = param.Value;
                 }
             }
-            string host = HOST_CN;
-            if (httpConfig.Domain != null)
-            {
-                host = httpConfig.Domain;
-            }
-            else
-            {
-                if (TapCoreStandalone.coreOptions.region == TapTapRegionType.CN)
-                {
-                    host = HOST_CN;
-                }
-                else if (TapCoreStandalone.coreOptions.region == TapTapRegionType.Overseas)
-                {
-                    host = HOST_IO;
-                }
-            }
+            string host = httpConfig.Domain != null ? httpConfig.Domain : TapSDKHost.GetApiHost();
             // 拼接查询参数
             UriBuilder uriBuilder;
             if (path.StartsWith("http://") || path.StartsWith("https://"))

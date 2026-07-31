@@ -47,7 +47,7 @@ namespace TapSDK.Compliance
                     // await Verification.Save(userId, Region.China, result);
                     if (Verification.IsVerifyFailed) {
                         // TODO@luran:本地化
-                        UIManager.Instance.OpenToast("认证未通过，请重新提交实名信息", UIManager.GeneralToastLevel.Error);
+                        ComplianceMainThread.Run(() => UIManager.Instance.OpenToast("认证未通过，请重新提交实名信息", UIManager.GeneralToastLevel.Error));
                         continue;
                     }
 
@@ -64,7 +64,7 @@ namespace TapSDK.Compliance
                    
                     if (e is HttpRequestException || e is WebException)
                     {
-                        UIManager.Instance.OpenToast(TapTapComplianceManager.LocalizationItems.Current.NetError, UIManager.GeneralToastLevel.Error);
+                        ComplianceMainThread.Run(() => UIManager.Instance.OpenToast(TapTapComplianceManager.LocalizationItems.Current.NetError, UIManager.GeneralToastLevel.Error));
                         continue;
                     }
 
@@ -72,23 +72,23 @@ namespace TapSDK.Compliance
                     {
                         if (aae.Description != null && aae.Description.Length > 0)
                         {
-                            UIManager.Instance.OpenToast(aae.message, UIManager.GeneralToastLevel.Error);
+                            ComplianceMainThread.Run(() => UIManager.Instance.OpenToast(aae.message, UIManager.GeneralToastLevel.Error));
                             continue;
                         }
                         if (aae.Code >= (int)HttpStatusCode.InternalServerError)
                         {
                             // TODO@luran:本地化
-                            UIManager.Instance.OpenToast("请求出错", UIManager.GeneralToastLevel.Error);
+                            ComplianceMainThread.Run(() => UIManager.Instance.OpenToast("请求出错", UIManager.GeneralToastLevel.Error));
                             continue;
                         }
                     }
                     if (e.Message.Contains("Interval server error."))
                     {
                         // TODO@luran:本地化
-                        UIManager.Instance.OpenToast("请求出错", UIManager.GeneralToastLevel.Error);
+                        ComplianceMainThread.Run(() => UIManager.Instance.OpenToast("请求出错", UIManager.GeneralToastLevel.Error));
                         continue;
                     }
-                    UIManager.Instance.OpenToast(TapTapComplianceManager.LocalizationItems.Current.NoVerification, UIManager.GeneralToastLevel.Error);
+                    ComplianceMainThread.Run(() => UIManager.Instance.OpenToast(TapTapComplianceManager.LocalizationItems.Current.NoVerification, UIManager.GeneralToastLevel.Error));
                     await Task.Yield();
                     
                 }
@@ -129,7 +129,7 @@ namespace TapSDK.Compliance
         
         protected override async Task<int> InternalStartup(string userId) {
             try {
-                UIManager.Instance.CloseLoading();
+                ComplianceMainThread.Run(() => UIManager.Instance.CloseLoading());
                 return await GetVerificationResult(userId);
             }
             catch (Exception e) {
@@ -186,12 +186,12 @@ namespace TapSDK.Compliance
         /// <param name="accessToken"></param>
         /// <returns>0-正常;1-走手动;-1-打断流程</returns>
         private static async Task<int> FetchByTapToken(string userId, AccessToken accessToken) {
-            UIManager.Instance.OpenLoading();
+            ComplianceMainThread.Run(() => UIManager.Instance.OpenLoading());
             var tcs = new TaskCompletionSource<int>();
             // get verification
             try {
                 VerificationResult result = await Verification.FetchVerificationByTapToken(userId,accessToken);
-                UIManager.Instance.CloseLoading();
+                ComplianceMainThread.Run(() => UIManager.Instance.CloseLoading());
                 if(result.Status != null && !result.IsVerifyFailed){
                     tcs.TrySetResult(0);
                 }else{
@@ -200,7 +200,7 @@ namespace TapSDK.Compliance
             }
             catch (Exception e) {
                 TapLog.Error(e.ToString());
-                UIManager.Instance.CloseLoading();
+                ComplianceMainThread.Run(() => UIManager.Instance.CloseLoading());
                 var aae = e as TapException;
                 if (aae != null && aae.code >= (int)HttpStatusCode.InternalServerError && aae.code < 600) {
                     tcs.TrySetResult(1);
@@ -211,7 +211,7 @@ namespace TapSDK.Compliance
                     tcs.TrySetResult(1);
                 }
             }
-            UIManager.Instance.CloseLoading();
+            ComplianceMainThread.Run(() => UIManager.Instance.CloseLoading());
             return tcs.Task.Result;
         }
         
@@ -253,38 +253,57 @@ namespace TapSDK.Compliance
         private Task<VerificationResult> OpenVerificationPanelCn()
         {
             var tcs = new TaskCompletionSource<VerificationResult>();
-            var path = ComplianceConst.GetPrefabPath(ComplianceConst.ID_NUMBER_INPUT_PANEL_NAME,
-                false);
-            idInputPanel =
-                UIManager.Instance.OpenUI<TaptapComplianceIDInputController>(path);
-            idInputPanel.activeManualVerification = true;;
-            if (idInputPanel != null)
+            // GetPrefabPath(Resources.Load) 到 OpenUI 到回调挂载必须整块在主线程完成：
+            // OpenUI<T> 有返回值，没法只把里面一句派发出去。这里本来就是 tcs 模式——
+            // 派发后立刻 return tcs.Task，等用户在面板上操作再 TrySetResult。
+            //
+            // 但派发后异常不再冒泡给调用方（只会从 TapLoom.Update 冒出），所以必须把失败
+            // 回填进 tcs，否则 Resources.Load / OpenUI 一旦抛异常，这个 Task 永远不会完成，
+            // 等它的 VerifyManuallyAsync → Startup 整条链<b>永久挂起</b>。
+            ComplianceMainThread.Run(() =>
             {
-                idInputPanel.OnVerified = (verification) => tcs.TrySetResult(verification);
-                idInputPanel.OnException = (e) =>
+                var path = ComplianceConst.GetPrefabPath(ComplianceConst.ID_NUMBER_INPUT_PANEL_NAME,
+                    false);
+                idInputPanel =
+                    UIManager.Instance.OpenUI<TaptapComplianceIDInputController>(path);
+                // 原来这里先解引用 .activeManualVerification 再判空，顺序是反的：OpenUI 找不到
+                // prefab 时会返回 null，那一行就直接 NRE（下面那个 != null 判断说明作者是知道
+                // 可能为 null 的）。改为先判空并把失败回填给等待方。
+                if (idInputPanel == null)
                 {
-                    if (e is HttpRequestException || e is WebException)
+                    tcs.TrySetException(new ComplianceException(
+                        (int)HttpStatusCode.InternalServerError,
+                        "打开实名认证面板失败，prefab 缺失: " + path));
+                    return;
+                }
+                idInputPanel.activeManualVerification = true;
+                {
+                    idInputPanel.OnVerified = (verification) => tcs.TrySetResult(verification);
+                    idInputPanel.OnException = (e) =>
                     {
-                        tcs.TrySetException(e);
-                    }
-                    else
-                    {
-                        if (e is ComplianceException aae)
+                        if (e is HttpRequestException || e is WebException)
                         {
-                                tcs.TrySetException(e);
+                            tcs.TrySetException(e);
                         }
                         else
                         {
-                            if (e.Message.Contains("Interval server error."))
-                                tcs.TrySetException(e);
-                            else {
-                                UIManager.Instance.OpenToast("身份证号码错误", UIManager.GeneralToastLevel.Error);
+                            if (e is ComplianceException aae)
+                            {
+                                    tcs.TrySetException(e);
+                            }
+                            else
+                            {
+                                if (e.Message.Contains("Interval server error."))
+                                    tcs.TrySetException(e);
+                                else {
+                                    ComplianceMainThread.Run(() => UIManager.Instance.OpenToast("身份证号码错误", UIManager.GeneralToastLevel.Error));
+                                }
                             }
                         }
-                    }
-                };
-                idInputPanel.OnClosed = () => tcs.TrySetCanceled();
-            }
+                    };
+                    idInputPanel.OnClosed = () => tcs.TrySetCanceled();
+                }
+            }, e => tcs.TrySetException(e));
 
             return tcs.Task;
         }
@@ -307,14 +326,14 @@ namespace TapSDK.Compliance
                             /// 异常问题
                             if (fetchResult == 1)
                             {
-                                UIManager.Instance.OpenToast("授权异常", UIManager.GeneralToastLevel.Error);
+                                ComplianceMainThread.Run(() => UIManager.Instance.OpenToast("授权异常", UIManager.GeneralToastLevel.Error));
                             }
                             mannualVerify = 2;
                         }
                     }
                     else {
                         //TODO@luran:本地化
-                        UIManager.Instance.OpenToast("授权错误", UIManager.GeneralToastLevel.Error);
+                        ComplianceMainThread.Run(() => UIManager.Instance.OpenToast("授权错误", UIManager.GeneralToastLevel.Error));
                         mannualVerify = 2;
                     }
                 }
@@ -443,10 +462,22 @@ namespace TapSDK.Compliance
                 onClicked = (isQuickVerify) => tcs.TrySetResult(isQuickVerify),
                 onClose = ()=> tcs.TrySetCanceled(),
             };
-            var path = ComplianceConst.GetPrefabPath(ComplianceConst.QUICK_VERIFY_TIP_PANEL_NAME,
-                false);
-            UIManager.Instance
-                .OpenUI<TapTapComplianceQuickVerifyTipController>(path, openParams);
+            // 同 OpenVerificationPanelCn：GetPrefabPath + OpenUI 整块进主线程，tcs 模式下
+            // 派发不改变语义。
+            ComplianceMainThread.Run(() =>
+            {
+                var path = ComplianceConst.GetPrefabPath(ComplianceConst.QUICK_VERIFY_TIP_PANEL_NAME,
+                    false);
+                var tipPanel = UIManager.Instance
+                    .OpenUI<TapTapComplianceQuickVerifyTipController>(path, openParams);
+                // 面板没打开就没人会触发 onClicked/onClose，等待方会一直挂着
+                if (tipPanel == null)
+                {
+                    tcs.TrySetException(new ComplianceException(
+                        (int)HttpStatusCode.InternalServerError,
+                        "打开快速认证提示面板失败，prefab 缺失: " + path));
+                }
+            }, e => tcs.TrySetException(e));
             return tcs.Task;
         }
         

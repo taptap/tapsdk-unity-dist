@@ -95,7 +95,10 @@ namespace TapSDK.Compliance
                 };
             }
             
-            TapComplianceUI.OpenHealthReminderPanel(playable, onOk, onSwitchAccount);
+            // RemainTime > 0 时 tcs 只由 onOk（用户点面板按钮）完成，面板打不开就永远等不到，
+            // 必须把失败回填进去，否则未成年人的 Startup 永久挂起。
+            TapComplianceUI.OpenHealthReminderPanel(playable, onOk, onSwitchAccount,
+                e => tcs.TrySetException(e));
             return await tcs.Task;
         }
         
@@ -330,14 +333,21 @@ namespace TapSDK.Compliance
         /// </summary>
         public virtual void Logout(bool needClearCache = true)
         {
-            if(needClearCache){
-                string filename = Tool.EncryptString(Verification.Current.UserId);
+            // Verification.Current 在 startup 之前一直是 null，而 exit 是游戏随时可以调的
+            // 公开接口（幂等语义）。原来无条件解引用 .UserId 会抛 NRE，让本该 no-op 的
+            // exit 变成抛异常；UserId 为空时 Tool.EncryptString 里的 Encoding.GetBytes
+            // 还会再抛 ArgumentNullException。没有 userId 就定位不到缓存文件，跳过即可，
+            // 后面的 Verification.Logout / CompliancePoll.Logout 仍照常执行。
+            string userId = Verification.Current?.UserId;
+            if (needClearCache && !string.IsNullOrEmpty(userId))
+            {
+                string filename = Tool.EncryptString(userId);
                 Persistence persistence = new Persistence(Path.Combine(
                                 USER_ANTI_FILENAME,
                                 filename));
                 persistence.Delete();
             }
-                        
+
             Verification.Logout(needClearCache);
             CompliancePoll.Logout();
             TapTapComplianceManager.UserId = null;
@@ -366,7 +376,7 @@ namespace TapSDK.Compliance
             }
             else
             {
-                UIManager.Instance.CloseLoading();
+                ComplianceMainThread.Run(() => UIManager.Instance.CloseLoading());
             }
             return await OnVerificationFetched();
         }
@@ -383,7 +393,9 @@ namespace TapSDK.Compliance
                 TapLog.Log("[TapTap: ChinaCompliance] 认证中,实名取消!");
                 task.TrySetResult(StartUpResult.REAL_NAME_STOP);
             };
-            TapComplianceUI.OpenHealthPaymentPanel(tip.Title, tip.Content, tip.PositiveButtonText, onOk);
+            // 同上：task 只由 onOk 完成，面板打不开必须回填失败，否则这里永久挂起。
+            TapComplianceUI.OpenHealthPaymentPanel(tip.Title, tip.Content, tip.PositiveButtonText, onOk,
+                e => task.TrySetException(e));
             return await task.Task;
         }
         /// <summary>
@@ -395,12 +407,12 @@ namespace TapSDK.Compliance
             try
             {
                 await Verification.Fetch(userId);
-                UIManager.Instance.CloseLoading();
+                ComplianceMainThread.Run(() => UIManager.Instance.CloseLoading());
             }
             catch (Exception e)
             {
                 TapLog.Error(e.Message ?? "");
-                UIManager.Instance.CloseLoading();
+                ComplianceMainThread.Run(() => UIManager.Instance.CloseLoading());
                 //所有错误跳过，执行实名
             }
         }
@@ -527,9 +539,14 @@ namespace TapSDK.Compliance
         }
 
         protected void ShowVerifiedToast() {
-            Texture avatar = TapSDK.UI.UIManager.TapTapToastIcon;
-            string str = "您已在 TapTap 实名！";
-            TapSDK.UI.UIManager.Instance.OpenToast(false, str, 3, icon: avatar);
+            // UIManager.TapTapToastIcon 这个静态属性内部是 Resources.Load<Texture>，
+            // 和 OpenToast 一样只能主线程调，所以取图标也要包进来。
+            ComplianceMainThread.Run(() =>
+            {
+                Texture avatar = TapSDK.UI.UIManager.TapTapToastIcon;
+                string str = "您已在 TapTap 实名！";
+                TapSDK.UI.UIManager.Instance.OpenToast(false, str, 3, icon: avatar);
+            });
         }
         
         #endregion

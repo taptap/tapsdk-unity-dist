@@ -66,10 +66,16 @@ namespace TapSDK.Compliance.Internal.Http {
             urlSB.Append($"/{path}");
             string url = urlSB.ToString();
 
+            // kv.Value 为 null 时不能直接 ToString()，否则 NRE。合规接口的 user_identifier
+            // 取的就是 TapTapComplianceManager.UserId，startup 之前它是 null——checkPayment
+            // 在 startup 前被调用就在这里炸，游戏侧只看到一句"Object reference not set to an
+            // instance of an object"，完全指不到真正的原因。null 值直接不带该参数，让服务端
+            // 按缺参处理（回 "xxx is required"），比传一个字面量 "null" 上去语义正确。
             Dictionary<string, string> newHeaders = null;
             if(headers != null){
                 newHeaders = new Dictionary<string, string>();
                foreach (KeyValuePair<string, object> kv in headers) {
+                    if (kv.Value == null) continue;
                     newHeaders.Add(kv.Key, kv.Value.ToString());
                 }
             }
@@ -78,6 +84,7 @@ namespace TapSDK.Compliance.Internal.Http {
             if(queryParams != null){
                 newQueryParams = new Dictionary<string, string>();
                 foreach (KeyValuePair<string, object> kv in queryParams) {
+                    if (kv.Value == null) continue;
                     newQueryParams.Add(kv.Key, kv.Value.ToString());
                 }
             }

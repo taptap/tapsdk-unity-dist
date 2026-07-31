@@ -37,6 +37,40 @@ namespace TapSDK.Core.Internal.Utils
             }
         }
 
+        /// <summary>
+        /// Awake() 是否已经跑过、记录到了权威的主线程 ID。调用方在这个属性返回 false
+        /// 时无法判断"当前线程是不是主线程"，不应该据此拒绝调用（Codex 审查发现：
+        /// 不能把"哪个线程第一次触发了某个类型的静态构造器"当成主线程的代理——一旦
+        /// 后台线程提前访问到那个类型，会永久把错误的线程当成主线程，反而让后续真正
+        /// 从主线程发起的合法调用被拒绝）。
+        /// </summary>
+        public static bool IsMainThreadKnown => _mainThreadId >= 0;
+
+        /// <summary>
+        /// 当前线程是否是 Awake() 记录到的主线程；IsMainThreadKnown 为 false 时始终
+        /// 返回 true（还没有可信基准，不能拒绝）。Awake() 由 Unity 引擎保证只会在
+        /// 主线程被调用，是比自行猜测更权威的主线程标识。
+        /// </summary>
+        public static bool IsMainThread =>
+            _mainThreadId < 0 || Thread.CurrentThread.ManagedThreadId == _mainThreadId;
+
+        /// <summary>
+        /// 在 Unity 运行时加载阶段（保证在主线程执行，早于任何场景的 Awake/Start，甚至
+        /// 早于用户脚本代码）就主动记录主线程 ID，不依赖 SDK 代码先调用 Initialize()
+        /// 才被动记录。之前只在 TapLoom 的 MonoBehaviour Awake() 里记录，而 Awake()
+        /// 只有在某个 SDK 模块自己调用了 Initialize() 创建 GameObject 之后才会触发——
+        /// 如果调用方在那之前就从背景线程调用了 TapTapSDK.Init()，IsMainThreadKnown
+        /// 会是 false，IsMainThread 默认放行，反而漏掉了这次误用（Codex 审查发现）。
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        private static void CaptureMainThreadOnLoad()
+        {
+            if (_mainThreadId < 0)
+            {
+                _mainThreadId = Thread.CurrentThread.ManagedThreadId;
+            }
+        }
+
         void Awake()
         {
             _current = this;

@@ -156,7 +156,9 @@ namespace TapSDK.Achievement.Standalone
                 achievementSemaphoreSlim.Release();
                 return;
             }
-            if (!UrlExistsUsingSockets(TapHttp.HOST_CN))
+            // 用当前 region 的域名探测，不能固定 HOST_CN：海外包会去解析 CN 域名，探测结果
+            // 与实际要请求的地址无关，可能误判成"网络不可用"而把待上传成就一直压在本地。
+            if (!UrlExistsUsingSockets(TapHttp.ApiHost))
             {
                 NotifyCallbackFailure(
                             achievementId: "",
