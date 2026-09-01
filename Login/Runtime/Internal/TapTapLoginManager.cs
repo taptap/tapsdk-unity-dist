@@ -34,5 +34,7 @@ namespace TapSDK.Login.Internal
         public void Logout() => platformWrapper.Logout();
 
         public Task<TapTapAccount> GetCurrentAccount() => platformWrapper.GetCurrentAccount();
+
+        public Task<TapTapAccount> PeekCachedAccount() => platformWrapper.PeekCachedAccount();
     }
 }

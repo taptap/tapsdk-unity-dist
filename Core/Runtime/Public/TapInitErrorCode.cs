@@ -16,7 +16,8 @@ namespace TapSDK.Core
         public const int ConfigError = 1001;
 
         /// <summary>
-        /// gatekeeper 请求多次尝试后仍因网络原因失败，可通过重新调用 Init 恢复
+        /// 保留的网络错误码。当前 gatekeeper 超时/DNS/TLS/5xx 等会降级为 Success
+        ///（沿用磁盘缓存或默认配置），不会通过 OnInitFail 抛出此码。
         /// </summary>
         public const int NetworkError = 1002;
 

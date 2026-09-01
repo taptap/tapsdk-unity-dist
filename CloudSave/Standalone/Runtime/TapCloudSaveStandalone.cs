@@ -37,7 +37,9 @@ namespace TapSDK.CloudSave.Standalone
             string deviceID = SystemInfo.deviceUniqueIdentifier;
             Task.Run(async () =>
             {
-                TapTapAccount tapAccount = await TapTapLogin.Instance.GetCurrentTapAccount();
+                // 模块 Init 与异步 gatekeeper 并行，必须静默读本地缓存，
+                // 不能走会弹窗的 GetCurrentTapAccount / CheckInitState。
+                TapTapAccount tapAccount = await TapTapLogin.Instance.PeekCachedTapAccount();
                 string loginKid = "";
                 string loginKey = "";
                 if (tapAccount != null && !string.IsNullOrEmpty(tapAccount.openId))
@@ -668,7 +670,7 @@ namespace TapSDK.CloudSave.Standalone
                     Task.Run(async () =>
                     {
                         TapTapAccount tapAccount =
-                            await TapTapLogin.Instance.GetCurrentTapAccount();
+                            await TapTapLogin.Instance.PeekCachedTapAccount();
                         string loginKid = "";
                         string loginKey = "";
                         if (tapAccount != null && !string.IsNullOrEmpty(tapAccount.openId))

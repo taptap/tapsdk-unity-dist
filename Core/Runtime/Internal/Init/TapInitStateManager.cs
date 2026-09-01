@@ -229,6 +229,18 @@ namespace TapSDK.Core.Internal.Init
         }
 
         /// <summary>
+        /// 本地同步初始化已经开始：含 InProgress（gatekeeper 还在飞）和 Success。
+        /// 用于 SDK 内部读取本地缓存，不要求异步校验完成。
+        /// </summary>
+        public static bool IsLocalInitStarted()
+        {
+            lock (Lock)
+            {
+                return state == TapInitState.InProgress || state == TapInitState.Success;
+            }
+        }
+
+        /// <summary>
         /// 状态机进入 Success 终态，通知所有已注册回调。
         /// </summary>
         /// <param name="session">产生这次结果的会话号，来自 SetInProgress 的返回值或
@@ -371,6 +383,38 @@ namespace TapSDK.Core.Internal.Init
         /// <summary>
         /// 供 CheckInitState 一类的同步检查读取：未初始化/进行中/失败时返回对应的提示文案
         /// </summary>
+        /// <summary>
+        /// 本地缓存是否还不可用。InProgress 视为可用（不返回文案）。
+        /// Idle / Failed 才需要提示。
+        /// </summary>
+        public static bool TryGetLocalUnavailableMessage(out string shortMsg, out string detailMsg)
+        {
+            TapInitState currentState;
+            string currentErrorMsg;
+            lock (Lock)
+            {
+                currentState = state;
+                currentErrorMsg = errorMsg;
+            }
+            if (currentState == TapInitState.Success || currentState == TapInitState.InProgress)
+            {
+                shortMsg = null;
+                detailMsg = null;
+                return false;
+            }
+            if (currentState == TapInitState.Failed && !string.IsNullOrEmpty(currentErrorMsg))
+            {
+                shortMsg = currentErrorMsg;
+                detailMsg = currentErrorMsg;
+            }
+            else
+            {
+                shortMsg = "当前应用还未初始化";
+                detailMsg = "当前应用还未初始化: 请在调用 SDK 业务接口前，先调用 TapTapSDK.Init  接口";
+            }
+            return true;
+        }
+
         public static bool TryGetNonSuccessMessage(out string shortMsg, out string detailMsg)
         {
             TapInitState currentState;

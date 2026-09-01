@@ -42,11 +42,13 @@ namespace TapSDK.Core.Mobile
             {
                 try
                 {
-                    Result inner = new Result(raw);
-                    // JsonUtility 对结构不匹配的 JSON 不会抛异常，只会留下默认值。用 content
-                    // 是否解析出内容来判断这层到底是不是我们要的那层 —— 否则一个恰好以 '{'
-                    // 开头但结构不同的字符串会被误当成内层，把会话号读成空。
-                    if (!string.IsNullOrEmpty(inner.content))
+                    // 内层 JSON 可能含 "message":null（Android kotlinx.serialization 默认
+                    // explicitNulls）。Unity JsonUtility 不能解析 null，会留下默认空 content，
+                    // 随后会话号校验失败、终态被丢弃。这里用 Newtonsoft 解带
+                    // [JsonProperty] 的 TapEngineBridgeResult：IL2CPP 下 Result 的 public
+                    // field 可能被剥离，DeserializeObject<Result> 会得到空 content。
+                    TapEngineBridgeResult inner = JsonConvert.DeserializeObject<TapEngineBridgeResult>(raw);
+                    if (inner != null && !string.IsNullOrEmpty(inner.content))
                     {
                         return new InitCallbackPayload
                         {
@@ -356,35 +358,23 @@ namespace TapSDK.Core.Mobile
                         // message 固定 "Success"），拿它判断会让 onInitFail 永远走不到失败分支，
                         // 真实的 errorCode / errorMsg 也全部丢失。
                         //
-                        // 只有 ConfigError（1001，gatekeeper 返回 invalid_client，应用信息与
-                        // clientId/clientToken 不匹配、不可自动恢复）才落 Failed，其余错误暂时按
-                        // 成功处理。
-                        //
-                        // 这条放宽只适用于「原生 / gatekeeper 异步返回的初始化结果」，不覆盖
-                        // 参数校验和同步初始化异常——那两类是调用前置条件不满足，配置本身还没
-                        // 建立起来，放成 Success 会让业务接口拿着 null 配置跑。
-                        //
-                        // 注意口径：这不等于"与线上完全一致"。线上（iOS TapTapSDK.m 的
-                        // checkInitState）把非 ConfigError 的 Failed 归为 INIT_STATE_EMPTY，
-                        // 业务接口同样会被拦，只是提示文案更温和；这里判成 Success 会放行接口，
-                        // 比线上更宽松。取这个方向是为了不让新引入的状态机比线上更严格地拦住
-                        // 可恢复错误（TryGetNonSuccessMessage 只放行 Success）。
-                        // 错误本身照旧记日志，不静默吞掉。
-                        if (payload.code == 0)
+                        // 与原生三端口径对齐：
+                        // - 0 / NetworkError：成功或网络失败降级成功
+                        // - ParamError / ConfigError / InternalError：失败，不能提升为 Success
+                        if (payload.code == 0 || payload.code == TapInitErrorCode.NetworkError)
                         {
+                            if (payload.code == TapInitErrorCode.NetworkError)
+                            {
+                                TapLog.Error(
+                                    "TapCoreMobile native init network error, treated as degraded success",
+                                    $"code={payload.code}, message={payload.message}"
+                                );
+                            }
                             TapInitStateManager.UpdateSuccess(session);
-                        }
-                        else if (payload.code == TapInitErrorCode.ConfigError)
-                        {
-                            TapInitStateManager.UpdateFailed(session, payload.code, payload.message);
                         }
                         else
                         {
-                            TapLog.Error(
-                                "TapCoreMobile native init failed with recoverable error, treated as success for now",
-                                $"code={payload.code}, message={payload.message}"
-                            );
-                            TapInitStateManager.UpdateSuccess(session);
+                            TapInitStateManager.UpdateFailed(session, payload.code, payload.message);
                         }
                         }
                     }

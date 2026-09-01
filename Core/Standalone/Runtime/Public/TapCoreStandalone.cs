@@ -292,16 +292,9 @@ namespace TapSDK.Core.Standalone
                        }
                        else
                        {
-                           // 只有 ConfigError（上面 invalid_client 那支）才落 Failed；gatekeeper 的
-                           // 网络失败是可恢复的、配置本身有效，暂时按成功处理，与移动端口径一致。
-                           // 理由：状态机是新引入的，若把可恢复错误也判 Failed，业务接口会被准入
-                           // 检查拦掉（TryGetNonSuccessMessage 只放行 Success），比原先更严格。
-                           //
-                           // 注意这<b>不</b>等于"与线上一致"：线上（iOS TapTapSDK.m 的 checkInitState）
-                           // 把非 ConfigError 的 Failed 归为 INIT_STATE_EMPTY，业务接口同样会被拦，
-                           // 只是提示文案更温和；这里判成 Success 会放行接口，比线上更宽松。
-                           // 错误本身照旧记日志，不静默吞掉。
-                           TapLog.Error("Init failed with recoverable error, treated as success for now",
+                           // 与 Android / iOS 对齐：只有 invalid_client 落 ConfigError Failed；
+                           // gatekeeper 网络失败降级为 Success，沿用磁盘缓存或默认配置。
+                           TapLog.Error("Init failed with recoverable error, treated as degraded success",
                                error?.Message ?? "network error");
                            TapInitStateManager.UpdateSuccess(session);
                        }
@@ -319,9 +312,34 @@ namespace TapSDK.Core.Standalone
 
         public static bool CheckInitState()
         {
+            return CheckInitState(true);
+        }
+
+        /// <param name="showUI">为 false 时只做状态判断，不弹窗。供 SDK 内部后台初始化使用。</param>
+        public static bool CheckInitState(bool showUI)
+        {
             if (TapInitStateManager.TryGetNonSuccessMessage(out string shortMsg, out string detailMsg))
             {
-                TapVerifyInitStateUtils.ShowVerifyErrorMsg(shortMsg, detailMsg);
+                if (showUI)
+                {
+                    TapVerifyInitStateUtils.ShowVerifyErrorMsg(shortMsg, detailMsg);
+                }
+                return false;
+            }
+            return true;
+        }
+
+        /// <summary>
+        /// SDK 内部使用：本地同步初始化是否已开始。InProgress 视为通过，不要求 gatekeeper 成功。
+        /// </summary>
+        internal static bool CheckLocalInitState(bool showUI = true)
+        {
+            if (TapInitStateManager.TryGetLocalUnavailableMessage(out string shortMsg, out string detailMsg))
+            {
+                if (showUI)
+                {
+                    TapVerifyInitStateUtils.ShowVerifyErrorMsg(shortMsg, detailMsg);
+                }
                 return false;
             }
             return true;

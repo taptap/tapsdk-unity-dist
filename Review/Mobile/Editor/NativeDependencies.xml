@@ -4,7 +4,7 @@
     <repositories>
       <repository>https://repo.maven.apache.org/maven2</repository>
     </repositories>
-    <androidPackage spec="com.taptap.sdk:tap-review-unity:4.10.8" />
+    <androidPackage spec="com.taptap.sdk:tap-review:4.10.9" />
   </androidPackages>
   <iosPods>
     <sources>

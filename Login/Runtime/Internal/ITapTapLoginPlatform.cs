@@ -11,5 +11,7 @@ namespace TapSDK.Login.Internal
         void Logout();
         
         Task<TapTapAccount> GetCurrentAccount();
+
+        Task<TapTapAccount> PeekCachedAccount();
     }
 }

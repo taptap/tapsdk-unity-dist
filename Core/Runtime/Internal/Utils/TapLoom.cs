@@ -22,6 +22,8 @@ namespace TapSDK.Core.Internal.Utils
 
         // 记录主线程 ID
         private static int _mainThreadId = -1;
+        private static readonly object _pendingActionsLock = new object();
+        private static readonly List<Action> _pendingActions = new List<Action>();
 #if UNITY_EDITOR
         private static bool editorPlayModeStateChangedRegistered;
         private static bool editorPauseStateChangedRegistered;
@@ -76,6 +78,14 @@ namespace TapSDK.Core.Internal.Utils
             _current = this;
             initialized = true;
             _mainThreadId = Thread.CurrentThread.ManagedThreadId;
+            lock (_pendingActionsLock)
+            {
+                lock (_actions)
+                {
+                    _actions.AddRange(_pendingActions);
+                    _pendingActions.Clear();
+                }
+            }
 #if UNITY_EDITOR
             BindEditorLifecycleEvents();
 #endif
@@ -95,7 +105,6 @@ namespace TapSDK.Core.Internal.Utils
             {
                 if (!IsApplicationPlaying())
                     return;
-                initialized = true;
                 var g = new GameObject("TapLoom");
                 DontDestroyOnLoad(g);
                 _current = g.AddComponent<TapLoom>();
@@ -133,6 +142,18 @@ namespace TapSDK.Core.Internal.Utils
 
         public static void QueueOnMainThread(Action action, float time)
         {
+            if (action == null)
+            {
+                return;
+            }
+            if (!IsMainThread && !initialized)
+            {
+                lock (_pendingActionsLock)
+                {
+                    _pendingActions.Add(action);
+                }
+                return;
+            }
             if (time != 0)
             {
                 lock (Current._delayed)

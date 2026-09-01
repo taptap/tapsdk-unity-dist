@@ -152,5 +152,10 @@ namespace TapSDK.Login.Mobile
                 return null;
             }
         }
+
+        public Task<TapTapAccount> PeekCachedAccount()
+        {
+            return GetCurrentAccount();
+        }
     }
 }

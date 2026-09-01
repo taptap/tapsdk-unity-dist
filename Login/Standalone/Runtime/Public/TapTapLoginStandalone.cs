@@ -41,6 +41,16 @@ namespace TapSDK.Login.Standalone
             }
             return TapLoginStandaloneImpl.Instance.GetCurrentAccount();
         }
+
+        public Task<TapTapAccount> PeekCachedAccount()
+        {
+            if(!TapCoreStandalone.CheckLocalInitState(false)){
+                var defaultTcs = new TaskCompletionSource<TapTapAccount>();
+                defaultTcs.TrySetResult(null);
+                return defaultTcs.Task;
+            }
+            return TapLoginStandaloneImpl.Instance.GetCurrentAccount();
+        }
     }
 
     public class TapTapLoginOpenIDProvider: IOpenIDProvider {

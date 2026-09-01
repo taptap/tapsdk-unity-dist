@@ -266,23 +266,35 @@ namespace TapSDK.Relation.Mobile
                 }
                 TapLog.Log("Relation -->> Bridge Callback == " + JsonConvert.SerializeObject(result));
                 var dic = Json.Deserialize(result.content) as Dictionary<string, object>;
-                var code = SafeDictionary.GetValue<int>(dic, "relation_code");
-                var newFansCount = SafeDictionary.GetValue<int>(dic, "new_fans_count");
-                var unreadMessageCount = SafeDictionary.GetValue<int>(dic, "unread_message_count");
+                if (dic == null)
+                {
+                    return;
+                }
 
-                if (code != null)
+                // SafeDictionary.GetValue<int> returns 0 for missing keys, and int is never null.
+                // Dispatch by actual payload fields so NEED_LOGIN does not fake fans/unread callbacks.
+                var hasRelationCode = dic.ContainsKey("relation_code");
+                var hasNewFansCount = dic.ContainsKey("new_fans_count");
+                var hasUnreadMessageCount = dic.ContainsKey("unread_message_count");
+                var code = hasRelationCode ? SafeDictionary.GetValue<int>(dic, "relation_code") : 0;
+
+                if (hasNewFansCount)
+                {
+                    var newFansCount = SafeDictionary.GetValue<int>(dic, "new_fans_count");
+                    callbacks.ForEach((x) => x.OnNewFansCountChanged(code, newFansCount));
+                    return;
+                }
+
+                if (hasUnreadMessageCount)
+                {
+                    var unreadMessageCount = SafeDictionary.GetValue<int>(dic, "unread_message_count");
+                    callbacks.ForEach((x) => x.OnUnreadMessageCountChanged(code, unreadMessageCount));
+                    return;
+                }
+
+                if (hasRelationCode)
                 {
                     callbacks.ForEach((x) => x.OnMessengerCodeResult(code));
-                }
-
-                if (newFansCount != null)
-                {
-                    callbacks.ForEach((x) => x.OnNewFansCountChanged(code, newFansCount));
-                }
-
-                if (unreadMessageCount != null)
-                {
-                    callbacks.ForEach((x) => x.OnUnreadMessageCountChanged(code, unreadMessageCount));
                 }
 
             });

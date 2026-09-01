@@ -8,7 +8,7 @@ namespace TapSDK.Core.Internal.Utils
     
         public static void ShowVerifyErrorMsg(string error, string errorMsg)
         {
-            if (error != null || error.Length > 0)
+            if (!string.IsNullOrEmpty(error))
             {
                 TapMessage.ShowMessage(error, TapMessage.Position.bottom, TapMessage.Time.twoSecond);
             }

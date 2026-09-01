@@ -1,13 +1,16 @@
+using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using TapSDK.Core.Internal.Utils;
 using TapSDK.Login.Internal;
+
+[assembly: InternalsVisibleTo("TapSDK.CloudSave.Standalone.Runtime")]
 
 namespace TapSDK.Login
 {
     public class TapTapLogin
     {
 
-        public static readonly string Version = "4.10.8";
+        public static readonly string Version = "4.10.9";
 
         public const string TAP_LOGIN_SCOPE_BASIC_INFO = "basic_info";
         public const string TAP_LOGIN_SCOPE_PUBLIC_PROFILE = "public_profile";
@@ -38,5 +41,7 @@ namespace TapSDK.Login
         public void Logout() => TapTapLoginManager.Instance.Logout();
 
         public Task<TapTapAccount> GetCurrentTapAccount() => TapTapLoginManager.Instance.GetCurrentAccount();
+
+        internal Task<TapTapAccount> PeekCachedTapAccount() => TapTapLoginManager.Instance.PeekCachedAccount();
     }
 }

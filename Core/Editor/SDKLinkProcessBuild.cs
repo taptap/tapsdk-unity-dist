@@ -62,9 +62,7 @@ namespace TapSDK.Core.Editor {
 
             Application.logMessageReceived -= OnBuildError;
             RecoverIgnoredPaths();
-
-            string linkPath = Path.Combine(Application.dataPath, LinkPath);
-            LinkXMLGenerator.Delete(linkPath);
+            LinkXMLGenerator.ScheduleDeleteGeneratedFiles();
         }
 
         /// <summary>
@@ -78,6 +76,7 @@ namespace TapSDK.Core.Editor {
             if (logType == LogType.Error) {
                 Application.logMessageReceived -= OnBuildError;
                 RecoverIgnoredPaths();
+                LinkXMLGenerator.ScheduleDeleteGeneratedFiles();
             }
         }
 

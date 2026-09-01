@@ -17,6 +17,11 @@ public class TapMessage : MonoBehaviour {
     };
     public static void ShowMessage ( string msg, TapMessage.Position position, TapMessage.Time time )
     {
+        if (!TapSDK.Core.Internal.Utils.TapLoom.IsMainThread)
+        {
+            TapSDK.Core.Internal.Utils.TapLoom.QueueOnMainThread(() => ShowMessage(msg, position, time));
+            return;
+        }
 
         //Load message prefab from resources folder
         GameObject messagePrefab = Resources.Load ( "TapMessage" ) as GameObject;

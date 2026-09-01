@@ -12,6 +12,9 @@ using Newtonsoft.Json.Linq;
 
 #if UNITY_IOS
 using System;
+using System.Runtime.InteropServices;
+using System.Threading;
+using System.Threading.Tasks;
 using UnityEditor.Build;
 using UnityEditor.Build.Reporting;
 using UnityEditor.iOS.Xcode;
@@ -25,6 +28,19 @@ namespace TapSDK.Core.Editor
         private const string TDSInfoJsonName = "TDS-Info.json";
         private const string TDSInfoPlistName = "TDS-Info.plist";
         private const string EnableEdm4uCheckKey = "enable_edm4u_check";
+#if UNITY_IOS
+        private const string CocoaPodsCommandEnvironmentVariable = "TAPSDK_UNITY_POD_COMMAND";
+        private const string CocoaPodsProcessGroupPrefix = "TAPSDK_PROCESS_GROUP=";
+        private const int CocoaPodsStartupTimeoutMilliseconds = 5 * 1000;
+        private const int CocoaPodsTimeoutMilliseconds = 10 * 60 * 1000;
+        private const int ProcessTerminationGracePeriodMilliseconds = 5 * 1000;
+        private const int NoSuchProcessError = 3;
+        private const int SigKill = 9;
+        private const int SigTerm = 15;
+
+        [DllImport("libc", SetLastError = true)]
+        private static extern int kill(int pid, int signal);
+#endif
         private static string cachedAppClientId;
         private static readonly HashSet<string> iosURLSchemesAddedByTapSDK =
             new HashSet<string>(System.StringComparer.OrdinalIgnoreCase);
@@ -634,6 +650,13 @@ namespace TapSDK.Core.Editor
 
         public static void ExecutePodCommand(string command, string workingDirectory)
         {
+            if (string.Equals(Environment.GetEnvironmentVariable("TAPSDK_SKIP_UNITY_POD_INSTALL"), "true",
+                    StringComparison.OrdinalIgnoreCase))
+            {
+                UnityEngine.Debug.Log("[CocoaPods] Skipping Unity post-build pod install; CI runs it in a separate step.");
+                return;
+            }
+
             string podPath = FindPodPath();
             if (string.IsNullOrEmpty(podPath))
             {
@@ -643,36 +666,169 @@ namespace TapSDK.Core.Editor
             UnityEngine.Debug.Log("[CocoaPods] search pod install path :" + podPath);
             command = command.Replace("pod", podPath);
             command = "export LANG=en_US.UTF-8 && " + command;
-            var process = new Process
+            var startInfo = new ProcessStartInfo
             {
-                StartInfo = new ProcessStartInfo
-                {
-                    FileName = "/bin/bash",
-                    Arguments = $"-c \"{command}\"",
-                    WorkingDirectory = workingDirectory,
-                    RedirectStandardOutput = true,
-                    RedirectStandardError = true,
-                    UseShellExecute = false,
-                    CreateNoWindow = true
-                }
+                FileName = "/usr/bin/env",
+                Arguments = $"ruby -e \"child = nil; trap('TERM') {{ begin; Process.kill('TERM', -child) if child; rescue Errno::ESRCH; end; exit(1) }}; child = fork do; Process.setsid; STDOUT.puts('{CocoaPodsProcessGroupPrefix}' + Process.pid.to_s); STDOUT.flush; exec('/bin/bash', '-c', ENV.fetch('{CocoaPodsCommandEnvironmentVariable}')); end; _, status = Process.wait2(child); exit(status.exitstatus || 1)\"",
+                WorkingDirectory = workingDirectory,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true,
+                UseShellExecute = false,
+                CreateNoWindow = true
             };
+            startInfo.EnvironmentVariables[CocoaPodsCommandEnvironmentVariable] = command;
+            var process = new Process { StartInfo = startInfo };
+            try
+            {
+                process.Start();
+                int processGroupId = ReadProcessGroupId(process);
+                var outputTask = process.StandardOutput.ReadToEndAsync();
+                var errorTask = process.StandardError.ReadToEndAsync();
+                bool timedOut = !process.WaitForExit(CocoaPodsTimeoutMilliseconds);
+                if (timedOut)
+                {
+                    TerminateProcessGroup(process, processGroupId);
+                }
 
-            process.Start();
-            process.WaitForExit();
+                if (!Task.WaitAll(new Task[] { outputTask, errorTask }, ProcessTerminationGracePeriodMilliseconds))
+                {
+                    TerminateProcessGroup(process, processGroupId);
+                    if (!Task.WaitAll(new Task[] { outputTask, errorTask }, ProcessTerminationGracePeriodMilliseconds))
+                    {
+                        throw new TimeoutException($"CocoaPods output streams did not close: {command}");
+                    }
+                }
 
-            string output = process.StandardOutput.ReadToEnd();
-            string error = process.StandardError.ReadToEnd();
+                string output = outputTask.Result;
+                string error = errorTask.Result;
 
-            if (!string.IsNullOrEmpty(output))
-                UnityEngine.Debug.Log($"[CocoaPods] Output: {output}");
+                if (!string.IsNullOrEmpty(output))
+                    UnityEngine.Debug.Log($"[CocoaPods] Output: {output}");
 
-            if (!string.IsNullOrEmpty(error))
-                UnityEngine.Debug.LogError($"[CocoaPods] Error: {error}");
+                if (!string.IsNullOrEmpty(error))
+                    UnityEngine.Debug.LogError($"[CocoaPods] Error: {error}");
 
-            if (process.ExitCode == 0)
-                UnityEngine.Debug.Log($"[CocoaPods] Success: {command}");
-            else
-                UnityEngine.Debug.LogError($"[CocoaPods] Failed: {command} (Exit code: {process.ExitCode})");
+                if (timedOut)
+                    throw new TimeoutException($"CocoaPods command timed out: {command}");
+
+                if (process.ExitCode == 0)
+                    UnityEngine.Debug.Log($"[CocoaPods] Success: {command}");
+                else
+                    UnityEngine.Debug.LogError($"[CocoaPods] Failed: {command} (Exit code: {process.ExitCode})");
+            }
+            finally
+            {
+                process.Dispose();
+            }
+        }
+
+        private static int ReadProcessGroupId(Process process)
+        {
+            var processGroupTask = process.StandardOutput.ReadLineAsync();
+            if (!processGroupTask.Wait(CocoaPodsStartupTimeoutMilliseconds))
+            {
+                TerminateProcess(process);
+                throw new TimeoutException("Timed out while starting the CocoaPods process group.");
+            }
+
+            string processGroupLine = processGroupTask.Result;
+            int processGroupId;
+            if (string.IsNullOrEmpty(processGroupLine) ||
+                !processGroupLine.StartsWith(CocoaPodsProcessGroupPrefix, StringComparison.Ordinal) ||
+                !int.TryParse(processGroupLine.Substring(CocoaPodsProcessGroupPrefix.Length), out processGroupId) ||
+                processGroupId <= 0)
+            {
+                TerminateProcess(process);
+                throw new InvalidOperationException($"Failed to read the CocoaPods process group: {processGroupLine}");
+            }
+
+            return processGroupId;
+        }
+
+        private static void TerminateProcess(Process process)
+        {
+            SignalProcess(process.Id, SigTerm);
+            if (!process.WaitForExit(ProcessTerminationGracePeriodMilliseconds))
+            {
+                SignalProcess(process.Id, SigKill);
+                process.WaitForExit(ProcessTerminationGracePeriodMilliseconds);
+            }
+        }
+
+        private static void TerminateProcessGroup(Process process, int processGroupId)
+        {
+            SignalProcessGroup(processGroupId, SigTerm);
+
+            if (!WaitForProcessGroupAndLeaderExit(process, processGroupId,
+                    ProcessTerminationGracePeriodMilliseconds))
+            {
+                SignalProcessGroup(processGroupId, SigKill);
+
+                if (!WaitForProcessGroupAndLeaderExit(process, processGroupId,
+                        ProcessTerminationGracePeriodMilliseconds))
+                {
+                    throw new TimeoutException($"CocoaPods process group {processGroupId} did not exit after termination.");
+                }
+            }
+        }
+
+        private static bool WaitForProcessGroupAndLeaderExit(Process process, int processGroupId,
+            int timeoutMilliseconds)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            bool processExited = process.WaitForExit(timeoutMilliseconds);
+            int remainingMilliseconds = System.Math.Max(0,
+                timeoutMilliseconds - (int)stopwatch.ElapsedMilliseconds);
+            return processExited && WaitForProcessGroupExit(processGroupId, remainingMilliseconds);
+        }
+
+        private static bool WaitForProcessGroupExit(int processGroupId, int timeoutMilliseconds)
+        {
+            var stopwatch = Stopwatch.StartNew();
+            while (IsProcessGroupRunning(processGroupId))
+            {
+                if (stopwatch.ElapsedMilliseconds >= timeoutMilliseconds)
+                {
+                    return false;
+                }
+
+                Thread.Sleep(100);
+            }
+
+            return true;
+        }
+
+        private static bool IsProcessGroupRunning(int processGroupId)
+        {
+            return kill(-processGroupId, 0) == 0 || Marshal.GetLastWin32Error() != NoSuchProcessError;
+        }
+
+        private static void SignalProcessGroup(int processGroupId, int signal)
+        {
+            if (kill(-processGroupId, signal) == 0)
+            {
+                return;
+            }
+
+            int error = Marshal.GetLastWin32Error();
+            if (error != NoSuchProcessError)
+            {
+                UnityEngine.Debug.LogWarning($"[CocoaPods] Failed to signal process group {processGroupId}: {error}");
+            }
+        }
+
+        private static void SignalProcess(int processId, int signal)
+        {
+            if (kill(processId, signal) == 0)
+            {
+                return;
+            }
+
+            int error = Marshal.GetLastWin32Error();
+            if (error != NoSuchProcessError)
+            {
+                UnityEngine.Debug.LogWarning($"[CocoaPods] Failed to signal process {processId}: {error}");
+            }
         }
 
         private static string FindPodPath()
