@@ -56,7 +56,7 @@ namespace TapSDK.Core.Standalone
             }
             if (!IsValidUserID(userID))
             {
-                TapLog.Error("Invalid user ID, length should be 1-160 and only contains a-zA-Z0-9_+/=.,:");
+                TapLog.Error("Invalid user ID, length should be 1-160 and only contains a-zA-Z0-9_-+/=.,:");
                 return;
             }
 
@@ -356,7 +356,7 @@ namespace TapSDK.Core.Standalone
 
         private bool IsValidUserID(string userID)
         {
-            string pattern = @"^[a-zA-Z0-9_+/=.,:]{1,160}$";
+            string pattern = @"^[a-zA-Z0-9_\-+/=.,:]{1,160}$";
             Regex regex = new Regex(pattern);
             return regex.IsMatch(userID);
         }
