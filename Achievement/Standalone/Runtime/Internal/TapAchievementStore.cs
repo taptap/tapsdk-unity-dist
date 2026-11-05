@@ -108,9 +108,13 @@ namespace TapTap.Achievement.Standalone.Internal
             try
             {
                 string filePath = await getFilePath();
-                List<TapAchievementStoreBean> currentAll = await getAllInner(filePath) ?? new List<TapAchievementStoreBean>();
-                currentAll.Add(bean);
-                await SaveAllInner(currentAll, filePath);
+                if (string.IsNullOrEmpty(filePath)) throw new InvalidOperationException("[Achievement] Account unavailable while saving pending operations.");
+                using (await SharedCacheFile.AcquireAsync(filePath))
+                {
+                    List<TapAchievementStoreBean> currentAll = await getAllInner(filePath, true) ?? new List<TapAchievementStoreBean>();
+                    if (!currentAll.Exists(x => x.UUID == bean.UUID)) currentAll.Add(bean);
+                    await SaveAllInner(currentAll, filePath, true);
+                }
             }
             finally
             {
@@ -125,9 +129,13 @@ namespace TapTap.Achievement.Standalone.Internal
             {
                 TapAchievementLog.Log("Delete uuid = " + uuid);
                 string filePath = await getFilePath();
-                List<TapAchievementStoreBean> currentAll = await getAllInner(filePath) ?? new List<TapAchievementStoreBean>();
-                currentAll.RemoveAll(x => x.UUID == uuid);
-                await SaveAllInner(currentAll, filePath);
+                if (string.IsNullOrEmpty(filePath)) return;
+                using (await SharedCacheFile.AcquireAsync(filePath))
+                {
+                    List<TapAchievementStoreBean> currentAll = await getAllInner(filePath, true) ?? new List<TapAchievementStoreBean>();
+                    currentAll.RemoveAll(x => x.UUID == uuid);
+                    await SaveAllInner(currentAll, filePath, true);
+                }
             }
             finally
             {
@@ -135,7 +143,7 @@ namespace TapTap.Achievement.Standalone.Internal
             }
         }
 
-        private async static Task<List<TapAchievementStoreBean>> getAllInner(string filePath)
+        private async static Task<List<TapAchievementStoreBean>> getAllInner(string filePath, bool underLock = false)
         {
             if (string.IsNullOrEmpty(filePath))
             {
@@ -143,29 +151,30 @@ namespace TapTap.Achievement.Standalone.Internal
             }
 
             List<TapAchievementStoreBean> pending;
-            using (await SharedCacheFile.AcquireAsync(filePath))
+            using (underLock ? null : await SharedCacheFile.AcquireAsync(filePath))
             {
                 if (!File.Exists(filePath)) return null;
                 // Pending operations are not a disposable cache. A read/parse failure must not become an empty queue.
                 string text = await SharedCacheFile.ReadTextUnderLockAsync(filePath).ConfigureAwait(false);
                 pending = JsonConvert.DeserializeObject<List<TapAchievementStoreBean>>(text)
                     ?? throw new InvalidDataException("[Achievement] Invalid pending-operation cache.");
-            }
-            if (pending.RemoveAll(x => completedOperations.TryGetValue(x.UUID, out string path) && path == filePath) > 0)
-            {
-                try { await SaveAllInner(pending, filePath); }
-                catch (Exception e) { TapAchievementLog.Log("Completed achievement cleanup deferred: " + e.Message); }
+                if (pending.RemoveAll(x => completedOperations.TryGetValue(x.UUID, out string path) && path == filePath) > 0)
+                {
+                    try { await SaveAllInner(pending, filePath, true); }
+                    catch (Exception e) { TapAchievementLog.Log("Completed achievement cleanup deferred: " + e.Message); }
+                }
             }
             return pending;
         }
 
-        private async static Task SaveAllInner(List<TapAchievementStoreBean> data, string filePath)
+        private async static Task SaveAllInner(List<TapAchievementStoreBean> data, string filePath, bool underLock = false)
         {
             if (data == null) return;
             string text = JsonConvert.SerializeObject(data);
             if (string.IsNullOrEmpty(filePath))
                 throw new InvalidOperationException("[Achievement] Account unavailable while saving pending operations.");
-            await SharedCacheFile.WriteBytesAsync(filePath, Encoding.UTF8.GetBytes(text));
+            if (underLock) SharedCacheFile.WriteTextUnderLock(filePath, text);
+            else await SharedCacheFile.WriteBytesAsync(filePath, Encoding.UTF8.GetBytes(text));
             foreach (string uuid in new List<string>(completedOperations.Keys))
                 if (completedOperations[uuid] == filePath && !data.Exists(x => x.UUID == uuid))
                     completedOperations.Remove(uuid);

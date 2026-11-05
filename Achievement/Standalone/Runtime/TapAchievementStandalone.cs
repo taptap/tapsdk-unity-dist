@@ -32,14 +32,44 @@ namespace TapSDK.Achievement.Standalone
 
         public static bool toastEnable = true;
         private static TapTapRegionType currentRegionType;
-        public async void Init(string clientId, TapTapRegionType regionType, TapTapAchievementOptions achievementOptions)
+        private AchievementInitCallback initCallback;
+
+        public void Init(string clientId, TapTapRegionType regionType, TapTapAchievementOptions achievementOptions)
         {
             currentRegionType = regionType;
             toastEnable = achievementOptions.enableToast;
-            // 
             TapAchievementTracker.Instance.TrackInit();
-            try { await PublicAchievement(); }
-            catch (Exception e) { TapAchievementLog.Log(e); }
+            // Module initialization precedes gatekeeper completion. Read the account only after success.
+            if (initCallback == null)
+            {
+                initCallback = new AchievementInitCallback(this);
+                TapTapSDK.AddInitCallback(initCallback);
+            }
+        }
+
+        private sealed class AchievementInitCallback : ITapInitCallback
+        {
+            private readonly TapAchievementStandalone achievement;
+
+            internal AchievementInitCallback(TapAchievementStandalone achievement)
+            {
+                this.achievement = achievement;
+            }
+
+            public async void OnInitSuccess()
+            {
+                if (!TapCoreStandalone.CheckInitState(false) || currentRegionType == TapTapRegionType.Overseas)
+                {
+                    return;
+                }
+                try { await achievement.PublicAchievement(); }
+                catch (Exception e) { TapAchievementLog.Log(e); }
+            }
+
+            public void OnInitFail(int errorCode, string errorMsg)
+            {
+                // Keep listening with the singleton platform wrapper so a later init retry can upload.
+            }
         }
 
         public async void Increment(string achievementId, int step)
