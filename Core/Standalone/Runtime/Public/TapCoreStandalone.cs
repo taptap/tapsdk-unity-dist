@@ -124,51 +124,53 @@ namespace TapSDK.Core.Standalone
             // 设置区域与语言
             TapLocalizeManager.SetCurrentRegion(coreOption.region == TapTapRegionType.CN);
             TapLocalizeManager.SetCurrentLanguage(coreOption.preferredLanguage);
-            if (Prefs == null)
+            TapEventStorage.Prepare();
+            if (TapEventStorage.IsReady)
             {
-                Prefs = new Prefs();
+                if (Prefs == null) Prefs = new Prefs();
+                TapEventStorage.SeedIdentity();
             }
-            TapOpenlogStandalone.Init();
-
-            var path = Path.Combine(Application.persistentDataPath, Constants.ClientSettingsFileName + "_" + coreOption.clientId + ".json");
-            // 兼容旧版文件
-            if (!File.Exists(path))
-            {
-                var oldPath = Path.Combine(Application.persistentDataPath, Constants.ClientSettingsFileName + ".json");
-                if (File.Exists(oldPath))
-                {
-                    File.Move(oldPath, path);
-                }
-            }
-            if (File.Exists(path))
-            {
-                var clientSettings = File.ReadAllText(path);
-                // TapLog.Log("本地 clientSettings: " + clientSettings);
-                try
-                {
-                    TapGatekeeper tapGatekeeper = JsonConvert.DeserializeObject<TapGatekeeper>(clientSettings);
-                    if (tapGatekeeper.Switch?.Heartbeat == true)
-                    {
-                        TapAppDurationStandalone.Enable();
-                    }
-                    else
-                    {
-                        TapAppDurationStandalone.Disable();
-                    }
-                    gatekeeperData = tapGatekeeper;
-                }
-                catch (System.Exception e)
-                {
-                    TapLog.Warning("TriggerEvent error: " + e.Message);
-                }
-            }
-
             long requestVersion;
-            lock (sessionLock)
+            lock (sessionLock) { requestVersion = ++currentRequestVersion; }
+            CompleteInitialization(coreOption, session, requestVersion);
+        }
+
+        private void CompleteInitialization(TapTapSdkOptions options, long session, long requestVersion)
+        {
+            if (!TapInitStateManager.IsSessionCurrent(session) || requestVersion != currentRequestVersion) return;
+            if (TapEventStorage.IsReady) TapOpenlogStandalone.Init();
+
+            var storage = new SharedCacheStorage(
+                Path.Combine(Application.persistentDataPath, Constants.ClientSettingsFileName + ".json"),
+                Path.Combine(Application.persistentDataPath, Constants.ClientSettingsFileName + "_" + options.clientId + ".json"), false);
+            try
             {
-                requestVersion = ++currentRequestVersion;
+                Task preparation = storage.PrepareAsync();
+                if (!preparation.IsCompleted) _ = ObserveConfigurationCacheAsync(preparation);
+                else
+                {
+                    preparation.GetAwaiter().GetResult();
+                    string clientSettings = SharedCacheFile.ReadText(storage.Target, lockTimeoutMilliseconds: 0);
+                    if (clientSettings != null)
+                    {
+                        TapGatekeeper cached = JsonConvert.DeserializeObject<TapGatekeeper>(clientSettings);
+                        if (cached.Switch?.Heartbeat == true) TapAppDurationStandalone.Enable();
+                        else TapAppDurationStandalone.Disable();
+                        gatekeeperData = cached;
+                    }
+                }
             }
-            requestClientSetting(session, requestVersion);
+            catch (Exception e)
+            {
+                TapLog.Warning("[TapCore] Client settings cache unavailable; continuing initialization: " + e.Message);
+            }
+            requestClientSetting(session, requestVersion, storage);
+        }
+
+        private static async Task ObserveConfigurationCacheAsync(Task preparation)
+        {
+            try { await preparation; }
+            catch (Exception e) { TapLog.Warning("[TapCore] Config cache preparation failed: " + e.Message); }
         }
 
         public void UpdateLanguage(TapTapLanguageType language)
@@ -200,7 +202,7 @@ namespace TapSDK.Core.Standalone
             return null;
         }
 
-        private void requestClientSetting(long session, long requestVersion)
+        private void requestClientSetting(long session, long requestVersion, SharedCacheStorage storage)
         {
             // 使用 httpclient 请求 /sdk-core/v1/gatekeeper 获取配置
 #if UNITY_EDITOR
@@ -252,7 +254,7 @@ namespace TapSDK.Core.Standalone
                            }
                            gatekeeperData = data;
                            // 把 data 存储在本地
-                           saveClientSettings(data);
+                           _ = SaveClientSettingsAsync(data, storage, session, requestVersion);
                            // 发通知
                            EventManager.TriggerEvent(Constants.ClientSettingsEventKey, data);
                        }
@@ -303,10 +305,23 @@ namespace TapSDK.Core.Standalone
            );
         }
 
-        private void saveClientSettings(TapGatekeeper settings)
+        private static async Task SaveClientSettingsAsync(TapGatekeeper settings, SharedCacheStorage storage,
+            long session, long requestVersion)
         {
-            string json = JsonConvert.SerializeObject(settings);
-            File.WriteAllText(Path.Combine(Application.persistentDataPath, Constants.ClientSettingsFileName + "_" + TapTapSDK.taptapSdkOptions.clientId + ".json"), json);
+            try
+            {
+                string json = JsonConvert.SerializeObject(settings);
+                await storage.PrepareAsync().ConfigureAwait(false);
+                using (await SharedCacheFile.AcquireAsync(storage.Target).ConfigureAwait(false))
+                {
+                    lock (sessionLock)
+                    {
+                        if (requestVersion != currentRequestVersion || !TapInitStateManager.IsSessionCurrent(session)) return;
+                        SharedCacheFile.WriteTextUnderLock(storage.Target, json);
+                    }
+                }
+            }
+            catch (Exception e) { TapLog.Warning("[TapCore] Config cache save failed: " + e.Message); }
         }
 
 

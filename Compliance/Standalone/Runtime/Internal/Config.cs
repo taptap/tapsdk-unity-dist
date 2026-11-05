@@ -45,7 +45,8 @@ namespace TapSDK.Compliance.Internal
                     Current = await Network.FetchConfig(userId);
                     if (IsValid())
                     {
-                        await persistence.Value.Save(Current);
+                        try { await persistence.Value.Save(Current); }
+                        catch (Exception e) { TapLog.Warning("[Compliance] Config cache save failed: " + e.Message); }
                         return true;
                     }
                 } 

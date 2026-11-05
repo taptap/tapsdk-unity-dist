@@ -34,7 +34,10 @@ namespace TapSDK.Login.Internal {
         private readonly Button refreshButton;
 
         private bool isRunning;
-        private QRCodeData qrcodeData;
+        private bool isLoaded;
+        private bool isRequestInFlight;
+        private bool openBrowserWhenQRReady;
+        private uint requestGeneration;
 
         private string clientId;
         private string[] scopes;
@@ -69,70 +72,142 @@ namespace TapSDK.Login.Internal {
         public void Load(string clientId, string[] scopes) {
             this.clientId = clientId;
             this.scopes = scopes;
+            isLoaded = true;
 
             ILoginLang lang = LoginLanguage.GetCurrentLang();
             titleText.text = lang.QrTitleLogin();
             tipsText.text = $"{lang.QrNoticeUse()} <b>TapTap</b> {lang.QrNoticeClient()} {lang.QrNoticeScanToLogin()}";
 
             // 加载二维码
-            _ = RefreshQRCode(clientId, scopes);
+            _ = RefreshQRCode();
         }
 
         public void Unload() {
+            isLoaded = false;
             isRunning = false;
+            isRequestInFlight = false;
+            openBrowserWhenQRReady = false;
+            ++requestGeneration;
         }
 
-        private async Task RefreshQRCode(string clientId, string[] scopes) {
+        internal void StartWebLogin() {
+            _ = RefreshQRCode(true);
+        }
+
+        private bool IsSessionActive(uint requestId) {
+            return isLoaded && isRunning && requestId == requestGeneration;
+        }
+
+        private async Task RefreshQRCode(bool openBrowser = false) {
+            if (!isLoaded) {
+                return;
+            }
+
+            // Preserve a web click while the initial QR request or a refresh is pending.
+            if (openBrowser && !openBrowserWhenQRReady) {
+                openBrowserWhenQRReady = true;
+                UI.UIManager.Instance.OpenToast(true,
+                    LoginLanguage.GetCurrentLang().WebNoticeLogin(),
+                    icon: UI.UIManager.WhiteToastInfoIcon);
+            }
+            if (isRequestInFlight) {
+                return;
+            }
+
+            isRequestInFlight = true;
+            isRunning = false;
+            uint requestId = ++requestGeneration;
             try {
                 refreshButton.gameObject.SetActive(false);
-                qrcodeData = await LoginService.GetQRCodeUrl(clientId, scopes);
+                QRCodeData qrcodeData = await LoginService.GetQRCodeUrl(clientId, scopes);
+                if (!isLoaded || requestId != requestGeneration) {
+                    return;
+                }
+                if (qrcodeData == null || string.IsNullOrEmpty(qrcodeData.Url) ||
+                    string.IsNullOrEmpty(qrcodeData.DeviceCode)) {
+                    throw new InvalidOperationException("QR code response is missing its URL or device code");
+                }
                 qrcodeImage.texture = QRCodeUtils.EncodeQrImage(qrcodeData.Url, 320, 320);
 
+                openBrowser = openBrowserWhenQRReady;
+                openBrowserWhenQRReady = false;
+                if (openBrowser) {
+                    Application.OpenURL(qrcodeData.Url);
+                }
+                isRequestInFlight = false;
+                isRunning = true;
                 // 加载二维码完成后再开启监听
-                _ = ListenScanQRCode(clientId);
+                _ = ListenScanQRCode(clientId, qrcodeData, requestId, openBrowser);
 
                 await Task.Delay(qrcodeData.ExpiresIn * 1000);
+                if (!IsSessionActive(requestId)) {
+                    return;
+                }
 
                 // 过期暂停监听
                 isRunning = false;
                 ShowRefreshQRCode();
-            } catch (Exception) {
-                // 加载失败
+            } catch (Exception e) {
+                if (!isLoaded || requestId != requestGeneration) {
+                    return;
+                }
+                isRunning = false;
+                TapLog.Log("Login, QR code request failed: " + e.Message);
                 ShowRefreshQRCode();
-                return;
+                if (openBrowser || openBrowserWhenQRReady) {
+                    ILoginLang lang = LoginLanguage.GetCurrentLang();
+                    UI.UIManager.Instance.OpenToast(true,
+                        $"{lang.WebNoticeFail()}，{lang.WebNoticeFail2()}",
+                        icon: UI.UIManager.WhiteToastErrorIcon);
+                }
+            } finally {
+                if (requestId == requestGeneration) {
+                    isRequestInFlight = false;
+                    openBrowserWhenQRReady = false;
+                }
             }
         }
 
-        private async Task ListenScanQRCode(string clientId) {
-            isRunning = true;
-            while (isRunning) {
-                if (qrcodeData == null) {
-                    await Task.Delay(3 * 1000);
-                } else {
-                    try {
-                        TokenData tokenData = await LoginService.RequestScanQRCodeResult(clientId, qrcodeData.DeviceCode);
-                        TapLog.Log("Login , QRCodeController Success");
-                        onAuth.Invoke(tokenData, TapLoginTracker.LOGIN_TYPE_CODE);
-                        return ;
-                    } catch (TapHttpServerException e) {
-                        string errorMsg = e.ErrorData?.Error ?? "";
-                        ILoginLang lang = LoginLanguage.GetCurrentLang();
-                        if (errorMsg == AUTH_PENDING) {
-
-                        } else if (errorMsg == AUTH_WAITING) {
-                            UI.UIManager.Instance.OpenToast(true, 
-                                $"{lang.QrnNoticeSuccess()}，{lang.QrnNoticeSuccess2()}",
-                                icon: UI.UIManager.WhiteToastSuccessIcon);
-                        } else if (errorMsg == AUTH_DENIED) {
-                            UI.UIManager.Instance.OpenToast(true, 
-                                $"{lang.QrNoticeCancel()}，{lang.QrNoticeCancel2()}",
-                                icon: UI.UIManager.WhiteToastErrorIcon);
-                            ShowRefreshQRCode();
-                        }
-                        await Task.Delay(qrcodeData.Interval * 1000);
-                    } catch (Exception) {
-                        await Task.Delay(qrcodeData.Interval * 1000);
+        private async Task ListenScanQRCode(string clientId, QRCodeData qrcodeData,
+            uint requestId, bool webLoginSession) {
+            while (IsSessionActive(requestId)) {
+                try {
+                    TokenData tokenData = await LoginService.RequestScanQRCodeResult(clientId, qrcodeData.DeviceCode);
+                    if (!IsSessionActive(requestId)) {
+                        return;
                     }
+                    isRunning = false;
+                    TapLog.Log("Login , QRCodeController Success");
+                    onAuth.Invoke(tokenData, webLoginSession ?
+                        TapLoginTracker.LOGIN_TYPE_BROWSER : TapLoginTracker.LOGIN_TYPE_CODE);
+                    return ;
+                } catch (TapHttpServerException e) {
+                    if (!IsSessionActive(requestId)) {
+                        return;
+                    }
+                    string errorMsg = e.ErrorData?.Error ?? "";
+                    ILoginLang lang = LoginLanguage.GetCurrentLang();
+                    if (errorMsg == AUTH_PENDING) {
+
+                    } else if (errorMsg == AUTH_WAITING && !webLoginSession) {
+                        UI.UIManager.Instance.OpenToast(true,
+                            $"{lang.QrnNoticeSuccess()}，{lang.QrnNoticeSuccess2()}",
+                            icon: UI.UIManager.WhiteToastSuccessIcon);
+                    } else if (errorMsg == AUTH_DENIED) {
+                        isRunning = false;
+                        UI.UIManager.Instance.OpenToast(true,
+                            $"{lang.QrNoticeCancel()}，{lang.QrNoticeCancel2()}",
+                            icon: UI.UIManager.WhiteToastErrorIcon);
+                        ShowRefreshQRCode();
+                        return;
+                    }
+                    await Task.Delay(qrcodeData.Interval * 1000);
+                } catch (Exception e) {
+                    if (!IsSessionActive(requestId)) {
+                        return;
+                    }
+                    TapLog.Log("Login, QR code polling failed; retrying: " + e.Message);
+                    await Task.Delay(qrcodeData.Interval * 1000);
                 }
             }
         }
@@ -173,7 +248,7 @@ namespace TapSDK.Login.Internal {
             refreshButton.gameObject.SetActive(true);
             refreshButton.onClick.RemoveAllListeners();
             refreshButton.onClick.AddListener(() => {
-                _ = RefreshQRCode(clientId, scopes);
+                _ = RefreshQRCode();
             });
         }
     }

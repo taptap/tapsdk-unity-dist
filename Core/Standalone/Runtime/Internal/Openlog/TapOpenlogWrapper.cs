@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using System.Text;
 using AOT;
+using TapSDK.Core.Internal.Log;
 using UnityEngine;
 
 namespace TapSDK.Core.Standalone.Internal.Openlog
@@ -32,6 +33,12 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
         [MonoPInvokeCallback(typeof(TapSdkCppLogWriterDelegate))]
         private static void LogWriterCallback(int logLevel, IntPtr codeLocation, IntPtr logTag, IntPtr logMessage)
         {
+            // Native 初始化可能重设日志级别，回调仍需遵循 SDK 日志开关。
+            if (!TapLog.Enabled)
+            {
+                return;
+            }
+
             try
             {
                 string codeLocationStr = PtrToUtf8StringSafe(codeLocation);
@@ -159,8 +166,13 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
         /**
          * App 退出时调用，只需要调用一次。
          */
-        [DllImport(DllName)]
-        internal static extern void TdkOnAppStopped();
+        [DllImport(DllName, EntryPoint = "TdkOnAppStopped")]
+        private static extern void TdkOnAppStoppedNative();
+
+        internal static void TdkOnAppStopped()
+        {
+            TapOpenlogStandalone.PendingCalls.Stop(() => TdkOnAppStoppedNative());
+        }
 
         /**
          * 启用功能模块，如：app_duration
@@ -168,8 +180,13 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
          *   modules JSON 数组，如：["app_duration"]
          *
          */
-        [DllImport(DllName)]
-        internal static extern void TdkEnableModules(string modules);
+        [DllImport(DllName, EntryPoint = "TdkEnableModules")]
+        private static extern void TdkEnableModulesNative(string modules);
+
+        internal static void TdkEnableModules(string modules)
+        {
+            TapOpenlogStandalone.PendingCalls.Invoke(() => TdkEnableModulesNative(modules), "modules");
+        }
 
         /**
         * 禁用功能模块，如：app_duration
@@ -177,8 +194,13 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
         *   modules JSON 数组，如：["app_duration"]
         *
         */
-        [DllImport(DllName)]
-        internal static extern void TdkDisableModules(string modules);
+        [DllImport(DllName, EntryPoint = "TdkDisableModules")]
+        private static extern void TdkDisableModulesNative(string modules);
+
+        internal static void TdkDisableModules(string modules)
+        {
+            TapOpenlogStandalone.PendingCalls.Invoke(() => TdkDisableModulesNative(modules), "modules");
+        }
 
         /**
          * 需要发送埋点日志时调用。
@@ -188,48 +210,83 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
          *   logstore 如：tapsdk、tapsdk-apm
          *   log 埋点日志，仅需传递业务参数，JSON 格式：{"action":"xxx", "open_id":"yyy","tds_user_id":"zzz"}
          */
-        [DllImport(DllName)]
-        internal static extern void TdkOpenLog(string logStore, string logContent);
+        [DllImport(DllName, EntryPoint = "TdkOpenLog")]
+        private static extern void TdkOpenLogNative(string logStore, string logContent);
+
+        internal static void TdkOpenLog(string logStore, string logContent)
+        {
+            TapOpenlogStandalone.PendingCalls.Invoke(() => TdkOpenLogNative(logStore, logContent));
+        }
 
         /**
         * 用户登录成功时调用。
         *
         *   userInfo 用户信息，JSON 格式：{"open_id":"","tds_user_id":""}
         */
-        [DllImport(DllName)]
-        internal static extern void TdkOnLogin(string userInfo);
+        [DllImport(DllName, EntryPoint = "TdkOnLogin")]
+        private static extern void TdkOnLoginNative(string userInfo);
+
+        internal static void TdkOnLogin(string userInfo)
+        {
+            TapOpenlogStandalone.PendingCalls.Invoke(() => TdkOnLoginNative(userInfo), "account");
+        }
 
         /**
          * 用户登出时调用。
          */
-        [DllImport(DllName)]
-        internal static extern void TdkOnLogout();
+        [DllImport(DllName, EntryPoint = "TdkOnLogout")]
+        private static extern void TdkOnLogoutNative();
+
+        internal static void TdkOnLogout()
+        {
+            TapOpenlogStandalone.PendingCalls.Invoke(() => TdkOnLogoutNative(), "account");
+        }
 
         /**
          * 用户切到后台时调用。
          */
-        [DllImport(DllName)]
-        internal static extern void TdkOnForeground();
+        [DllImport(DllName, EntryPoint = "TdkOnForeground")]
+        private static extern void TdkOnForegroundNative();
+
+        internal static void TdkOnForeground()
+        {
+            TapOpenlogStandalone.PendingCalls.Invoke(() => TdkOnForegroundNative(), "activity");
+        }
 
         /**
          * 游戏切回前台时调用。
          */
-        [DllImport(DllName)]
-        internal static extern void TdkOnBackground();
+        [DllImport(DllName, EntryPoint = "TdkOnBackground")]
+        private static extern void TdkOnBackgroundNative();
+
+        internal static void TdkOnBackground()
+        {
+            TapOpenlogStandalone.PendingCalls.Invoke(() => TdkOnBackgroundNative(), "activity");
+        }
 
         /**
          * 设置额外的时长模块日志参数，JSON K/V 格式。每次调用这个接口时，会用最新得到的参数，替换原有参数。
          *
          *   params 额外日志参数，JSON 格式：{"K1":"V1","K2":"V2","K3":"V3"}
          */
-        [DllImport(DllName)]
-        internal static extern void TdkSetExtraAppDurationParams(string paramsJson);
+        [DllImport(DllName, EntryPoint = "TdkSetExtraAppDurationParams")]
+        private static extern void TdkSetExtraAppDurationParamsNative(string paramsJson);
+
+        internal static void TdkSetExtraAppDurationParams(string paramsJson)
+        {
+            TapOpenlogStandalone.PendingCalls.Invoke(() => TdkSetExtraAppDurationParamsNative(paramsJson), "extra");
+        }
 
         /**
          * 设置日志等级
          */
-        [DllImport(DllName)]
-        internal static extern void TdkSetLogLevel(int logLevel, int logToConsole);
+        [DllImport(DllName, EntryPoint = "TdkSetLogLevel")]
+        private static extern void TdkSetLogLevelNative(int logLevel, int logToConsole);
+
+        internal static void TdkSetLogLevel(int logLevel, int logToConsole)
+        {
+            TapOpenlogStandalone.PendingCalls.Invoke(() => TdkSetLogLevelNative(logLevel, logToConsole), "logging");
+        }
 
         /**
          * 代码版本，如：1.2.5

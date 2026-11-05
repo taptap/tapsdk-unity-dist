@@ -78,39 +78,57 @@ namespace TapSDK.Core.Internal.Utils {
         }
 
         static async Task<Texture> LoadCachedImaged(string url, int timeout = 30) {
-            string cachedImagePath = GetCachedPath(url);
-            if (!File.Exists(cachedImagePath)) {
-                throw new Exception("No cached image.");
-            }
-            string cachedImageUrl = $"file://{cachedImagePath}";
-            using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(cachedImageUrl)) {
-                request.timeout = timeout;
-                UnityWebRequestAsyncOperation operation = request.SendWebRequest();
-                while (!operation.isDone) {
-                    await Task.Delay(30);
+            string cachedImagePath = await GetCachedPathAsync(url);
+#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || ((UNITY_EDITOR_WIN || UNITY_EDITOR_OSX) && !UNITY_ANDROID && !UNITY_IOS)
+            using (await SharedCacheFile.AcquireAsync(cachedImagePath))
+#endif
+            {
+                if (!File.Exists(cachedImagePath)) {
+                    throw new Exception("No cached image.");
                 }
-
-                if (request.isNetworkError || request.isHttpError) {
-                    RemoveCachedImage(cachedImagePath);
-                    throw new Exception("Load cache image error.");
-                } else {
-                    var texture = ((DownloadHandlerTexture)request.downloadHandler)?.texture;
-                    if (texture == null) {
-                        RemoveCachedImage(cachedImagePath);
-                        throw new Exception("Cached image is invalid.");
+                string cachedImageUrl = $"file://{cachedImagePath}";
+                using (UnityWebRequest request = UnityWebRequestTexture.GetTexture(cachedImageUrl)) {
+                    request.timeout = timeout;
+                    UnityWebRequestAsyncOperation operation = request.SendWebRequest();
+                    while (!operation.isDone) {
+                        await Task.Delay(30);
                     }
-                    return texture;
+
+                    if (request.isNetworkError || request.isHttpError) {
+                        RemoveCachedImage(cachedImagePath);
+                        throw new Exception("Load cache image error.");
+                    } else {
+                        var texture = ((DownloadHandlerTexture)request.downloadHandler)?.texture;
+                        if (texture == null) {
+                            RemoveCachedImage(cachedImagePath);
+                            throw new Exception("Cached image is invalid.");
+                        }
+                        return texture;
+                    }
                 }
             }
         }
 
         static async Task CacheImage(string url, Texture2D tex) {
+#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || ((UNITY_EDITOR_WIN || UNITY_EDITOR_OSX) && !UNITY_ANDROID && !UNITY_IOS)
+            try
+            {
+                string path = await GetCachedPathAsync(url);
+                await SharedCacheFile.WriteBytesAsync(path, tex.EncodeToPNG());
+            }
+            catch (Exception e)
+            {
+                // Background cache writes must observe lock/IO failures; the image is already loaded.
+                TapLog.Warning("[ImageUtils] Cache write failed: " + e.Message);
+            }
+#else
             string cacheImagePath = GetCachedPath(url);
             // 写入缓存
             byte[] imageData = tex.EncodeToPNG();
             using (FileStream fileStream = new FileStream(cacheImagePath, FileMode.Create, FileAccess.Write, FileShare.None, bufferSize: 4096, useAsync: true)) {
                 await fileStream.WriteAsync(imageData, 0, imageData.Length);
             }
+#endif
         }
 
         static void RemoveCachedImage(string cachedImagePath) {
@@ -129,6 +147,22 @@ namespace TapSDK.Core.Internal.Utils {
             return sb.ToString();
         }
 
+        static async Task<string> GetCachedPathAsync(string url) {
+#if UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || ((UNITY_EDITOR_WIN || UNITY_EDITOR_OSX) && !UNITY_ANDROID && !UNITY_IOS)
+            string cachedHashName = ToHex(md5.ComputeHash(Encoding.UTF8.GetBytes(url)));
+            string oldPath = Path.Combine(Application.persistentDataPath, OldCacheDirName);
+            string newPath = oldPath;
+            if (TapTapSDK.taptapSdkOptions != null && !string.IsNullOrEmpty(TapTapSDK.taptapSdkOptions.clientId))
+                newPath = oldPath + "_" + TapTapSDK.taptapSdkOptions.clientId;
+            await SharedCacheFile.MigrateAsync(oldPath, newPath, true);
+            Directory.CreateDirectory(newPath);
+            return Path.Combine(newPath, cachedHashName);
+#else
+            return GetCachedPath(url);
+#endif
+        }
+
+#if !(UNITY_STANDALONE_WIN || UNITY_STANDALONE_OSX || ((UNITY_EDITOR_WIN || UNITY_EDITOR_OSX) && !UNITY_ANDROID && !UNITY_IOS))
         static string GetCachedPath(string url) {
             string cachedHashName = ToHex(md5.ComputeHash(Encoding.UTF8.GetBytes(url)));
             return Path.Combine(CacheDirPath, cachedHashName);
@@ -154,5 +188,6 @@ namespace TapSDK.Core.Internal.Utils {
                 return newCacheDirPath;
             }
         }
+#endif
     }
 }

@@ -9,6 +9,7 @@ namespace TapSDK.Core.Standalone.Internal {
 
         public static string DeviceId {
             get {
+                if (TapEventStorage.SharedIdentity != null) return TapEventStorage.InstallationValue(0, DEVICE_ID_KEY);
                 string deviceId = TapCoreStandalone.Prefs.Get<string>(DEVICE_ID_KEY);
                 if (string.IsNullOrWhiteSpace(deviceId)) {
                     deviceId = SystemInfo.deviceUniqueIdentifier;
@@ -20,6 +21,7 @@ namespace TapSDK.Core.Standalone.Internal {
 
         public static string PersistentId {
             get {
+                if (TapEventStorage.SharedIdentity != null) return TapEventStorage.InstallationValue(1, PERSISTENT_ID_KEY);
                 string persistentId = TapCoreStandalone.Prefs.Get<string>(PERSISTENT_ID_KEY);
                 if (string.IsNullOrWhiteSpace(persistentId)) {
                     persistentId = Guid.NewGuid().ToString();
@@ -31,6 +33,7 @@ namespace TapSDK.Core.Standalone.Internal {
 
         public static string InstallationId {
             get {
+                if (TapEventStorage.SharedIdentity != null) return TapEventStorage.InstallationValue(2, INSTALLATION_ID_KEY);
                 string installationId = TapCoreStandalone.Prefs.Get<string>(INSTALLATION_ID_KEY);
                 if (string.IsNullOrWhiteSpace(installationId)) {
                     installationId = Guid.NewGuid().ToString();

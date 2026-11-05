@@ -38,7 +38,8 @@ namespace TapSDK.Achievement.Standalone
             toastEnable = achievementOptions.enableToast;
             // 
             TapAchievementTracker.Instance.TrackInit();
-            await PublicAchievement();
+            try { await PublicAchievement(); }
+            catch (Exception e) { TapAchievementLog.Log(e); }
         }
 
         public async void Increment(string achievementId, int step)
@@ -58,8 +59,16 @@ namespace TapSDK.Achievement.Standalone
                 return;
             }
             TapAchievementStoreBean bean = new TapAchievementStoreBean(type: 0, achievementId: achievementId, steps: step);
-            await TapAchievementStore.Save(bean);
-            await PublicAchievement();
+            try
+            {
+                await TapAchievementStore.Save(bean);
+                await PublicAchievement();
+            }
+            catch (Exception e)
+            {
+                TapAchievementLog.Log(e);
+                NotifyCallbackFailure(achievementId, TapTapAchievementConstants.UNKNOWN_ERROR, e.Message);
+            }
         }
 
         public async void Unlock(string achievementId)
@@ -81,8 +90,16 @@ namespace TapSDK.Achievement.Standalone
             }
             TapAchievementLog.Log("Unlock achievementId");
             TapAchievementStoreBean bean = new TapAchievementStoreBean(type: 1, achievementId: achievementId);
-            await TapAchievementStore.Save(bean);
-            await PublicAchievement();
+            try
+            {
+                await TapAchievementStore.Save(bean);
+                await PublicAchievement();
+            }
+            catch (Exception e)
+            {
+                TapAchievementLog.Log(e);
+                NotifyCallbackFailure(achievementId, TapTapAchievementConstants.UNKNOWN_ERROR, e.Message);
+            }
         }
 
         public async void ShowAchievements()
@@ -147,181 +164,185 @@ namespace TapSDK.Achievement.Standalone
         {
             currentUploadFailedAchivements.Clear();
             await achievementSemaphoreSlim.WaitAsync();
-            List<TapAchievementStoreBean> all = await TapAchievementStore.getAll();
-            all?.RemoveAll(x => currentUploadingAchivements.ContainsKey(x.UUID));
-            all?.RemoveAll(x => currentUploadFailedAchivements.ContainsKey(x.UUID));
-            NetworkReachability internetReachability = Application.internetReachability;
-            if (all == null || all.Count <= 0)
+            try
             {
-                achievementSemaphoreSlim.Release();
-                return;
-            }
-            // 用当前 region 的域名探测，不能固定 HOST_CN：海外包会去解析 CN 域名，探测结果
-            // 与实际要请求的地址无关，可能误判成"网络不可用"而把待上传成就一直压在本地。
-            if (!UrlExistsUsingSockets(TapHttp.ApiHost))
-            {
-                NotifyCallbackFailure(
-                            achievementId: "",
-                            errorCode: TapTapAchievementConstants.NETWORK_ERROR,
-                            "The network is currently unavailable"
-                        );
-                achievementSemaphoreSlim.Release();
-                return;
-            }
-
-            all.ForEach(x => currentUploadingAchivements.TryAdd(x.UUID, x.AchievementId));
-            all.ForEach(async (x) =>
-            {
-                string seesionId = Guid.NewGuid().ToString();
-                try
+                // Cleanup must address the account whose operations were read, even after a login switch.
+                string filePath = await TapAchievementStore.getFilePath();
+                List<TapAchievementStoreBean> all = await TapAchievementStore.GetPendingAsync(filePath);
+                all?.RemoveAll(x => currentUploadingAchivements.ContainsKey(x.UUID));
+                all?.RemoveAll(x => currentUploadFailedAchivements.ContainsKey(x.UUID));
+                NetworkReachability internetReachability = Application.internetReachability;
+                if (all == null || all.Count <= 0)
                 {
-                    TapAchievementResponseData result = null;
-                    switch (x.Type)
-                    {
-                        case 0:
-                            TapAchievementTracker.Instance.TrackStart("increment", seesionId, x.AchievementId);
-                            result = await TapAchievementAPi.Increment(x.AchievementId, x.Steps);
-                            break;
-                        case 1:
-                            TapAchievementTracker.Instance.TrackStart("unlock", seesionId, x.AchievementId);
-                            result = await TapAchievementAPi.Unlock(x.AchievementId);
-                            break;
-                    }
+                    return;
+                }
+                // 用当前 region 的域名探测，不能固定 HOST_CN：海外包会去解析 CN 域名，探测结果
+                // 与实际要请求的地址无关，可能误判成"网络不可用"而把待上传成就一直压在本地。
+                if (!UrlExistsUsingSockets(TapHttp.ApiHost))
+                {
+                    NotifyCallbackFailure(
+                                achievementId: "",
+                                errorCode: TapTapAchievementConstants.NETWORK_ERROR,
+                                "The network is currently unavailable"
+                            );
+                    return;
+                }
 
-                    if (result != null)
+                all.ForEach(x => currentUploadingAchivements.TryAdd(x.UUID, x.AchievementId));
+                all.ForEach(async (x) =>
+                {
+                    string seesionId = Guid.NewGuid().ToString();
+                    try
                     {
-                        await TapAchievementStore.Delete(x.UUID);
-                        currentUploadingAchivements.TryRemove(x.UUID, out _);
-                        TapAchievementResponseBean normalAchievement = result.Achievement;
-                        TapAchievementResponseBean platinumAchievement = result.PlatinumAchievement;
-                        if (normalAchievement != null)
+                        TapAchievementResponseData result = null;
+                        switch (x.Type)
                         {
-                            TapAchievementResult normalAchievementResult =
-                                   new TapAchievementResult(
-                                       achievementId: normalAchievement.Id ?? "",
-                                       achievementName: normalAchievement.Name ?? "",
-                                       achievementType: TapAchievementType.NORMAL,
-                                       currentSteps: normalAchievement.CurrentSteps
-                                   );
-                            if (x.Type == 0)
+                            case 0:
+                                TapAchievementTracker.Instance.TrackStart("increment", seesionId, x.AchievementId);
+                                result = await TapAchievementAPi.Increment(x.AchievementId, x.Steps);
+                                break;
+                            case 1:
+                                TapAchievementTracker.Instance.TrackStart("unlock", seesionId, x.AchievementId);
+                                result = await TapAchievementAPi.Unlock(x.AchievementId);
+                                break;
+                        }
+
+                        if (result != null)
+                        {
+                            await TapAchievementStore.CompleteAsync(x.UUID, filePath);
+                            currentUploadingAchivements.TryRemove(x.UUID, out _);
+                            TapAchievementResponseBean normalAchievement = result.Achievement;
+                            TapAchievementResponseBean platinumAchievement = result.PlatinumAchievement;
+                            if (normalAchievement != null)
                             {
-                                NotifyCallbackSuccess(code: TapTapAchievementConstants.INCREMENT_SUCCESS, normalAchievementResult);
-                                TapAchievementTracker.Instance.TrackSuccess("increment", seesionId, x.AchievementId);
+                                TapAchievementResult normalAchievementResult =
+                                       new TapAchievementResult(
+                                           achievementId: normalAchievement.Id ?? "",
+                                           achievementName: normalAchievement.Name ?? "",
+                                           achievementType: TapAchievementType.NORMAL,
+                                           currentSteps: normalAchievement.CurrentSteps
+                                       );
+                                if (x.Type == 0)
+                                {
+                                    NotifyCallbackSuccess(code: TapTapAchievementConstants.INCREMENT_SUCCESS, normalAchievementResult);
+                                    TapAchievementTracker.Instance.TrackSuccess("increment", seesionId, x.AchievementId);
+                                }
+                                else if (x.Type == 1)
+                                {
+                                    TapAchievementTracker.Instance.TrackSuccess("unlock", seesionId, x.AchievementId);
+                                }
+                                if (normalAchievement.NewlyUnlocked == true)
+                                {
+                                    NotifyCallbackSuccess(code: TapTapAchievementConstants.UNLOCK_SUCCESS, normalAchievementResult);
+                                    TapAchievementLog.Log("Unlock success1 toastEnable = " + toastEnable);
+                                    if (toastEnable)
+                                    {
+                                        TapAchievementToastManager.ShowToast(normalAchievementResult);
+                                    }
+                                }
                             }
-                            else if (x.Type == 1)
+                            if (platinumAchievement != null && platinumAchievement.NewlyUnlocked == true)
                             {
-                                TapAchievementTracker.Instance.TrackSuccess("unlock", seesionId, x.AchievementId);
-                            }
-                            if (normalAchievement.NewlyUnlocked == true)
-                            {
-                                NotifyCallbackSuccess(code: TapTapAchievementConstants.UNLOCK_SUCCESS, normalAchievementResult);
-                                TapAchievementLog.Log("Unlock success1 toastEnable = " + toastEnable);
+                                TapAchievementResult platinumAchievementResult =
+                                    new TapAchievementResult(
+                                        achievementId: platinumAchievement.Id ?? "",
+                                        achievementName: platinumAchievement.Name ?? "",
+                                        achievementType: TapAchievementType.PLATINUM,
+                                        currentSteps: platinumAchievement.CurrentSteps
+                                    );
+                                NotifyCallbackSuccess(code: TapTapAchievementConstants.UNLOCK_SUCCESS, platinumAchievementResult);
+                                TapAchievementLog.Log("Unlock success2 toastEnable = " + toastEnable);
                                 if (toastEnable)
                                 {
-                                    TapAchievementToastManager.ShowToast(normalAchievementResult);
+                                    TapAchievementToastManager.ShowToast(platinumAchievementResult);
                                 }
                             }
                         }
-                        if (platinumAchievement != null && platinumAchievement.NewlyUnlocked == true)
+                        else
                         {
-                            TapAchievementResult platinumAchievementResult =
-                                new TapAchievementResult(
-                                    achievementId: platinumAchievement.Id ?? "",
-                                    achievementName: platinumAchievement.Name ?? "",
-                                    achievementType: TapAchievementType.PLATINUM,
-                                    currentSteps: platinumAchievement.CurrentSteps
-                                );
-                            NotifyCallbackSuccess(code: TapTapAchievementConstants.UNLOCK_SUCCESS, platinumAchievementResult);
-                            TapAchievementLog.Log("Unlock success2 toastEnable = " + toastEnable);
-                            if (toastEnable)
+                            currentUploadingAchivements.TryRemove(x.UUID, out _);
+                            currentUploadFailedAchivements.TryAdd(x.UUID, x.AchievementId);
+                            switch (x.Type)
                             {
-                                TapAchievementToastManager.ShowToast(platinumAchievementResult);
+                                case 0:
+                                    TapAchievementTracker.Instance.TrackFailure("increment", seesionId, x.AchievementId, errorCode: TapTapAchievementConstants.UNKNOWN_ERROR, errorMessage: "Request result is null");
+                                    break;
+                                case 1:
+                                    TapAchievementTracker.Instance.TrackFailure("unlock", seesionId, x.AchievementId, errorCode: TapTapAchievementConstants.UNKNOWN_ERROR, errorMessage: "Request result is null");
+                                    break;
+                            }
+                            // do nothing
+                            NotifyCallbackFailure(
+                                        achievementId: x.AchievementId,
+                                        errorCode: TapTapAchievementConstants.UNKNOWN_ERROR,
+                                        "Request result is null"
+                                    );
+                        }
+                    }
+                    catch (Exception e)
+                    {
+                        currentUploadFailedAchivements.TryAdd(x.UUID, x.AchievementId);
+                        if (e is TapHttpServerException exception)
+                        {
+                            switch (x.Type)
+                            {
+                                case 0:
+                                    TapAchievementTracker.Instance.TrackFailure("increment", seesionId, x.AchievementId, errorCode: (int)exception.ErrorData.Code, errorMessage: exception.Message);
+                                    break;
+                                case 1:
+                                    TapAchievementTracker.Instance.TrackFailure("unlock", seesionId, x.AchievementId, errorCode: (int)exception.ErrorData.Code, errorMessage: exception.Message);
+                                    break;
+                            }
+                            switch (exception.ErrorData.Error)
+                            {
+                                case TapHttpErrorConstants.ERROR_NOT_FOUND:
+                                case TapHttpErrorConstants.ERROR_FORBIDDEN:
+                                case TapHttpErrorConstants.ERROR_INVALID_REQUEST:
+                                    await TapAchievementStore.CompleteAsync(x.UUID, filePath);
+                                    currentUploadingAchivements.TryRemove(x.UUID, out _);
+                                    NotifyCallbackFailure(
+                                        achievementId: x.AchievementId,
+                                        errorCode: TapTapAchievementConstants.INVALID_REQUEST,
+                                        exception.ErrorData.Msg
+                                    );
+                                    break;
+                                case TapHttpErrorConstants.ERROR_ACCESS_DENIED:
+                                    await TapAchievementStore.CompleteAsync(x.UUID, filePath);
+                                    currentUploadingAchivements.TryRemove(x.UUID, out _);
+                                    NotifyCallbackFailure(
+                                         achievementId: x.AchievementId,
+                                         errorCode: TapTapAchievementConstants.ACCESS_DENIED,
+                                         exception.ErrorData.Msg
+                                     );
+                                    break;
+                                default:
+                                    NotifyCallbackFailure(
+                                        achievementId: x.AchievementId,
+                                        errorCode: TapTapAchievementConstants.UNKNOWN_ERROR,
+                                        exception.Message
+                                    );
+                                    currentUploadingAchivements.TryRemove(x.UUID, out _);
+                                    // do nothing
+                                    break;
                             }
                         }
-                    }
-                    else
-                    {
-                        currentUploadingAchivements.TryRemove(x.UUID, out _);
-                        currentUploadFailedAchivements.TryAdd(x.UUID, x.AchievementId);
-                        switch (x.Type)
+                        else
                         {
-                            case 0:
-                                TapAchievementTracker.Instance.TrackFailure("increment", seesionId, x.AchievementId, errorCode: TapTapAchievementConstants.UNKNOWN_ERROR, errorMessage: "Request result is null");
-                                break;
-                            case 1:
-                                TapAchievementTracker.Instance.TrackFailure("unlock", seesionId, x.AchievementId, errorCode: TapTapAchievementConstants.UNKNOWN_ERROR, errorMessage: "Request result is null");
-                                break;
-                        }
-                        // do nothing
-                        NotifyCallbackFailure(
-                                    achievementId: x.AchievementId,
-                                    errorCode: TapTapAchievementConstants.UNKNOWN_ERROR,
-                                    "Request result is null"
-                                );
-                    }
-                }
-                catch (Exception e)
-                {
-                    currentUploadFailedAchivements.TryAdd(x.UUID, x.AchievementId);
-                    if (e is TapHttpServerException exception)
-                    {
-                        switch (x.Type)
-                        {
-                            case 0:
-                                TapAchievementTracker.Instance.TrackFailure("increment", seesionId, x.AchievementId, errorCode: (int)exception.ErrorData.Code, errorMessage: exception.Message);
-                                break;
-                            case 1:
-                                TapAchievementTracker.Instance.TrackFailure("unlock", seesionId, x.AchievementId, errorCode: (int)exception.ErrorData.Code, errorMessage: exception.Message);
-                                break;
-                        }
-                        switch (exception.ErrorData.Error)
-                        {
-                            case TapHttpErrorConstants.ERROR_NOT_FOUND:
-                            case TapHttpErrorConstants.ERROR_FORBIDDEN:
-                            case TapHttpErrorConstants.ERROR_INVALID_REQUEST:
-                                await TapAchievementStore.Delete(x.UUID);
-                                currentUploadingAchivements.TryRemove(x.UUID, out _);
-                                NotifyCallbackFailure(
-                                    achievementId: x.AchievementId,
-                                    errorCode: TapTapAchievementConstants.INVALID_REQUEST,
-                                    exception.ErrorData.Msg
-                                );
-                                break;
-                            case TapHttpErrorConstants.ERROR_ACCESS_DENIED:
-                                await TapAchievementStore.Delete(x.UUID);
-                                currentUploadingAchivements.TryRemove(x.UUID, out _);
-                                NotifyCallbackFailure(
-                                     achievementId: x.AchievementId,
-                                     errorCode: TapTapAchievementConstants.ACCESS_DENIED,
-                                     exception.ErrorData.Msg
-                                 );
-                                break;
-                            default:
-                                NotifyCallbackFailure(
-                                    achievementId: x.AchievementId,
-                                    errorCode: TapTapAchievementConstants.UNKNOWN_ERROR,
-                                    exception.Message
-                                );
-                                currentUploadingAchivements.TryRemove(x.UUID, out _);
-                                // do nothing
-                                break;
+                            currentUploadingAchivements.TryRemove(x.UUID, out _);
+                            TapAchievementTracker.Instance.TrackFailure("increment", seesionId, x.AchievementId, errorCode: TapTapAchievementConstants.UNKNOWN_ERROR, errorMessage: e.Message);
+                            // 没到服务器 全部 80030
+                            // do nothing
+                            NotifyCallbackFailure(
+                                         achievementId: x.AchievementId,
+                                         errorCode: TapTapAchievementConstants.UNKNOWN_ERROR,
+                                         e.Message
+                                     );
                         }
                     }
-                    else
-                    {
-                        currentUploadingAchivements.TryRemove(x.UUID, out _);
-                        TapAchievementTracker.Instance.TrackFailure("increment", seesionId, x.AchievementId, errorCode: TapTapAchievementConstants.UNKNOWN_ERROR, errorMessage: e.Message);
-                        // 没到服务器 全部 80030
-                        // do nothing
-                        NotifyCallbackFailure(
-                                     achievementId: x.AchievementId,
-                                     errorCode: TapTapAchievementConstants.UNKNOWN_ERROR,
-                                     e.Message
-                                 );
-                    }
-                }
-            });
-            achievementSemaphoreSlim.Release();
+                    finally { currentUploadingAchivements.TryRemove(x.UUID, out _); }
+                });
+            }
+            finally { achievementSemaphoreSlim.Release(); }
         }
 
         private void NotifyCallbackSuccess(int code, TapAchievementResult result)

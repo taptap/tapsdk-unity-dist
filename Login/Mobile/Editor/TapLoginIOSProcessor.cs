@@ -3,16 +3,16 @@ using System.IO;
 using TapSDK.Core.Editor;
 using UnityEditor;
 using UnityEditor.Callbacks;
-#if UNITY_IOS || UNITY_STANDALONE_OSX
+#if UNITY_IOS
 using UnityEditor.iOS.Xcode;
 #endif
 using UnityEngine;
 
 namespace TapSDK.Login.Editor
 {
-#if UNITY_IOS || UNITY_STANDALONE_OSX
+#if UNITY_IOS
     /// <summary>
-    /// TapTap Login iOS/macOS 平台构建后处理器
+    /// TapTap Login iOS 平台构建后处理器
     /// 用于在 Unity 构建完成后自动配置 Xcode 项目：
     /// 1. 合并 TDS-Info.plist 配置到应用的 Info.plist
     /// 2. 添加 TapTapLoginResource.bundle 资源包到 Xcode 项目
@@ -43,15 +43,15 @@ namespace TapSDK.Login.Editor
 
         /// <summary>
         /// Unity 构建后处理回调
-        /// 在 iOS 或 macOS 平台构建完成后自动执行，配置 Xcode 项目
+        /// 在 iOS 平台构建完成后自动执行，配置 Xcode 项目
         /// </summary>
         /// <param name="buildTarget">构建目标平台</param>
-        /// <param name="path">构建输出路径（iOS 为 Xcode 项目目录，macOS 为 .app 路径）</param>
+        /// <param name="path">构建输出的 Xcode 项目目录</param>
         [PostProcessBuild(103)]
         public static void OnPostprocessBuild(BuildTarget buildTarget, string path)
         {
-            // 只处理 iOS 和 macOS 平台
-            if (buildTarget != BuildTarget.iOS && buildTarget != BuildTarget.StandaloneOSX)
+            // 只处理 iOS 平台
+            if (buildTarget != BuildTarget.iOS)
             {
                 return;
             }
@@ -71,14 +71,6 @@ namespace TapSDK.Login.Editor
 
                 // 添加 TapTapLoginResource.bundle 到 Xcode 项目
                 AddLoginResourceBundle(path);
-#endif
-            }
-            // 处理 macOS 平台
-            else if (buildTarget == BuildTarget.StandaloneOSX)
-            {
-#if UNITY_IOS
-                // 合并可选的 TDS-Info.plist，并根据应用信息添加 URL scheme
-                TapSDKCoreCompile.HandlerPlist(Path.GetFullPath(path), infoPlistPath, true);
 #endif
             }
         }

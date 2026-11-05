@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Threading.Tasks;
 using System.Runtime.InteropServices;
 using AOT;
 using Newtonsoft.Json;
@@ -31,18 +32,63 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
         private static readonly FreeStringCallback freeString = new FreeStringCallback(FreeString);
 #endif
 
+        internal static readonly CacheReadyActions PendingCalls = new CacheReadyActions(1024);
+        private static bool windowEventsBound;
+
         public static void Init()
         {
 #if UNITY_STANDALONE
-            InitGeneralParameter();
-            InitOpenlogStartParameter();
-            // 初始化 C++ SDK 日志回调，将日志桥接到 Unity Debug.Log
-            InitLogger(TapCoreStandalone.coreOptions.enableLog ? 1 : 6);
-            string openlogStartStr = JsonConvert.SerializeObject(openlogStartParameter);
-            int result = TdkOnAppStarted(openlogStartStr, commonVariablesGetter, freeString);
-            BindWindowChange();
+            int generation = PendingCalls.Begin();
+            if (!windowEventsBound)
+            {
+                BindWindowChange();
+                windowEventsBound = true;
+            }
+            // Capture paths before awaiting; Unity APIs stay on their calling context.
+            string oldPath = Path.Combine(Application.persistentDataPath, "OpenlogData");
+            string target = oldPath;
+            if (TapTapSDK.taptapSdkOptions != null && !string.IsNullOrEmpty(TapTapSDK.taptapSdkOptions.clientId))
+                target += "_" + TapTapSDK.taptapSdkOptions.clientId;
+            _ = StartWhenReadyAsync(new SharedCacheStorage(oldPath, target, true), generation);
 #endif
         }
+
+#if UNITY_STANDALONE
+        private static async Task StartWhenReadyAsync(SharedCacheStorage storage, int generation)
+        {
+            try
+            {
+                while (PendingCalls.IsCurrent(generation))
+                {
+                    try
+                    {
+                        await TapCoreStandalone.Prefs.EnsureReadyAsync();
+                        await storage.PrepareAsync();
+                        break;
+                    }
+                    catch (CacheBusyException)
+                    {
+                        await Task.Delay(1000);
+                    }
+                }
+                if (!PendingCalls.IsCurrent(generation)) return;
+                Directory.CreateDirectory(storage.Target);
+                InitGeneralParameter();
+                InitOpenlogStartParameter(storage.Target);
+                string parameters = JsonConvert.SerializeObject(openlogStartParameter);
+                PendingCalls.Complete(generation, () =>
+                {
+                    InitLogger(TapCoreStandalone.coreOptions.enableLog ? 1 : 6);
+                    if (TdkOnAppStarted(parameters, commonVariablesGetter, freeString) != 0)
+                        throw new InvalidOperationException("Native Openlog initialization failed.");
+                });
+            }
+            catch (Exception e)
+            {
+                log.Warning("Openlog storage not ready; native startup deferred: " + e.Message);
+            }
+        }
+#endif
 
         [MonoPInvokeCallback(typeof(Action))]
         private static IntPtr GetCommonVariables()
@@ -145,7 +191,7 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
 #endif
         }
 
-        private static void InitOpenlogStartParameter()
+        private static void InitOpenlogStartParameter(string openLogDirPath)
         {
             if (isRND)
             {
@@ -159,33 +205,6 @@ namespace TapSDK.Core.Standalone.Internal.Openlog
             openlogStartParameter[TapOpenlogStartParamConstants.PARAM_LOG_TO_CONSOLE] =
                 TapCoreStandalone.coreOptions.enableLog ? 1 : 0;
             openlogStartParameter[TapOpenlogStartParamConstants.PARAM_LOG_LEVEL] = 1;
-            string openLogDirPath = Path.Combine(Application.persistentDataPath, "OpenlogData");
-            if (
-                TapTapSDK.taptapSdkOptions != null
-                && !string.IsNullOrEmpty(TapTapSDK.taptapSdkOptions.clientId)
-            )
-            {
-                openLogDirPath = Path.Combine(
-                    Application.persistentDataPath,
-                    "OpenlogData_" + TapTapSDK.taptapSdkOptions.clientId
-                );
-                if (!Directory.Exists(openLogDirPath))
-                {
-                    string oldPath = Path.Combine(Application.persistentDataPath, "OpenlogData");
-                    if (Directory.Exists(oldPath))
-                    {
-                        Directory.Move(oldPath, openLogDirPath);
-                    }
-                }
-            }
-            try
-            {
-                Directory.CreateDirectory(openLogDirPath);
-            }
-            catch (Exception e)
-            {
-                log.Warning("Create openlog data dir failed: " + e.Message);
-            }
             openlogStartParameter[TapOpenlogStartParamConstants.PARAM_DATA_DIR] = openLogDirPath;
             openlogStartParameter[TapOpenlogStartParamConstants.PARAM_ENV] = "local";
             openlogStartParameter[TapOpenlogStartParamConstants.PARAM_PLATFORM] = "PC";

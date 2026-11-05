@@ -136,15 +136,16 @@ namespace TapSDK.Compliance
         protected virtual async Task<UserComplianceConfigResult> CheckUserConfigAsyncWithFallback()
         {
             string filename = Tool.EncryptString(Verification.Current.UserId);
-            Persistence persistence = new Persistence(Path.Combine(
-                USER_ANTI_FILENAME,
-                filename));
-            UserComplianceConfigResult result = await persistence.Load<UserComplianceConfigResult>();
+            Persistence persistence = new Persistence(Path.Combine(USER_ANTI_FILENAME, filename));
+            UserComplianceConfigResult result = null;
+            try { result = await persistence.Load<UserComplianceConfigResult>(); }
+            catch (Exception e) { TapLog.Warning("[Compliance] User config cache unavailable: " + e.Message); }
             try 
             {
                 UserComplianceConfigResult serverResult =  await Network.CheckUserConfig();
                 if(serverResult != null){
-                    await persistence.Save(serverResult);
+                    try { await persistence.Save(serverResult); }
+                    catch (Exception e) { TapLog.Warning("[Compliance] User config cache save failed: " + e.Message); }
                     TapTapComplianceManager.CurrentSession = GenerateSession();
                 }
                 return serverResult;
@@ -339,18 +340,24 @@ namespace TapSDK.Compliance
             // 还会再抛 ArgumentNullException。没有 userId 就定位不到缓存文件，跳过即可，
             // 后面的 Verification.Logout / CompliancePoll.Logout 仍照常执行。
             string userId = Verification.Current?.UserId;
-            if (needClearCache && !string.IsNullOrEmpty(userId))
+            try
             {
-                string filename = Tool.EncryptString(userId);
-                Persistence persistence = new Persistence(Path.Combine(
-                                USER_ANTI_FILENAME,
-                                filename));
-                persistence.Delete();
+                if (needClearCache && !string.IsNullOrEmpty(userId))
+                {
+                    string filename = Tool.EncryptString(userId);
+                    new Persistence(Path.Combine(USER_ANTI_FILENAME, filename)).Delete();
+                }
             }
-
-            Verification.Logout(needClearCache);
-            CompliancePoll.Logout();
-            TapTapComplianceManager.UserId = null;
+            catch (Exception e) { TapLog.Error("[Compliance] User cache invalidation failed: " + e.Message); }
+            finally
+            {
+                try { Verification.Logout(needClearCache); }
+                finally
+                {
+                    try { CompliancePoll.Logout(); }
+                    finally { TapTapComplianceManager.UserId = null; }
+                }
+            }
         }
         
         #endregion

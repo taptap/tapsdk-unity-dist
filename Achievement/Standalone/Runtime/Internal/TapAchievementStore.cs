@@ -3,6 +3,7 @@ using TapSDK.Achievement.Internal.Util;
 using System;
 using System.Text;
 using System.IO;
+using TapSDK.Core.Internal.Utils;
 using Newtonsoft.Json;
 using UnityEngine;
 using TapSDK.Login;
@@ -17,6 +18,9 @@ namespace TapTap.Achievement.Standalone.Internal
     public class TapAchievementStore
     {
         private static readonly SemaphoreSlim semaphoreSlim = new SemaphoreSlim(1, 1);
+        // Server-final operations must not be uploaded again if local cleanup fails. Guarded by semaphoreSlim.
+        // This is process-local: a crash before durable cleanup still requires server-side idempotency.
+        private static readonly Dictionary<string, string> completedOperations = new Dictionary<string, string>();
 
         private TapAchievementStore()
         {
@@ -43,12 +47,8 @@ namespace TapTap.Achievement.Standalone.Internal
             }
             string newDirectoryPath = Path.Combine(Application.persistentDataPath, newDirecotryName);
             // 兼容旧版本数据
-            if(!Directory.Exists(newDirectoryPath)){
-                string oldDirectoryPath = Path.Combine(Application.persistentDataPath, "TapAchievement");
-                if (Directory.Exists(oldDirectoryPath)) {
-                    Directory.Move(oldDirectoryPath, newDirectoryPath);
-                }
-            }
+            await SharedCacheFile.MigrateAsync(
+                Path.Combine(Application.persistentDataPath, "TapAchievement"), newDirectoryPath, true);
             string path = Path.Combine(Application.persistentDataPath, newDirecotryName, "localAchievementCache", fileName);
             return path;
         }
@@ -58,7 +58,7 @@ namespace TapTap.Achievement.Standalone.Internal
             await semaphoreSlim.WaitAsync();
             try
             {
-                return await getAllInner();
+                return await getAllInner(await getFilePath());
             }
             finally
             {
@@ -66,12 +66,35 @@ namespace TapTap.Achievement.Standalone.Internal
             }
         }
 
+        internal static async Task<List<TapAchievementStoreBean>> GetPendingAsync(string filePath)
+        {
+            await semaphoreSlim.WaitAsync();
+            try { return await getAllInner(filePath); }
+            finally { semaphoreSlim.Release(); }
+        }
+
+        internal static async Task CompleteAsync(string uuid, string filePath)
+        {
+            await semaphoreSlim.WaitAsync();
+            try
+            {
+                completedOperations[uuid] = filePath;
+                // Reads filter completed operations and retry their cleanup before exposing pending work.
+                await getAllInner(filePath);
+            }
+            catch (Exception e)
+            {
+                TapAchievementLog.Log("Completed achievement cleanup deferred: " + e.Message);
+            }
+            finally { semaphoreSlim.Release(); }
+        }
+
         public async static Task SaveAll(List<TapAchievementStoreBean> data)
         {
             await semaphoreSlim.WaitAsync();
             try
             {
-                await SaveAllInner(data);
+                await SaveAllInner(data, await getFilePath());
             }
             finally
             {
@@ -84,9 +107,10 @@ namespace TapTap.Achievement.Standalone.Internal
             await semaphoreSlim.WaitAsync();
             try
             {
-                List<TapAchievementStoreBean> currentAll = await getAllInner() ?? new List<TapAchievementStoreBean>();
+                string filePath = await getFilePath();
+                List<TapAchievementStoreBean> currentAll = await getAllInner(filePath) ?? new List<TapAchievementStoreBean>();
                 currentAll.Add(bean);
-                await SaveAllInner(currentAll);
+                await SaveAllInner(currentAll, filePath);
             }
             finally
             {
@@ -100,9 +124,10 @@ namespace TapTap.Achievement.Standalone.Internal
             try
             {
                 TapAchievementLog.Log("Delete uuid = " + uuid);
-                List<TapAchievementStoreBean> currentAll = await getAllInner() ?? new List<TapAchievementStoreBean>();
+                string filePath = await getFilePath();
+                List<TapAchievementStoreBean> currentAll = await getAllInner(filePath) ?? new List<TapAchievementStoreBean>();
                 currentAll.RemoveAll(x => x.UUID == uuid);
-                await SaveAllInner(currentAll);
+                await SaveAllInner(currentAll, filePath);
             }
             finally
             {
@@ -110,99 +135,40 @@ namespace TapTap.Achievement.Standalone.Internal
             }
         }
 
-        private async static Task<List<TapAchievementStoreBean>> getAllInner()
+        private async static Task<List<TapAchievementStoreBean>> getAllInner(string filePath)
         {
-            string filePath = await getFilePath();
             if (string.IsNullOrEmpty(filePath))
             {
                 return null;
             }
 
-            if (!File.Exists(filePath))
+            List<TapAchievementStoreBean> pending;
+            using (await SharedCacheFile.AcquireAsync(filePath))
             {
-                return null;
+                if (!File.Exists(filePath)) return null;
+                // Pending operations are not a disposable cache. A read/parse failure must not become an empty queue.
+                string text = await SharedCacheFile.ReadTextUnderLockAsync(filePath).ConfigureAwait(false);
+                pending = JsonConvert.DeserializeObject<List<TapAchievementStoreBean>>(text)
+                    ?? throw new InvalidDataException("[Achievement] Invalid pending-operation cache.");
             }
-            try
+            if (pending.RemoveAll(x => completedOperations.TryGetValue(x.UUID, out string path) && path == filePath) > 0)
             {
-                string text;
-                using (FileStream fs = File.Open(filePath, FileMode.Open, FileAccess.Read, FileShare.Read))
-                {
-                    byte[] buffer = new byte[fs.Length];
-                    await fs.ReadAsync(buffer, 0, buffer.Length);
-                    text = Encoding.UTF8.GetString(buffer);
-                }
-
-                List<TapAchievementStoreBean> data;
-                try
-                {
-                    data = JsonConvert.DeserializeObject<List<TapAchievementStoreBean>>(text);
-                }
-                catch (Exception e)
-                {
-                    TapAchievementLog.Log(e);
-                    // Delete the file if deserialization fails
-                    try
-                    {
-                        File.Delete(filePath);
-                    }
-                    catch (Exception deleteException)
-                    {
-                        TapAchievementLog.Log($"Failed to delete file: {deleteException}");
-                    }
-
-                    return null;
-                }
-
-                if (data == null)
-                {
-                    return null;
-                }
-
-                return data;
+                try { await SaveAllInner(pending, filePath); }
+                catch (Exception e) { TapAchievementLog.Log("Completed achievement cleanup deferred: " + e.Message); }
             }
-            catch (Exception e)
-            {
-                TapAchievementLog.Log(e);
-                return null;
-            }
+            return pending;
         }
 
-        private async static Task SaveAllInner(List<TapAchievementStoreBean> data)
+        private async static Task SaveAllInner(List<TapAchievementStoreBean> data, string filePath)
         {
-            if (data == null)
-            {
-                return;
-            }
-
-            string text;
-            try
-            {
-                text = JsonConvert.SerializeObject(data);
-            }
-            catch (Exception e)
-            {
-                TapAchievementLog.Log(e);
-                return;
-            }
-
-            string dirPath = Path.GetDirectoryName(await getFilePath());
-            if (!string.IsNullOrEmpty(dirPath) && !Directory.Exists(dirPath))
-            {
-                Directory.CreateDirectory(dirPath);
-            }
-
-            try
-            {
-                using (FileStream fs = File.Create(await getFilePath()))
-                {
-                    byte[] buffer = Encoding.UTF8.GetBytes(text);
-                    await fs.WriteAsync(buffer, 0, buffer.Length);
-                }
-            }
-            catch (Exception e)
-            {
-                TapAchievementLog.Log(e);
-            }
+            if (data == null) return;
+            string text = JsonConvert.SerializeObject(data);
+            if (string.IsNullOrEmpty(filePath))
+                throw new InvalidOperationException("[Achievement] Account unavailable while saving pending operations.");
+            await SharedCacheFile.WriteBytesAsync(filePath, Encoding.UTF8.GetBytes(text));
+            foreach (string uuid in new List<string>(completedOperations.Keys))
+                if (completedOperations[uuid] == filePath && !data.Exists(x => x.UUID == uuid))
+                    completedOperations.Remove(uuid);
         }
         private static string EncryptString(string str)
         {

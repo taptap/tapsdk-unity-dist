@@ -4,6 +4,7 @@ using System.Collections;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
+using TapSDK.Core.Internal.Utils;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -20,7 +21,7 @@ namespace TapSDK.Core.Standalone.Internal
         private const string OldEventFilePath = "events.json";
 
         private readonly TapLog log = new TapLog("TapEvent");
-        private string persistentDataPath = Application.persistentDataPath;
+        private string persistentDataPath = TapEventStorage.DataPath ?? Application.persistentDataPath;
 
         private ConcurrentQueue<Dictionary<string, object>> eventQueue = new ConcurrentQueue<Dictionary<string, object>>();
         private TapHttp tapHttp = TapHttp
@@ -43,11 +44,26 @@ namespace TapSDK.Core.Standalone.Internal
         private string domain = Constants.SERVER_URL_CN;
 
         private int QueueCount => eventQueue.Count;
+        private readonly object queueGate = new object();
+        private Task saving;
+        private bool saveRequested;
+        private readonly SharedCacheStorage storage;
+        private readonly bool isolated = TapEventStorage.IsIsolated;
+        private Task loading;
+        private bool cacheLoaded;
+        private const int MaxPendingEvents = 10000;
+
+        private Task EnsureLoadedAsync()
+        {
+            lock (queueGate)
+            {
+                if (loading == null || loading.IsFaulted || loading.IsCanceled) loading = LoadEventsAsync();
+                return loading;
+            }
+        }
 
         public EventSender()
         {
-            // 设置计时器
-            timer = new Timer(OnTimerElapsed, null, TimeSpan.Zero, TimeSpan.FromSeconds(SendInterval));
             lastSendTime = DateTime.Now;
 
             // 初始化 HttpClient
@@ -66,15 +82,44 @@ namespace TapSDK.Core.Standalone.Internal
                 domain = Constants.SERVER_URL_IO;
             }
 
-            // 加载未发送的事件
-            LoadEvents();
+            storage = new SharedCacheStorage(Path.Combine(persistentDataPath, OldEventFilePath),
+                Path.Combine(persistentDataPath, GetEventCacheFileName()), false);
+            timer = new Timer(OnTimerElapsed, null, TimeSpan.FromSeconds(SendInterval), TimeSpan.FromSeconds(SendInterval));
             SendEventsAsync(null);
+        }
+
+        // 历史数据独立分批发送，不进入当前队列、不创建定时器；由调用方等待每批结果。
+        internal static async Task<bool> SendHistoryAsync(List<Dictionary<string, object>> events, string region)
+        {
+            var http = TapHttp.NewBuilder("TapSDKCore", TapTapSDK.Version)
+                .Sign(TapHttpSign.CreateNoneSign()).Parser(TapHttpParser.CreateEventParser()).Build();
+            string endpoint = region == TapTapRegionType.CN.ToString() ? Constants.SERVER_URL_CN : Constants.SERVER_URL_IO;
+            for (int offset = 0; offset < events.Count; offset += MaxBatchSize)
+            {
+                var body = new Dictionary<string, object> {
+                    { "data", events.GetRange(offset, Math.Min(MaxBatchSize, events.Count - offset)) }
+                };
+                var response = await http.PostJsonAsync<Boolean>(path: $"{endpoint}/v2/batch", json: body);
+                if (!response.IsSuccess) return false;
+            }
+            return true;
         }
 
         public async void SendEventsAsync(Action onSendComplete)
         {
+            try { await EnsureLoadedAsync(); }
+            catch (Exception e)
+            {
+                log.Warning("Event cache not ready; preserving disk and pending events: " + e.Message);
+                onSendComplete?.Invoke();
+                return;
+            }
             if (eventQueue.IsEmpty)
             {
+                // A successful upload may have emptied memory while its disk cleanup failed.
+                bool retrySave;
+                lock (queueGate) retrySave = saveRequested || saving != null;
+                if (retrySave) await SaveEventsAsync();
                 onSendComplete?.Invoke();
                 return;
             }
@@ -87,9 +132,11 @@ namespace TapSDK.Core.Standalone.Internal
             }
 
             var eventsToSend = new List<Dictionary<string, object>>();
-            while (eventsToSend.Count < MaxBatchSize && eventQueue.TryDequeue(out var item))
+            lock (queueGate)
             {
-                eventsToSend.Add(item);
+                while (eventsToSend.Count < MaxBatchSize && eventQueue.TryDequeue(out var item))
+                    eventsToSend.Add(item);
+                _inFlightBatch = eventsToSend;
             }
 
             // 并发 TryDequeue 可能导致本次实际取到 0 条
@@ -100,8 +147,6 @@ namespace TapSDK.Core.Standalone.Internal
                 return;
             }
 
-            // 登记 in-flight 批次，SaveEvents 落盘时合并，防止崩溃丢失
-            _inFlightBatch = eventsToSend;
             try
             {
                 var body = new Dictionary<string, object> {
@@ -112,26 +157,28 @@ namespace TapSDK.Core.Standalone.Internal
                 if (!response.IsSuccess)
                 {
                     log.Warning("Failed to send events");
-                    foreach (var eventParams in eventsToSend)
+                    lock (queueGate)
                     {
-                        eventQueue.Enqueue(eventParams);
+                        foreach (var eventParams in eventsToSend) eventQueue.Enqueue(eventParams);
+                        _inFlightBatch = null;
                     }
                 }
             }
             catch (Exception ex)
             {
                 log.Warning($"SendEventsAsync exception: {ex.ToString()}");
-                foreach (var eventParams in eventsToSend)
+                lock (queueGate)
                 {
-                    eventQueue.Enqueue(eventParams);
+                    foreach (var eventParams in eventsToSend) eventQueue.Enqueue(eventParams);
+                    _inFlightBatch = null;
                 }
             }
             finally
             {
                 // 先清 in-flight 再落盘：此时事件已回队（失败）或确认完成（成功）
-                _inFlightBatch = null;
+                lock (queueGate) { _inFlightBatch = null; }
+                await SaveEventsAsync();
                 Interlocked.Exchange(ref _isSending, 0);
-                SaveEvents();
                 // 回调放在持久化之后，隔离外部异常不影响落盘
                 try { onSendComplete?.Invoke(); } catch (Exception ex) { log.Warning($"onSendComplete exception: {ex.Message}"); }
             }
@@ -140,8 +187,16 @@ namespace TapSDK.Core.Standalone.Internal
         public void Send(Dictionary<string, object> eventParams)
         {
             // 将事件添加到队列
-            eventQueue.Enqueue(eventParams);
-            SaveEvents();
+            lock (queueGate)
+            {
+                if (!cacheLoaded && eventQueue.Count >= MaxPendingEvents)
+                {
+                    log.Warning("Event cache unavailable; pending buffer full, rejecting new event.");
+                    return;
+                }
+                eventQueue.Enqueue(eventParams);
+            }
+            _ = SaveEventsAsync();
 
             // 检查队列大小
             if (QueueCount >= MaxEvents)
@@ -168,6 +223,7 @@ namespace TapSDK.Core.Standalone.Internal
         }
 
         private string GetEventCacheFileName(){
+            if (TapEventStorage.IsIsolated) return TapEventStorage.EventsFile;
             if (TapTapSDK.taptapSdkOptions != null 
             && !string.IsNullOrEmpty(TapTapSDK.taptapSdkOptions.clientId)){
                 return "events_" + TapTapSDK.taptapSdkOptions.clientId + ".json";
@@ -175,70 +231,79 @@ namespace TapSDK.Core.Standalone.Internal
             return OldEventFilePath;
         }
 
-        private void LoadEvents()
-        {   
-            string filePath = Path.Combine(persistentDataPath, GetEventCacheFileName());
-            if(!File.Exists(filePath)){
-                string oldFilePath = Path.Combine(persistentDataPath, OldEventFilePath);
-                // 兼容旧版本文件
-                if (File.Exists(oldFilePath)) {
-                    File.Move(oldFilePath, filePath);
-                }
-            }
-           
-            if (File.Exists(filePath))
+        private async Task LoadEventsAsync()
+        {
+            await storage.PrepareAsync().ConfigureAwait(false);
+            using (isolated ? null : await SharedCacheFile.AcquireAsync(storage.Target).ConfigureAwait(false))
             {
-                string jsonData = File.ReadAllText(filePath);
-                if (string.IsNullOrEmpty(jsonData))
+                var savedEvents = new List<Dictionary<string, object>>();
+                if (File.Exists(storage.Target))
                 {
-                    return;
+                    string jsonData = File.ReadAllText(storage.Target);
+                    savedEvents = ConvertToListOfDictionaries(Json.Deserialize(jsonData));
+                    if (savedEvents == null) throw new InvalidDataException("Event cache is invalid; original data retained.");
                 }
-                var savedEvents = ConvertToListOfDictionaries(Json.Deserialize(jsonData));
-                if (savedEvents == null)
+                lock (queueGate)
                 {
-                    return;
-                }
-                foreach (var eventParams in savedEvents)
-                {
-                    eventQueue.Enqueue(eventParams);
+                    // Recover older events before events accumulated while storage was unavailable.
+                    savedEvents.AddRange(eventQueue.ToArray());
+                    eventQueue = new ConcurrentQueue<Dictionary<string, object>>(savedEvents);
+                    cacheLoaded = true;
                 }
             }
         }
 
-        private void SaveEvents()
+        private Task SaveEventsAsync()
+        {
+            TaskCompletionSource<bool> completion;
+            lock (queueGate)
+            {
+                saveRequested = true;
+                if (saving != null) return saving;
+                completion = new TaskCompletionSource<bool>(TaskCreationOptions.RunContinuationsAsynchronously);
+                saving = completion.Task;
+            }
+            // Run inline until IO must wait, preserving normal single-process immediate persistence.
+            _ = PersistEventsAsync(completion);
+            return completion.Task;
+        }
+
+        private async Task PersistEventsAsync(TaskCompletionSource<bool> completion)
         {
             try
             {
-                if (eventQueue == null)
+                await EnsureLoadedAsync().ConfigureAwait(false);
+                while (true)
                 {
-                    return;
+                    using (isolated ? null : await SharedCacheFile.AcquireAsync(storage.Target).ConfigureAwait(false))
+                    {
+                        List<Dictionary<string, object>> eventList;
+                        lock (queueGate)
+                        {
+                            eventList = new List<Dictionary<string, object>>(eventQueue.ToArray());
+                            if (_inFlightBatch != null) eventList.AddRange(_inFlightBatch);
+                            saveRequested = false;
+                        }
+                        SharedCacheFile.WriteTextUnderLock(storage.Target, Json.Serialize(eventList));
+                    }
+                    lock (queueGate)
+                    {
+                        if (saveRequested) continue;
+                        saving = null;
+                        break;
+                    }
                 }
-
-                // 合并 in-flight 批次：若进程在 HTTP 确认前崩溃，重启后可从磁盘恢复这批事件
-                var eventList = new List<Dictionary<string, object>>(eventQueue.ToArray());
-                var inFlight = _inFlightBatch;
-                if (inFlight != null) eventList.AddRange(inFlight);
-                string jsonData = Json.Serialize(eventList);
-
-                if (string.IsNullOrEmpty(GetEventCacheFileName()))
-                {
-                    TapLog.Error("EventFilePath is null or empty");
-                    return;
-                }
-
-                string filePath = Path.Combine(persistentDataPath, GetEventCacheFileName());
-
-                if (string.IsNullOrEmpty(filePath))
-                {
-                    return;
-                }
-
-                File.WriteAllText(filePath, jsonData);
             }
-            catch (Exception ex)
+            catch (Exception e)
             {
-                TapLog.Error("SaveEvents Exception - " + ex.Message);
+                lock (queueGate)
+                {
+                    saveRequested = true;
+                    saving = null;
+                }
+                log.Warning("Event cache save deferred; original data retained: " + e.Message);
             }
+            finally { completion.TrySetResult(true); }
         }
 
         public void SendEvents()

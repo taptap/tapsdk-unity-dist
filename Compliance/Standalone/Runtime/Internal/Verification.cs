@@ -58,10 +58,11 @@ namespace TapSDK.Compliance.Internal
             VerificationResult result;
             try
             {
-                LocalVerification localVerification;
+                LocalVerification localVerification = null;
                 TapLog.Log("start check v2 token in local");
                 //先检查本地是否有 v2 缓存
-                localVerification = await persistenceV2.Load<LocalVerification>();
+                try { localVerification = await persistenceV2.Load<LocalVerification>(); }
+                catch (Exception e) { TapLog.Warning("[Compliance] Verification cache unavailable; requesting server: " + e.Message); }
                 if (localVerification != null && localVerification.ComplianceToken != null
                     && localVerification.ComplianceToken.Length > 0)
                 {
@@ -91,7 +92,7 @@ namespace TapSDK.Compliance.Internal
             }
         }
 
-        internal static async Task FetchByTapToken(string userId, AccessToken accessToken = null)
+        internal static async Task<VerificationResult> FetchByTapToken(string userId, AccessToken accessToken = null)
         {
             TapLog.Log("start check tapToken in local");
             long timestamp = 0;
@@ -112,7 +113,7 @@ namespace TapSDK.Compliance.Internal
                         TapLog.Log("try use tapToken to get v2 token");
                         result = await Network.FetchVerificationByTapToken(userId, accessToken, timestamp);
                         await Save(userId, result);
-                        return;
+                        return result;
                     }
                 }
                 catch (Exception e)
@@ -188,28 +189,16 @@ namespace TapSDK.Compliance.Internal
         /// <returns></returns>
         public static async Task<VerificationResult> FetchVerificationByTapToken(string userId, AccessToken token)
         {
-            var tcs = new TaskCompletionSource<VerificationResult>();
             try
             {
-                await FetchByTapToken(userId, token);
-                if (persistenceV2 == null)
-                {
-                    var filename = Tool.EncryptString(userId);
-                    persistenceV2 = new Persistence(Path.Combine(
-                    VERIFICATION_V2_FILENAME,
-                    filename));
-                }
-                VerificationResult result = await persistenceV2.Load<VerificationResult>();
-                tcs.SetResult(result);
+                // The server response is authoritative even if saving the optional cache failed.
+                return await FetchByTapToken(userId, token);
             }
             catch (Exception e)
             {
-                tcs.SetException(e);
                 TapLog.Error(e.ToString());
                 throw;
             }
-
-            return await tcs.Task;
         }
 
         public static async Task Save(string userId, VerificationResult verification)
@@ -226,7 +215,8 @@ namespace TapSDK.Compliance.Internal
                 VERIFICATION_V2_FILENAME,
                 filename));
             }
-            await persistenceV2.Save(current);
+            try { await persistenceV2.Save(current); }
+            catch (Exception e) { TapLog.Warning("[Compliance] Verification cache save failed: " + e.Message); }
         }
 
         public static async Task setAgeState(int ageLimit, bool isAdult)
@@ -243,14 +233,20 @@ namespace TapSDK.Compliance.Internal
                     VERIFICATION_V2_FILENAME,
                     filename));
                 }
-                await persistenceV2.Save(current);
+                try { await persistenceV2.Save(current); }
+                catch (Exception e) { TapLog.Warning("[Compliance] Verification cache save failed: " + e.Message); }
             }
         }
 
         public static void ClearCacheVerfiction()
         {
-            persistence?.Delete();
-            persistenceV2?.Delete();
+            var oldPersistence = persistence;
+            var oldPersistenceV2 = persistenceV2;
+            // Delete retires these instances. A later authoritative Save needs the new generation.
+            persistence = null;
+            persistenceV2 = null;
+            try { oldPersistence?.Delete(); }
+            finally { oldPersistenceV2?.Delete(); }
         }
 
         internal static void Logout(bool needClearCache = true)
@@ -261,13 +257,16 @@ namespace TapSDK.Compliance.Internal
             //                 Network.CheckPlayable();
             // #pragma warning restore CS4014
             // }
-            if (needClearCache)
-            {
-                ClearCacheVerfiction();
-            }
+            var oldPersistence = persistence;
+            var oldPersistenceV2 = persistenceV2;
             persistence = null;
             persistenceV2 = null;
             current = null;
+            if (needClearCache)
+            {
+                try { oldPersistence?.Delete(); }
+                finally { oldPersistenceV2?.Delete(); }
+            }
         }
 
         internal static string GetCurrentToken()

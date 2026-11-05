@@ -38,7 +38,7 @@ namespace TapSDK.Login.Internal {
             qrcodeController = new QRCodeController(qrcodeTrans, OnAuth);
 
             Transform webTrans = transform.Find("Web");
-            webController = new WebController(webTrans, OnAuth);
+            webController = new WebController(webTrans, qrcodeController.StartWebLogin);
         }
 
         protected override void OnLoadSuccess() {
@@ -47,12 +47,11 @@ namespace TapSDK.Login.Internal {
             OpenParams openParams = openParam as OpenParams;
             titleController.Load();
             qrcodeController.Load(openParams.ClientId, openParams.Scopes);
-            webController.Load(openParams.ClientId, openParams.Scopes);
+            webController.Load();
         }
 
         private void OnDestroy() {
             qrcodeController.Unload();
-            webController.Unload();
         }
 
         private void OnCloseClicked() {

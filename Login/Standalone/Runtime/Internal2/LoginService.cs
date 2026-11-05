@@ -38,27 +38,6 @@ namespace TapSDK.Login.Internal
             }
         }
 
-        public static async Task<TokenData> Authorize(string clientId, string code)
-        {
-            Dictionary<string, string> data = new Dictionary<string, string> {
-                { "client_id", clientId },
-                { "grant_type", "authorization_code" },
-                { "secret_type", "hmac-sha-1" },
-                { "code", code },
-                { "redirect_uri", WebLoginRequestManager.Instance.GetCurrentRequest().GetRedirectUri() },
-                { "code_verifier", WebLoginRequestManager.Instance.GetCodeVerifier() }
-            };
-            TapHttpResult<TokenData> result = await tapHttp.PostFormAsync<TokenData>(TapTapSdk.CurrentRegion.TokenUrl(), form: data);
-            if (result.IsSuccess)
-            {
-                return result.Data;
-            }
-            else
-            {
-                throw result.HttpException;
-            }
-        }
-
          public static async Task<TokenData> Authorize(string clientId, string code, string codeVerify) {
             Dictionary<string, string> data = new Dictionary<string, string> {
                 { "client_id", clientId },

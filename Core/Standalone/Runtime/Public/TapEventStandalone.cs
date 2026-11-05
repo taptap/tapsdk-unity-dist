@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using TapSDK.Core.Internal;
 using TapSDK.Core.Standalone.Internal;
 using System.Collections.Generic;
@@ -15,19 +16,47 @@ namespace TapSDK.Core.Standalone
     public class TapEventStandalone : ITapEventPlatform
     {
         internal static Tracker Tracker;
-        private readonly User User = TapCoreStandalone.User;
+        private User User => TapCoreStandalone.User;
 
         private TapTapEventOptions eventOptions;
+        private static int initializationVersion;
 
         public void Init(TapTapEventOptions eventOptions)
         {
             this.eventOptions = eventOptions;
+            int version = ++initializationVersion;
+            Tracker = null;
             if (eventOptions == null || !eventOptions.enableTapTapEvent)
             {
                 return;
             }
-            Tracker = new Tracker();
-            Tracker.Init(eventOptions);
+            if (!TapEventStorage.IsReady)
+            {
+                TapLog.Warning("[TapEvent] Storage unavailable; reinitialize after storage recovers.");
+                return;
+            }
+            _ = InitializeTrackerAsync(eventOptions, version);
+        }
+
+        private async Task InitializeTrackerAsync(TapTapEventOptions options, int version)
+        {
+            try
+            {
+                while (version == initializationVersion)
+                {
+                    try { await TapCoreStandalone.Prefs.EnsureReadyAsync(); break; }
+                    catch (CacheBusyException) { await Task.Delay(1000); }
+                }
+                if (version != initializationVersion) return;
+                Tracker = new Tracker();
+                Tracker.Init(options);
+                _ = TapEventStorage.RecoverAsync();
+            }
+            catch (Exception e)
+            {
+                if (version == initializationVersion) Tracker = null;
+                TapLog.Warning("[TapEvent] Persistent identity unavailable; initialization deferred: " + e.Message);
+            }
         }
 
         /// <summary>
@@ -381,6 +410,11 @@ namespace TapSDK.Core.Standalone
                 }
                 else
                 {
+                    if (Tracker == null)
+                    {
+                        TapLog.Warning("[TapEvent] Persistent identity is not ready; call rejected. Reinitialize after storage recovers.");
+                        return false;
+                    }
                     return true;
                 }
             }

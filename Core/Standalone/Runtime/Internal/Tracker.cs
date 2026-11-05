@@ -85,16 +85,23 @@ namespace TapSDK.Core.Standalone.Internal {
         /// <param name="properties"></param>
         /// <param name="isAutomationlly">是否为自动事件</param>
         public void TrackEvent(string name, Dictionary<string, object> properties = null, bool isAutomationlly = false) {
+            sender.Send(BuildEvent(name, properties, isAutomationlly));
+        }
 
+        internal void SendSnapshot(Dictionary<string, object> payload) {
+            sender.Send(payload);
+        }
+
+        internal Dictionary<string, object> BuildEvent(string name, Dictionary<string, object> properties, bool isAutomationlly, bool basicOnly = false) {
             Dictionary<string, object> props = new Dictionary<string, object>(basicProps);
 
-            if (commonProps != null) {
+            if (!basicOnly && commonProps != null) {
                 foreach (KeyValuePair<string, object> kv in commonProps) {
                     props[kv.Key] = kv.Value;
                 }
             }
 
-            Dictionary<string, object> dynamicProps = dynamicPropsDelegate?.GetDynamicProperties();
+            Dictionary<string, object> dynamicProps = basicOnly ? null : dynamicPropsDelegate?.GetDynamicProperties();
             TapLog.Log("dynamicProps: " + dynamicProps);
             if (dynamicProps != null) {
                 foreach (KeyValuePair<string, object> kv in dynamicProps) {
@@ -114,7 +121,7 @@ namespace TapSDK.Core.Standalone.Internal {
             props["t_log_id"] = generateUUID();
             // 时间戳，毫秒级
             props["timestamp"] = DateTimeOffset.Now.ToUnixTimeMilliseconds();
-            var open_id = OpenID;
+            var open_id = basicOnly ? null : OpenID;
             if (!string.IsNullOrWhiteSpace(open_id)) {
                 props["open_id"] = open_id;
             }
@@ -143,7 +150,7 @@ namespace TapSDK.Core.Standalone.Internal {
                 data["user_id"] = TapCoreStandalone.User.Id;
             }
 
-            sender.Send(data);
+            return data;
         }
 
         /// <summary>

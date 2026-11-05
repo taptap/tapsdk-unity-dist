@@ -368,7 +368,7 @@ namespace TapSDK.Core.Editor
             string modulePackageName,
             string moduleName, string[] bundleNames, string target, string projPath, PBXProject proj)
         {
-
+            path = NormalizeDirectoryPath(path);
             var resourcePath = Path.Combine(path, resourceName);
 
             var parentFolder = Directory.GetParent(appDataPath).FullName;
@@ -380,11 +380,11 @@ namespace TapSDK.Core.Editor
                 Directory.Delete(resourcePath, true);
             }
 
-            var podSpecPath = Path.Combine(path + "/Pods", "TapTapSDK");
+            var podSpecPath = Path.Combine(path, "Pods", "TapTapSDK");
             //使用 cocospod 远程依赖
             if (Directory.Exists(podSpecPath))
             {
-                var fwRoot = Path.Combine(path + "/Pods", "TapTapSDK/iOS/Frameworks");
+                var fwRoot = Path.Combine(podSpecPath, "iOS", "Frameworks");
                 resourcePath = fwRoot;
                 // 兼容新发版结构：bundle 已按版本子目录存放（podspec 形如 'iOS/Frameworks/<version>/Xxx.bundle'）。
                 // 优先识别 fwRoot 下"包含全部目标 bundle"的子目录；找不到则 fallback 到平层（老 podspec）。
@@ -454,17 +454,31 @@ namespace TapSDK.Core.Editor
             return true;
         }
 
+        private static string NormalizeDirectoryPath(string path)
+        {
+            var fullPath = Path.GetFullPath(path);
+            var pathRoot = Path.GetPathRoot(fullPath);
+            // Unity Mono may retain trailing separators; keep the filesystem root intact.
+            return fullPath.Length > pathRoot.Length
+                ? fullPath.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+                : fullPath;
+        }
+
         private static string GetRelativePath(string absolutePath, string rootPath)
         {
-            if (Directory.Exists(rootPath) && !rootPath.EndsWith(Path.AltDirectorySeparatorChar.ToString()))
+            absolutePath = Path.GetFullPath(absolutePath);
+            rootPath = NormalizeDirectoryPath(rootPath);
+            // MakeRelativeUri needs a directory URI, with exactly one trailing separator.
+            if (!rootPath.EndsWith(Path.DirectorySeparatorChar.ToString()))
             {
-                rootPath += Path.AltDirectorySeparatorChar;
+                rootPath += Path.DirectorySeparatorChar;
             }
-            Uri aboslutePathUri = new Uri(absolutePath);
+            Uri absolutePathUri = new Uri(absolutePath);
             Uri rootPathUri = new Uri(rootPath);
-            var relateivePath = rootPathUri.MakeRelativeUri(aboslutePathUri).ToString();
-            UnityEngine.Debug.LogFormat($"[TapSDKCoreCompile] GetRelativePath absolutePath:{absolutePath} rootPath:{rootPath} relateivePath:{relateivePath} ");
-            return relateivePath;
+            var relativePath = Uri.UnescapeDataString(rootPathUri.MakeRelativeUri(absolutePathUri).ToString())
+                .Replace(Path.DirectorySeparatorChar, '/');
+            UnityEngine.Debug.LogFormat($"[TapSDKCoreCompile] GetRelativePath absolutePath:{absolutePath} rootPath:{rootPath} relativePath:{relativePath} ");
+            return relativePath;
         }
 
         public static bool HandlerPlist(string pathToBuildProject, string infoPlistPath, bool macos = false)
@@ -524,11 +538,10 @@ namespace TapSDK.Core.Editor
                 }
             }
 
-            AddURLSchemeToPlist(
-                rootDic,
-                macos ? "TapWeb" : "TapTap",
-                macos ? $"open-taptap-{taptapId}" : $"tt{taptapId}"
-            );
+            if (!macos)
+            {
+                AddURLSchemeToPlist(rootDic, "TapTap", $"tt{taptapId}");
+            }
 
             File.WriteAllText(plistPath, plist.WriteToString());
             UnityEngine.Debug.Log("TapSDK change plist Success");
