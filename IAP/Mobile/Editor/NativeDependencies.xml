@@ -4,12 +4,12 @@
     <repositories>
       <repository>https://repo.maven.apache.org/maven2</repository>
     </repositories>
-    <androidPackage spec="com.taptap.android.payment:iap:4.11.1-beta.2" />
-    <androidPackage spec="com.taptap.android.payment:stripe:4.11.1-beta.2" />
-    <androidPackage spec="com.taptap.android.payment:alipay:4.11.1-beta.2" />
-    <androidPackage spec="com.taptap.android.payment:braintree:4.11.1-beta.2" />
-    <androidPackage spec="com.taptap.android.payment:alipaycn:4.11.1-beta.2" />
-    <androidPackage spec="com.taptap.android.payment:wechat:4.11.1-beta.2" />
+    <androidPackage spec="com.taptap.android.payment:iap:4.11.1-beta.4" />
+    <androidPackage spec="com.taptap.android.payment:stripe:4.11.1-beta.4" />
+    <androidPackage spec="com.taptap.android.payment:alipay:4.11.1-beta.4" />
+    <androidPackage spec="com.taptap.android.payment:braintree:4.11.1-beta.4" />
+    <androidPackage spec="com.taptap.android.payment:alipaycn:4.11.1-beta.4" />
+    <androidPackage spec="com.taptap.android.payment:wechat:4.11.1-beta.4" />
   </androidPackages>
   <iosPods>
     <sources>

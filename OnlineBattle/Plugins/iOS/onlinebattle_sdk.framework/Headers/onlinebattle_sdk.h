@@ -24,7 +24,6 @@ TAPSDK_EXPORT_API void TapSdkOnlineBattleInitLogger(TapSdkCppLogWriter logWriter
  *     TapSDK参数格式
  *     {
  *       "region": 2,
- *       "dataDir": "/tmp/onlinebattle",
  *       "ua": "TapSDK-Android/3.28.0",
  *       "lang": "zh-CN",
  *       "platform": "Android",
@@ -36,14 +35,12 @@ TAPSDK_EXPORT_API void TapSdkOnlineBattleInitLogger(TapSdkCppLogWriter logWriter
  *     Tap Miniapp参数格式
  *     {
  *       "region": 2,
- *       "dataDir": "/tmp/onlinebattle",
  *       "ua": "TapSDK-Android/3.28.0",
  *       "lang": "zh-CN",
  *       "runtimeVer": "4.6.0-alpha.7"
  *     }
  *
  *     - region 取值：0 国内、1 海外、2 RND、3 海外RND
- *     - dataDir 保存本地缓存的目录，不允许为空
  *     - ua user agent，不允许为空
  *     - lang 语言，允许为空
  *     - platform 不允许为空，TapSDK专用参数

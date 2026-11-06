@@ -5,7 +5,7 @@ namespace TapSDK.Achievement
 {
     public class TapTapAchievement
     {
-        public static readonly string Version = "4.11.1-beta.3";
+        public static readonly string Version = "4.11.1-beta.4";
 
         public static void Increment(string achievementId, int step)
         {
