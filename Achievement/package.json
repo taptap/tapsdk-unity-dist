@@ -2,11 +2,11 @@
   "name": "com.taptap.sdk.achievement",
   "displayName": "TapTapSDK Achievement ",
   "description": "TapTapSDK Achievement",
-  "version": "4.11.1-beta.4",
+  "version": "4.11.1",
   "unity": "2019.4",
   "license": "MIT",
   "dependencies": {
-    "com.taptap.sdk.core": "4.11.1-beta.4",
-    "com.taptap.sdk.login": "4.11.1-beta.4"
+    "com.taptap.sdk.core": "4.11.1",
+    "com.taptap.sdk.login": "4.11.1"
   }
 }
