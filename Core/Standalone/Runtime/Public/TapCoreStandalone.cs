@@ -61,9 +61,7 @@ namespace TapSDK.Core.Standalone
         /// </summary>
         private static long currentRequestVersion = 0;
 
-        private readonly TapHttp tapHttp = TapHttp.NewBuilder("TapSDKCore", TapTapSDK.Version)
-            .RequestTimeout(1000)
-            .Build();
+        private readonly TapHttp tapHttp = TapHttp.NewBuilder("TapSDKCore", TapTapSDK.Version).Build();
 
         /// <summary>
         /// Initializes a new instance of the <see cref="TapCoreStandalone"/> class.
@@ -218,8 +216,8 @@ namespace TapSDK.Core.Standalone
                 { "bundle_id", bundleIdentifier }
             };
 
-            // 与 Android / iOS 对齐：1 秒单次请求，不重试，失败使用缓存或默认配置。
-            var retryStrategy = TapHttpRetryStrategy.CreateNone();
+            // gatekeeper 最多尝试 4 次（1 次首发 + 3 次重试）
+            var retryStrategy = TapHttpRetryStrategy.CreateDefault(TapHttpBackoffStrategy.CreateExponentialLimited(maxRetryCount: 3));
 
             tapHttp.PostJson<TapGatekeeper>(
                url: path,

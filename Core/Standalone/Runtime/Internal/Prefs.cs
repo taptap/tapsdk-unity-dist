@@ -54,7 +54,8 @@ namespace TapSDK.Core.Standalone.Internal {
         }
 
         private async Task LoadAsync() {
-            await storage.PrepareAsync().ConfigureAwait(false);
+            // The client-specific Prefs file takes precedence over a retained legacy file.
+            if (!File.Exists(persistentFilePath)) await storage.PrepareAsync().ConfigureAwait(false);
             using (isolated ? null : await SharedCacheFile.AcquireAsync(persistentFilePath).ConfigureAwait(false)) {
                 Dictionary<string, object> loaded;
                 if (!File.Exists(persistentFilePath)) loaded = new Dictionary<string, object>();
