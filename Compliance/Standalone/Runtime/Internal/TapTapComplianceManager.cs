@@ -144,6 +144,11 @@ namespace TapSDK.Compliance
         /// <summary>
         /// 登出
         /// </summary>
+        public static void ShowContentRatingLimitPanel()
+        {
+            Worker.ShowContentRatingLimitPanel();
+        }
+
         public static void Logout() 
         {
             CurrentRemainSeconds = null;

@@ -38,14 +38,14 @@ namespace TapSDK.Compliance.Internal {
             okButton.onClick.AddListener(OnOKButtonClicked);
         }
 
-        internal void Show(PlayableResult playable, Action onOk, Action onSwitchAccount)
+        internal void Show(PlayableResult playable, Action onOk, Action onSwitchAccount, bool allowEmptyTitle)
         {
             OnOk = onOk;
             OnSwitchAccount = onSwitchAccount;
             string title = playable.Title;
             string content = playable.Content;
             //服务端异常，返回了无效的提示文案,为避免异常闪退，使用保底文案
-            if(title == null || title.Length == 0 || content == null || content.Length == 0){
+            if((!allowEmptyTitle && string.IsNullOrEmpty(title)) || string.IsNullOrEmpty(content)){
                 HealthReminderDesc healthReminderDesc;
                 if(playable.RemainTime > 0){
                     healthReminderDesc = TapTapComplianceManager.CurrentUserAntiResult.localConfig.timeRangeConfig.uITipText.allow;
@@ -55,7 +55,7 @@ namespace TapSDK.Compliance.Internal {
                 title = healthReminderDesc.tipTitle;
                 content = healthReminderDesc.tipDescription;
             }
-            titleText.text = title;
+            titleText.text = title ?? "";
             // 替换富文本标签
             //周六、周日和法定节假日每日 20 时至 21 时向未成年人提供 60 分钟网络游戏服务
             TapLog.Log("remain tip = " + content);    

@@ -432,6 +432,33 @@ namespace TapSDK.Compliance
             return await ValidateUserConfigAsync();
         }
 
+        internal void ShowContentRatingLimitPanel()
+        {
+            var prompt = Config.Current?.antiAddictionText?.contentRatingLimit;
+            if (prompt == null
+                || string.IsNullOrWhiteSpace(prompt.Content))
+            {
+                return;
+            }
+            var playable = new PlayableResult
+            {
+                Title = prompt.Title ?? "",
+                Content = prompt.Content,
+                RemainTime = 0
+            };
+            Action onSwitchAccount = null;
+            if (config.showSwitchAccount)
+            {
+                onSwitchAccount = () =>
+                {
+                    Logout(false);
+                    TapTapCompliance.OnInvokeExternalCallback(StartUpResult.SWITCH_ACCOUNT, null);
+                };
+            }
+            TapComplianceUI.OpenHealthReminderPanel(playable, () => Application.Quit(), onSwitchAccount,
+                allowEmptyTitle: true);
+        }
+
         private async Task<int> ValidateUserConfigAsync(){
             do {
                 try{

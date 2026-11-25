@@ -5,7 +5,7 @@ namespace TapSDK.Review
     public class TapTapReview
     {
 
-        public static readonly string Version = "4.12.0-beta.2";
+        public static readonly string Version = "4.11.2";
 
         public static void OpenReview()
         {

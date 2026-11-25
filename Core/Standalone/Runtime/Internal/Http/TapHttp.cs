@@ -8,6 +8,7 @@ namespace TapSDK.Core.Standalone.Internal.Http
     using System.Net.Http.Headers;
     using System.Net.NetworkInformation;
     using System.Text;
+    using System.Threading;
     using System.Threading.Tasks;
     using Newtonsoft.Json;
     using TapSDK.Core.Internal.Log;
@@ -381,14 +382,20 @@ namespace TapSDK.Core.Standalone.Internal.Http
                 {
                     TapHttpUtils.PrintRequest(client, request);
                 }
-                // 发送请求
-                HttpResponseMessage response = await client.SendAsync(request);
-                if (TapTapSDK.taptapSdkOptions.enableLog)
+                // 每次发送独立计时，不修改共享 client.Timeout，避免影响其它模块和并发请求。
+                using (var timeout = httpConfig.RequestTimeoutMillis > 0
+                    ? new CancellationTokenSource(TimeSpan.FromMilliseconds(httpConfig.RequestTimeoutMillis))
+                    : null)
                 {
-                    TapHttpUtils.PrintResponse(response);
+                    // 默认 ResponseContentRead：取消令牌同时约束等待响应头和完整响应体。
+                    HttpResponseMessage response = await client.SendAsync(request, timeout?.Token ?? CancellationToken.None);
+                    if (TapTapSDK.taptapSdkOptions.enableLog)
+                    {
+                        TapHttpUtils.PrintResponse(response);
+                    }
+                    // 解析响应
+                    return await httpConfig.Parser.Parse<T>(response);
                 }
-                // 解析响应
-                return await httpConfig.Parser.Parse<T>(response);
             }
             catch (Exception ex)
             {

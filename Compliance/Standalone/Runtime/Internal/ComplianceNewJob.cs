@@ -150,7 +150,11 @@ namespace TapSDK.Compliance
                     TapComplianceTracker.Instance.TrackCancel("startup", sessionId);
                     break;
             }
-            OnInvokeExternalCallback(code,null);
+            OnInvokeExternalCallback(code, null);
+            if (code == StartUpResult.AGE_LIMIT)
+            {
+                TapTapComplianceManager.ShowContentRatingLimitPanel();
+            }
         }
         
 
@@ -266,9 +270,16 @@ namespace TapSDK.Compliance
             {
                 if (_externalCallbackList != null)
                 {
-                    foreach (Action<int, string> callback in _externalCallbackList)
+                    foreach (Action<int, string> callback in _externalCallbackList.ToArray())
                     {
-                        callback?.Invoke(code, msg);
+                        try
+                        {
+                            callback?.Invoke(code, msg);
+                        }
+                        catch (Exception e)
+                        {
+                            TapLog.Error("[Compliance] external callback failed for code " + code + ": " + e);
+                        }
                     }
                 }
             }

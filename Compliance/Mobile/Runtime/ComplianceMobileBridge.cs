@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Newtonsoft.Json;
 using TapSDK.Compliance.Model;
 using System.Threading.Tasks;
@@ -77,19 +78,6 @@ namespace TapSDK.Compliance.Mobile.Runtime
 
                         ComplianceCallbackData callbackData = new ComplianceCallbackData();
 #if UNITY_IOS
-                    result.content = RemoveFontColor(result.content);
-
-                    // 修复：在RemoveFontColor之后再次检查content，防止null导致反序列化失败
-                    if (string.IsNullOrEmpty(result.content))
-                    {
-                        TapLog.Error("[Unity:Compliance] callback content is null or empty after RemoveFontColor");
-                        callbackList.ForEach((item) =>
-                        {
-                            item?.Invoke(-1, "[Unity:Compliance] callback content is empty after processing");
-                        });
-                        return;
-                    }
-
                     var callbackOriginData = JsonConvert.DeserializeObject<ComplianceCallbackOriginData>(result.content);
                     callbackData.code = callbackOriginData.code;
 
@@ -97,6 +85,12 @@ namespace TapSDK.Compliance.Mobile.Runtime
                     if (!string.IsNullOrEmpty(callbackOriginData.extras))
                     {
                         callbackData.extras = JsonConvert.DeserializeObject<MsgExtraParams>(callbackOriginData.extras);
+                        // 仅在文本字段上清理富文本，避免在整段 JSON 上跑正则时残缺标签跨界吞掉字段
+                        if (callbackData.extras != null)
+                        {
+                            callbackData.extras.title = RemoveFontColor(callbackData.extras.title);
+                            callbackData.extras.description = RemoveFontColor(callbackData.extras.description);
+                        }
                     }
                     else
                     {
@@ -136,39 +130,10 @@ namespace TapSDK.Compliance.Mobile.Runtime
         private static string RemoveFontColor(string originStr)
         {
             if (string.IsNullOrEmpty(originStr)) return originStr;
-            var colorBeginPattern = "<fontcolor=";
-            int index = originStr.IndexOf(colorBeginPattern, StringComparison.Ordinal);
-            while (index >= 0)
-            {
-                int eIndex = originStr.IndexOf('>', index);
-                originStr = originStr.Remove(index, eIndex - index + 1);
-                index = originStr.IndexOf(colorBeginPattern, StringComparison.Ordinal);
-            }
-            var colorEndPattern = "font>";
-            index = originStr.IndexOf(colorEndPattern, StringComparison.Ordinal);
-            while (index >= 0)
-            {
-                int eIndex = originStr.LastIndexOf('<', index + colorEndPattern.Length, index);
-                originStr = originStr.Remove(eIndex, index + colorEndPattern.Length - eIndex);
-                index = originStr.IndexOf(colorEndPattern, StringComparison.Ordinal);
-            }
-
-            var spancolorBeginPattern = "<spancolor=";
-            int spanindex = originStr.IndexOf(spancolorBeginPattern, StringComparison.Ordinal);
-            while (spanindex >= 0)
-            {
-                int eIndex = originStr.IndexOf('>', spanindex);
-                originStr = originStr.Remove(spanindex, eIndex - spanindex + 1);
-                spanindex = originStr.IndexOf(spancolorBeginPattern, StringComparison.Ordinal);
-            }
-            var spancolorEndPattern = "span>";
-            spanindex = originStr.IndexOf(spancolorEndPattern, StringComparison.Ordinal);
-            while (spanindex >= 0)
-            {
-                int eIndex = originStr.LastIndexOf('<', spanindex + spancolorEndPattern.Length, spanindex);
-                originStr = originStr.Remove(eIndex, spanindex + spancolorEndPattern.Length - eIndex);
-                spanindex = originStr.IndexOf(spancolorEndPattern, StringComparison.Ordinal);
-            }
+            // 去掉 <font ...> / </font> 与 <span ...> / </span> 标签（含带空格/不带空格的属性）
+            // 用正则整体替换，避免手写循环在相邻标签(如 </font><br>)时 Remove 长度为 0 导致的死循环
+            originStr = Regex.Replace(originStr, @"</?font[^>]*>", string.Empty, RegexOptions.IgnoreCase);
+            originStr = Regex.Replace(originStr, @"</?span[^>]*>", string.Empty, RegexOptions.IgnoreCase);
             return originStr;
         }
 

@@ -15,6 +15,7 @@ namespace TapSDK.Core.Standalone.Internal.Http
         private long connectTimeoutMillis = TapHttp.CONNECT_TIMEOUT_MILLIS;
         private long readTimeoutMillis = TapHttp.READ_TIMEOUT_MILLIS;
         private long writeTimeoutMillis = TapHttp.WRITE_TIMEOUT_MILLIS;
+        private long requestTimeoutMillis;
 
         public TapHttpBuilder(string moduleName, string moduleVersion)
         {
@@ -34,6 +35,7 @@ namespace TapSDK.Core.Standalone.Internal.Http
                 ConnectTimeoutMillis = connectTimeoutMillis,
                 ReadTimeoutMillis = readTimeoutMillis,
                 WriteTimeoutMillis = writeTimeoutMillis,
+                RequestTimeoutMillis = requestTimeoutMillis,
             };
             return new TapHttp(httpConfig);
         }
@@ -41,6 +43,20 @@ namespace TapSDK.Core.Standalone.Internal.Http
         public TapHttpBuilder ConnectTimeout(long connectTimeoutMillis)
         {
             this.connectTimeoutMillis = connectTimeoutMillis;
+            return this;
+        }
+
+        /// <summary>
+        /// 为内部请求设置比共享 HttpClient 的 10 秒更短的单次总时限，包含响应体传输。
+        /// 不设置时沿用共享客户端配置；不包含重试间隔或本地序列化耗时。
+        /// </summary>
+        internal TapHttpBuilder RequestTimeout(long timeoutMillis)
+        {
+            if (timeoutMillis <= 0 || timeoutMillis > TapHttp.CONNECT_TIMEOUT_MILLIS)
+            {
+                throw new ArgumentOutOfRangeException(nameof(timeoutMillis));
+            }
+            requestTimeoutMillis = timeoutMillis;
             return this;
         }
 
@@ -87,6 +103,7 @@ namespace TapSDK.Core.Standalone.Internal.Http
         public long ConnectTimeoutMillis { get; set; }
         public long ReadTimeoutMillis { get; set; }
         public long WriteTimeoutMillis { get; set; }
+        internal long RequestTimeoutMillis { get; set; }
     }
 
 }

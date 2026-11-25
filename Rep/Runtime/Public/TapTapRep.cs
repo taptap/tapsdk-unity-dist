@@ -20,7 +20,7 @@ namespace TapSDK.Rep {
     /// TapTapRep 主类
     /// </summary>
     public class TapTapRep {
-        public static readonly string Version = "4.12.0-beta.2";
+        public static readonly string Version = "4.11.2";
 
         static readonly ITapRepBridge repBridge;
 

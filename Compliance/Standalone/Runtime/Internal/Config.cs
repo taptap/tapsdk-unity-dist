@@ -49,6 +49,10 @@ namespace TapSDK.Compliance.Internal
                         catch (Exception e) { TapLog.Warning("[Compliance] Config cache save failed: " + e.Message); }
                         return true;
                     }
+                    // 成功响应但正文无效（缺适龄文案）：对齐 Android/iOS/UE5 直接失败(1200)，
+                    // 不回退旧缓存 —— 缓存兜底只保留给网络/5xx 失败。
+                    TapLog.Warning("[Compliance] Config fetched but age-limit text missing; treat as invalid");
+                    return false;
                 } 
                 catch (Exception e) 
                 {
@@ -65,7 +69,7 @@ namespace TapSDK.Compliance.Internal
                 try 
                 {
                     Current = await persistence.Value.Load<RealNameConfigResult>();
-                    if (Current != null)
+                    if (IsValid())
                         return true;
                 } 
                 catch (Exception e) 
@@ -84,6 +88,8 @@ namespace TapSDK.Compliance.Internal
         {
             if (current == null) return false;
             if (current.realNameText == null) return false;
+            var prompt = current.antiAddictionText?.contentRatingLimit;
+            if (prompt == null || string.IsNullOrWhiteSpace(prompt.Content)) return false;
             return true;
         }
 

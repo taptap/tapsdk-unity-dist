@@ -54,6 +54,13 @@ namespace TapSDK.Compliance.Model
     }
 
 
+    public class AntiAddictionText
+    {
+        [JsonProperty("content_rating_limit")]
+        public Prompt contentRatingLimit { get; private set; }
+    }
+
+
     public class RealNameConfigResult 
     {
         // 实名过程 UI 提示文案
@@ -62,6 +69,9 @@ namespace TapSDK.Compliance.Model
 
         [JsonProperty("manual_auth_enable")]
         public bool useManual = true;
+
+        [JsonProperty("anti_addiction_text")]
+        public AntiAddictionText antiAddictionText { get; private set; }
 
     }
 

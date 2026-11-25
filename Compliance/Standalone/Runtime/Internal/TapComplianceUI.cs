@@ -32,7 +32,7 @@ namespace TapSDK.Compliance
         /// tcs 只由 onOk 完成，必须传它，否则未成年人的 Startup 会一直挂着。
         /// </param>
         internal static void OpenHealthReminderPanel(PlayableResult playable, Action onOk = null,
-            Action onSwitchAccount = null, Action<Exception> onFailed = null)
+            Action onSwitchAccount = null, Action<Exception> onFailed = null, bool allowEmptyTitle = false)
         {
             ComplianceMainThread.Run(() =>
             {
@@ -44,7 +44,7 @@ namespace TapSDK.Compliance
                     onFailed?.Invoke(PanelMissing(path));
                     return;
                 }
-                healthReminderPanel.Show(playable, onOk, onSwitchAccount);
+                healthReminderPanel.Show(playable, onOk, onSwitchAccount, allowEmptyTitle);
             }, onFailed);
         }
 
